@@ -82,20 +82,71 @@ export class BootScene extends Phaser.Scene {
   }
 
   private generateFallbackTextures() {
-    // Generic item fallback (16x16 gray square)
+    // Generic item fallback (16x16 glitchy question mark)
     const itemG = this.add.graphics();
-    itemG.fillStyle(0x888888, 1);
+    // Dark CRT background
+    itemG.fillStyle(0x1a1a2e, 1);
     itemG.fillRect(0, 0, 16, 16);
-    itemG.lineStyle(1, 0xffffff, 0.4);
+    // Glitch offset (red channel shifted left)
+    itemG.fillStyle(0xff0044, 0.3);
+    itemG.fillRect(4, 3, 1, 1); itemG.fillRect(5, 2, 3, 1);
+    itemG.fillRect(8, 3, 1, 2); itemG.fillRect(7, 5, 2, 1);
+    itemG.fillRect(6, 6, 1, 2); itemG.fillRect(6, 10, 1, 2);
+    // Question mark in cyan
+    itemG.fillStyle(0x5ee6b0, 1);
+    itemG.fillRect(5, 2, 4, 1);   // top bar
+    itemG.fillRect(4, 3, 2, 1);   // top-left curve
+    itemG.fillRect(9, 3, 2, 1);   // top-right curve
+    itemG.fillRect(9, 4, 2, 1);   // right side
+    itemG.fillRect(8, 5, 2, 1);   // bend
+    itemG.fillRect(7, 6, 2, 2);   // stem
+    itemG.fillRect(7, 10, 2, 2);  // dot
+    // Scanline artifacts
+    itemG.fillStyle(0x5ee6b0, 0.15);
+    itemG.fillRect(0, 5, 16, 1);
+    itemG.fillRect(0, 11, 16, 1);
+    // Border
+    itemG.lineStyle(1, 0x5ee6b0, 0.2);
     itemG.strokeRect(0, 0, 16, 16);
     itemG.generateTexture('item-default', 16, 16);
     itemG.destroy();
 
-    // Generic object fallback (32x32 gray square)
+    // Generic object fallback (32x32 glitchy question mark)
     const objG = this.add.graphics();
-    objG.fillStyle(0x666666, 1);
+    // Dark CRT background
+    objG.fillStyle(0x1a1a2e, 1);
     objG.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-    objG.lineStyle(1, 0xffffff, 0.3);
+    // Glitch offset (red channel shifted)
+    objG.fillStyle(0xff0044, 0.3);
+    objG.fillRect(9, 5, 2, 2); objG.fillRect(11, 4, 6, 2);
+    objG.fillRect(18, 6, 2, 4); objG.fillRect(16, 10, 3, 2);
+    objG.fillRect(13, 12, 3, 4); objG.fillRect(13, 21, 3, 3);
+    // Question mark in cyan (doubled scale)
+    objG.fillStyle(0x5ee6b0, 1);
+    objG.fillRect(11, 5, 8, 2);   // top bar
+    objG.fillRect(9, 7, 3, 2);    // top-left curve
+    objG.fillRect(19, 7, 3, 2);   // top-right curve
+    objG.fillRect(19, 9, 3, 2);   // right side
+    objG.fillRect(17, 11, 3, 2);  // upper bend
+    objG.fillRect(15, 13, 3, 4);  // stem
+    objG.fillRect(15, 21, 3, 3);  // dot
+    // Brighter inner highlight
+    objG.fillStyle(0x8fffd4, 0.6);
+    objG.fillRect(12, 6, 6, 1);
+    objG.fillRect(16, 14, 1, 2);
+    objG.fillRect(16, 22, 1, 1);
+    // Scanline artifacts
+    objG.fillStyle(0x5ee6b0, 0.1);
+    for (let y = 0; y < TILE_SIZE; y += 4) {
+      objG.fillRect(0, y, TILE_SIZE, 1);
+    }
+    // Glitch corruption lines
+    objG.fillStyle(0xff00ff, 0.25);
+    objG.fillRect(2, 18, 7, 1);
+    objG.fillStyle(0x00ffaa, 0.2);
+    objG.fillRect(22, 8, 6, 1);
+    // Border
+    objG.lineStyle(1, 0x5ee6b0, 0.2);
     objG.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
     objG.generateTexture('obj-default', TILE_SIZE, TILE_SIZE);
     objG.destroy();

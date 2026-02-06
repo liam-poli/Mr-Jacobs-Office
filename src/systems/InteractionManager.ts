@@ -302,7 +302,7 @@ export class InteractionManager {
       if (result.output_item) {
         const outputItem: InventoryItem = {
           id: crypto.randomUUID(),
-          item_id: 'output',
+          item_id: result.output_item_id ?? 'output',
           name: result.output_item,
           tags: result.output_item_tags ?? [],
         };

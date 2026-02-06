@@ -121,7 +121,8 @@ Rules:
 - If the combination doesn't make physical/logical sense, set result_state to null (no change).
 - Only create an output_item if the interaction would logically produce something new.
 - Keep the description short, dark, and corporate-dystopian in humor.
-- Be consistent: the same tags + state should always produce the same outcome.`;
+- Use the tags to reason about physical properties — they constrain what's plausible, not what's interesting.
+- The item and object names matter — tailor the description to the specific combo.`;
 
   const result = await model.generateContent(prompt);
   const text = result.response.text();

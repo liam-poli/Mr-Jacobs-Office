@@ -4,8 +4,35 @@ import { soundService } from '../services/soundService';
 
 const SLOT_COUNT = 5;
 
-// Fallback color when no sprite URL is available
-const FALLBACK_ITEM_COLOR = '#888888';
+// Glitchy "?" fallback rendered as a tiny inline SVG matching the Phaser item-default texture
+const FALLBACK_QUESTION_SVG = `data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" shape-rendering="crispEdges">` +
+  `<rect width="16" height="16" fill="#1a1a2e"/>` +
+  // Red glitch offset
+  `<rect x="4" y="3" width="1" height="1" fill="#ff0044" opacity="0.3"/>` +
+  `<rect x="5" y="2" width="3" height="1" fill="#ff0044" opacity="0.3"/>` +
+  `<rect x="8" y="3" width="1" height="2" fill="#ff0044" opacity="0.3"/>` +
+  `<rect x="7" y="5" width="2" height="1" fill="#ff0044" opacity="0.3"/>` +
+  `<rect x="6" y="6" width="1" height="2" fill="#ff0044" opacity="0.3"/>` +
+  `<rect x="6" y="10" width="1" height="2" fill="#ff0044" opacity="0.3"/>` +
+  // Cyan question mark
+  `<rect x="5" y="2" width="4" height="1" fill="#5ee6b0"/>` +
+  `<rect x="4" y="3" width="2" height="1" fill="#5ee6b0"/>` +
+  `<rect x="9" y="3" width="2" height="1" fill="#5ee6b0"/>` +
+  `<rect x="9" y="4" width="2" height="1" fill="#5ee6b0"/>` +
+  `<rect x="8" y="5" width="2" height="1" fill="#5ee6b0"/>` +
+  `<rect x="7" y="6" width="2" height="2" fill="#5ee6b0"/>` +
+  `<rect x="7" y="10" width="2" height="2" fill="#5ee6b0"/>` +
+  // Scanlines
+  `<rect x="0" y="5" width="16" height="1" fill="#5ee6b0" opacity="0.15"/>` +
+  `<rect x="0" y="11" width="16" height="1" fill="#5ee6b0" opacity="0.15"/>` +
+  // Border
+  `<rect x="0" y="0" width="16" height="1" fill="#5ee6b0" opacity="0.2"/>` +
+  `<rect x="0" y="15" width="16" height="1" fill="#5ee6b0" opacity="0.2"/>` +
+  `<rect x="0" y="0" width="1" height="16" fill="#5ee6b0" opacity="0.2"/>` +
+  `<rect x="15" y="0" width="1" height="16" fill="#5ee6b0" opacity="0.2"/>` +
+  `</svg>`,
+)}`;
 
 export function InventoryBar() {
   const inventory = useGameStore((s) => s.inventory);
@@ -67,22 +94,12 @@ export function InventoryBar() {
                   </div>
                 )}
                 {item && (
-                  item.spriteUrl ? (
-                    <img
-                      src={item.spriteUrl}
-                      alt={item.name}
-                      className="w-12 h-12 object-contain"
-                      style={{ imageRendering: 'pixelated' }}
-                    />
-                  ) : (
-                    <div
-                      className="w-8 h-8"
-                      style={{
-                        backgroundColor: FALLBACK_ITEM_COLOR,
-                        border: '1px solid rgba(255,255,255,0.3)',
-                      }}
-                    />
-                  )
+                  <img
+                    src={item.spriteUrl || FALLBACK_QUESTION_SVG}
+                    alt={item.name}
+                    className="w-12 h-12 object-contain"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
                 )}
               </div>
             );

@@ -16,7 +16,7 @@
 - [x] OfficeScene loads room from DB with fallback to DEFAULT_ROOM
 - [x] Objects placed from DB catalog with tags and initial state
 - [x] Procedural textures for furniture, state indicators (lock, power, broken)
-- [ ] Objects display visual state indicators polished (sparks, glow, puddles)
+- [x] Objects display visual state indicators polished (sparks, glow, puddles)
 
 ### 3. Player Movement
 - [x] Player sprite with walk animation
@@ -35,18 +35,18 @@
 
 ### 5. Object Interactions
 - [x] Player walks near object → interact prompt
-- [ ] "Use item on object" action (select item from inventory, apply to object)
-- [ ] Hash-based interaction cache (`interactions` table, see `docs/plans/interaction-engine.md`)
+- [x] "Use item on object" action (select item from inventory, apply to object)
+- [x] Hash-based interaction cache (`interactions` table, see `docs/plans/interaction-engine.md`)
 - [ ] `interact` edge function: hash lookup → instant on cache hit, AI fallback on miss → store result
-- [ ] Object state updates visually (e.g., LOCKED → UNLOCKED, POWERED → BROKEN)
-- [ ] New item created from interaction goes to inventory (e.g., Knife + Coffee Bag → Coffee Grounds)
-- [ ] Item consumed on use
-- [ ] Seed 8–10 common interactions so game works without AI calls
+- [x] Object state updates visually (e.g., LOCKED → UNLOCKED, POWERED → BROKEN)
+- [x] New item created from interaction goes to inventory (e.g., Knife + Coffee Bag → Coffee Grounds)
+- [x] Item consumed on use
+- [x] Seed 8–10 common interactions so game works without AI calls
 
 ### 6. Mr. Jacobs — Bit-Screen
-- [ ] Bit-screen object on the wall displaying Mr. Jacobs' face
-- [ ] Face changes with mood (Pleased, Neutral, Suspicious, Disappointed, Unhinged)
-- [ ] Mr. Jacobs comments on events via speech bubble or text overlay
+- [x] Bit-screen object on the wall displaying Mr. Jacobs' face
+- [x] Face changes with mood (Pleased, Neutral, Suspicious, Disappointed, Unhinged)
+- [x] Mr. Jacobs comments on events via speech bubble or text overlay
 - [ ] Reacts to object state changes in camera view (e.g., something breaks → comment)
 
 ### 7. Mr. Jacobs — Terminal
@@ -58,7 +58,7 @@
 
 ### 8. Bucks & Jobs (Minimal)
 - [ ] Player starts with a job title and quota (hardcoded for now)
-- [ ] HUD shows: Bucks, current job, quota progress
+- [ ] HUD shows: Bucks, sscurrent job, quota progress
 - [ ] Completing a job task (e.g., use item on correct object) awards Bucks
 - [ ] Bucks deducted on terminal use
 
@@ -68,7 +68,7 @@
 - [x] Objects tab — full CRUD for object definitions (name, tags, state, sprite preview + AI generation)
 - [x] Items tab — full CRUD for item definitions (name, tags, sprite preview + AI generation)
 - [x] Rooms tab — view room definitions from Supabase
-- [ ] Interactions tab — CRUD for cached interaction results (see `docs/plans/interaction-engine.md`)
+- [x] Interactions tab — CRUD for cached interaction results (see `docs/plans/interaction-engine.md`)
 - [ ] Player overview — state, inventory, Bucks, job, quota progress
 - [ ] Mr. Jacobs status — current mood, per-player attention levels
 - [ ] Interaction log — live feed of item-on-object and item-on-player actions

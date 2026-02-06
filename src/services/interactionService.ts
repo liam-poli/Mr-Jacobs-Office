@@ -14,6 +14,7 @@ interface InteractionParams {
 const FALLBACK_RESULT: InteractionResult = {
   result_state: null,
   output_item: null,
+  output_item_id: null,
   output_item_tags: null,
   description: "That doesn't seem to work.",
   cached: false,

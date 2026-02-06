@@ -74,6 +74,7 @@ export interface InteractionTarget {
 export interface InteractionResult {
   result_state: string | null;
   output_item: string | null;
+  output_item_id: string | null;
   output_item_tags: string[] | null;
   description: string;
   cached: boolean;
