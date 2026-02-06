@@ -4,12 +4,12 @@
 **Goal:** One player in one room. Pick up items, use them on objects, see state changes, talk to Mr. Jacobs at a terminal. Mr. Jacobs reacts on the bit-screen.
 
 ### 1. Project Setup
-- [ ] Vite + React + TypeScript scaffold
-- [ ] Phaser 3 embedded in React (game canvas + React UI overlay)
-- [ ] Tailwind CSS configured
-- [ ] Zustand store (player state, inventory, Bucks)
-- [ ] Supabase project + client setup (DB, Auth, Edge Functions)
-- [ ] Folder structure and basic routing
+- [x] Vite + React + TypeScript scaffold
+- [x] Phaser 3 embedded in React (game canvas + React UI overlay)
+- [x] Tailwind CSS configured
+- [x] Zustand store (player state, inventory, Bucks)
+- [x] Supabase project + client setup (DB, Auth, Edge Functions)
+- [x] Folder structure and basic routing
 
 ### 2. The Room
 - [ ] Single room tilemap (top-down/isometric) with walls, floor, furniture
