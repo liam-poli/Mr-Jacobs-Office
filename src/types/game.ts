@@ -1,3 +1,6 @@
+/** Cardinal directions for player facing */
+export type Direction = 'down' | 'up' | 'left' | 'right';
+
 /** Portable resource with Tags. Consumed on use. */
 export interface InventoryItem {
   id: string;

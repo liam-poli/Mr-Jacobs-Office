@@ -1,1 +1,1 @@
-export type { InventoryItem, ObjectState, GameState } from './game';
+export type { Direction, InventoryItem, ObjectState, GameState } from './game';

@@ -1,7 +1,35 @@
 import { useGameStore } from '../stores/gameStore';
+import { Player } from '../entities/Player';
 import type { GameState } from '../types/game';
 
+const TILE_SIZE = 32;
+
+// Simple room layout: 0 = floor, 1 = wall
+// 25 columns x 18 rows
+const ROOM_MAP: number[][] = [
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+];
+
 export class OfficeScene extends Phaser.Scene {
+  private player!: Player;
+  private wallGroup!: Phaser.Physics.Arcade.StaticGroup;
   private unsubscribe?: () => void;
 
   constructor() {
@@ -9,56 +37,68 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor('#1a1a2e');
+    // Build the room from the tile map
+    this.buildRoom();
 
-    // Placeholder room
-    const graphics = this.add.graphics();
-    graphics.fillStyle(0x16213e, 1);
-    graphics.fillRect(80, 60, 800, 520);
+    // Spawn local player at center of room
+    const startX = 12 * TILE_SIZE + TILE_SIZE / 2;
+    const startY = 9 * TILE_SIZE + TILE_SIZE / 2;
+    this.player = new Player(this, startX, startY, 'player-0', 'MACRODATA 2', true);
 
-    // Placeholder grid lines (floor tiles)
-    graphics.lineStyle(1, 0x0f3460, 0.3);
-    for (let x = 80; x <= 880; x += 40) {
-      graphics.lineBetween(x, 60, x, 580);
-    }
-    for (let y = 60; y <= 580; y += 40) {
-      graphics.lineBetween(80, y, 880, y);
-    }
+    // Player collides with walls
+    this.physics.add.collider(this.player, this.wallGroup);
 
-    this.add
-      .text(480, 300, 'J.A.C.O.B.S. OFFICE', {
-        fontSize: '28px',
-        color: '#e94560',
-        fontFamily: 'monospace',
-      })
-      .setOrigin(0.5);
+    // Set world bounds to room size
+    const worldW = ROOM_MAP[0].length * TILE_SIZE;
+    const worldH = ROOM_MAP.length * TILE_SIZE;
+    this.physics.world.setBounds(0, 0, worldW, worldH);
 
-    this.add
-      .text(480, 340, 'PRODUCTIVITY IS JOY.', {
-        fontSize: '14px',
-        color: '#537791',
-        fontFamily: 'monospace',
-      })
-      .setOrigin(0.5);
+    // Camera: instant follow + round pixels for crisp pixel art (no sub-pixel jitter)
+    this.cameras.main.startFollow(this.player, true, 1, 1);
+    this.cameras.main.setZoom(2);
+    this.cameras.main.setBounds(0, 0, worldW, worldH);
+    this.cameras.main.setRoundPixels(true);
 
     // Subscribe to Zustand store
     this.unsubscribe = useGameStore.subscribe((state) => {
       this.onStateChange(state);
     });
 
-    // Signal scene ready
+    // Clean up subscription when scene shuts down
+    this.events.on(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
+
     useGameStore.getState().setSceneReady('OfficeScene');
   }
 
+  private buildRoom() {
+    this.wallGroup = this.physics.add.staticGroup();
+
+    for (let row = 0; row < ROOM_MAP.length; row++) {
+      for (let col = 0; col < ROOM_MAP[row].length; col++) {
+        const x = col * TILE_SIZE + TILE_SIZE / 2;
+        const y = row * TILE_SIZE + TILE_SIZE / 2;
+
+        if (ROOM_MAP[row][col] === 0) {
+          this.add.image(x, y, 'floor-tile');
+        } else {
+          this.add.image(x, y, 'wall-tile');
+          const wall = this.wallGroup.create(x, y, 'wall-tile') as Phaser.Physics.Arcade.Sprite;
+          wall.setVisible(false);
+          wall.refreshBody();
+        }
+      }
+    }
+  }
+
   update(_time: number, _delta: number) {
-    // Game loop — zero allocations
+    this.player.update();
   }
 
   private onStateChange(_state: GameState) {
-    // React to Zustand state changes
+    // React to Zustand state changes (future: remote player positions)
   }
 
-  shutdown() {
+  private cleanup() {
     this.unsubscribe?.();
   }
 }
