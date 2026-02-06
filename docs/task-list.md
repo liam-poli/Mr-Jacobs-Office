@@ -24,11 +24,10 @@
 - [x] Player faces direction of movement
 
 ### 4. Items & Inventory
-- [ ] Items spawned in the room (on desks, shelves, floor)
-- [ ] Player walks near item → pickup prompt
-- [ ] Items added to inventory (3–4 slots)
-- [ ] React inventory UI overlay (shows held items with their tags)dwd
-d
+- [x] Items spawned in the room (on desks, shelves, floor)
+- [x] Player walks near item → pickup prompt
+- [x] Items added to inventory (3–4 slots)
+- [x] React inventory UI overlay (shows held items with their tags)
 
 ### 5. Object Interactions
 - [ ] Player walks near object → interact prompt
@@ -61,7 +60,7 @@ d
 ### 9. Admin Panel
 - [ ] Separate `/admin` route (React page, not in-game)
 - [x] Live view of all objects — current tags, states
-- [ ] Live view of all items — where they are (world, inventory, consumed)
+- [] Live view of all items — where they are (world, inventory, consumed)
 - [ ] Player overview — state, inventory, Bucks, job, quota progress
 - [ ] Mr. Jacobs status — current mood, per-player attention levels
 - [ ] Interaction log — feed of every item-on-object and item-on-player action with results
