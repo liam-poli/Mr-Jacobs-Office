@@ -2,21 +2,8 @@ import { useGameStore } from '../stores/gameStore';
 import { Player } from '../entities/Player';
 import { InteractionManager } from '../systems/InteractionManager';
 import { fetchRoom } from '../services/roomService';
-import { fetchItemsByIds } from '../services/itemService';
 import { soundService } from '../services/soundService';
-import type { RoomDef, GameState, ItemSpawn } from '../types/game';
-
-// Server item IDs to fetch from Supabase
-const SERVER_ITEM_IDS = [
-  'd636cf6a-6403-4b36-9336-6c8561794a47',
-  '80fd53b3-1bd1-4f11-a050-a922ee08294f',
-];
-
-// Tile positions for server items (placed on open floor tiles)
-const SERVER_ITEM_POSITIONS: Array<{ tileX: number; tileY: number }> = [
-  { tileX: 10, tileY: 3 },
-  { tileX: 13, tileY: 14 },
-];
+import type { RoomDef, GameState } from '../types/game';
 
 const TILE_SIZE = 32;
 
@@ -53,14 +40,10 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   async create() {
-    // Fetch room definition and server items in parallel
-    const [roomDef, serverItems] = await Promise.all([
-      fetchRoom('Main Office'),
-      fetchItemsByIds(SERVER_ITEM_IDS),
-    ]);
+    const roomDef = await fetchRoom('Main Office');
 
-    // Dynamically load server item sprite textures
-    const serverItemSpawns = await this.loadServerItems(serverItems);
+    // Load any item sprites that have imageUrl (server-hosted textures)
+    await this.loadItemSprites(roomDef);
 
     // Build the room from the tile map
     this.buildRoom(roomDef);
@@ -73,15 +56,9 @@ export class OfficeScene extends Phaser.Scene {
     // Collisions
     this.physics.add.collider(this.player, this.wallGroup);
 
-    // Merge server items into room item spawns
-    const allItems: RoomDef = {
-      ...roomDef,
-      itemSpawns: [...roomDef.itemSpawns, ...serverItemSpawns],
-    };
-
     // Spawn objects and items
     this.spawnObjects(roomDef);
-    this.spawnItems(allItems);
+    this.spawnItems(roomDef);
 
     // Player also collides with objects
     this.physics.add.collider(this.player, this.objectGroup);
@@ -153,42 +130,23 @@ export class OfficeScene extends Phaser.Scene {
     }
   }
 
-  private async loadServerItems(
-    serverItems: Awaited<ReturnType<typeof fetchItemsByIds>>,
-  ): Promise<ItemSpawn[]> {
-    const spawns: ItemSpawn[] = [];
+  private async loadItemSprites(roomDef: RoomDef): Promise<void> {
     let loadCount = 0;
 
-    for (let i = 0; i < serverItems.length; i++) {
-      const item = serverItems[i];
-      if (!item.sprite_url) continue;
-
-      const pos = SERVER_ITEM_POSITIONS[i] ?? { tileX: 12 + i, tileY: 9 };
+    for (const item of roomDef.itemSpawns) {
+      if (!item.imageUrl) continue;
       const textureKey = `server-item-${item.id}`;
-
-      this.load.image(textureKey, item.sprite_url);
+      item.textureKey = textureKey;
+      this.load.image(textureKey, item.imageUrl);
       loadCount++;
-
-      spawns.push({
-        id: item.id,
-        name: item.name,
-        tags: item.tags,
-        textureKey,
-        tileX: pos.tileX,
-        tileY: pos.tileY,
-        imageUrl: item.sprite_url,
-      });
     }
 
-    // Start the dynamic load and wait for completion
     if (loadCount > 0) {
       await new Promise<void>((resolve) => {
         this.load.once('complete', resolve);
         this.load.start();
       });
     }
-
-    return spawns;
   }
 
   private spawnObjects(roomDef: RoomDef) {

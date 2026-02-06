@@ -27,14 +27,14 @@
 ### 4. Items & Inventory
 - [x] Item definitions stored in Supabase `items` table (name, tags, sprite)
 - [x] AI-generated sprites for items via Replicate Flux 2 Pro + rembg
-- [ ] Items spawned in room at runtime from catalog (placed on desks, shelves, floor)
-- [ ] Player walks near item → pickup prompt
-- [ ] Items added to inventory (3–4 slots)
-- [ ] React inventory UI overlay (shows held items with their tags)
-- [ ] Drop item back to world
+- [x] Items spawned in room at runtime from catalog (placed on desks, shelves, floor)
+- [x] Player walks near item → pickup prompt
+- [x] Items added to inventory (3–4 slots)
+- [x] React inventory UI overlay (shows held items with their tags)
+- [x] Drop item back to world
 
 ### 5. Object Interactions
-- [ ] Player walks near object → interact prompt
+- [x] Player walks near object → interact prompt
 - [ ] "Use item on object" action (select item from inventory, apply to object)
 - [ ] Hash-based interaction cache (`interactions` table, see `docs/plans/interaction-engine.md`)
 - [ ] `interact` edge function: hash lookup → instant on cache hit, AI fallback on miss → store result

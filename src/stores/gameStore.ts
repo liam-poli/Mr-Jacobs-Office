@@ -28,8 +28,11 @@ export const useGameStore = create<GameState>((set) => ({
   interactionTarget: null,
   setInteractionTarget: (target) => set({ interactionTarget: target }),
 
-  selectedInventoryIndex: null,
-  setSelectedInventoryIndex: (index) => set({ selectedInventoryIndex: index }),
+  interactionMenuOpen: false,
+  openInteractionMenu: () => set({ interactionMenuOpen: true }),
+  closeInteractionMenu: () => set({ interactionMenuOpen: false, pendingInteraction: null }),
+  pendingInteraction: null,
+  setPendingInteraction: (interaction) => set({ pendingInteraction: interaction }),
 
   pendingDrop: null,
   dropItem: (index) =>
@@ -39,7 +42,6 @@ export const useGameStore = create<GameState>((set) => ({
       return {
         inventory: s.inventory.filter((_, i) => i !== index),
         pendingDrop: item,
-        selectedInventoryIndex: null,
       };
     }),
   clearPendingDrop: () => set({ pendingDrop: null }),

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { InputManager } from '../systems/InputManager';
+import { useGameStore } from '../stores/gameStore';
 import { soundService } from '../services/soundService';
 import type { Direction } from '../types';
 
@@ -78,6 +79,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   update(): void {
     if (!this.inputManager) return;
+
+    // Freeze movement while interaction menu is open
+    if (useGameStore.getState().interactionMenuOpen) {
+      const body = this.body as Phaser.Physics.Arcade.Body;
+      body.setVelocity(0, 0);
+      if (this.isMoving) {
+        this.isMoving = false;
+        this.play(`${this.texturePrefix}-idle-${this.currentDirection}`, true);
+      }
+      return;
+    }
 
     const { velocity, direction } = this.inputManager.getMovement(PLAYER_SPEED);
     const body = this.body as Phaser.Physics.Arcade.Body;

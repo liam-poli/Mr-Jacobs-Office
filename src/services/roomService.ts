@@ -70,6 +70,7 @@ function parseRoom(row: Record<string, unknown>): RoomDef {
       textureKey: (i.textureKey ?? i.texture_key) as string,
       tileX: (i.tileX ?? i.tile_x) as number,
       tileY: (i.tileY ?? i.tile_y) as number,
+      imageUrl: (i.imageUrl ?? i.image_url) as string | undefined,
     })),
   };
 }

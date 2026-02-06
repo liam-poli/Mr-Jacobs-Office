@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../services/supabase';
 
 interface Placement {
@@ -23,6 +23,191 @@ const TILE_COLORS: Record<number, string> = {
   2: '#5C6B7A', // carpet
   3: '#6B5040', // desk
 };
+
+const TILE_LABELS: Record<number, string> = {
+  0: 'Floor',
+  1: 'Wall',
+  2: 'Carpet',
+  3: 'Desk',
+};
+
+const EDITOR_PX = 24; // pixels per tile in editor
+const GRID_COLOR = '#00000020';
+
+/* ─── Visual Tile Map Editor ──────────────────────────────── */
+
+function TileMapEditor({
+  room,
+  onSave,
+  onClose,
+}: {
+  room: Room;
+  onSave: (tileMap: number[][]) => void;
+  onClose: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [tiles, setTiles] = useState<number[][]>(() =>
+    room.tile_map.map((row) => [...row]),
+  );
+  const [brush, setBrush] = useState(0);
+  const painting = useRef(false);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const w = room.width * EDITOR_PX;
+    const h = room.height * EDITOR_PX;
+    canvas.width = w;
+    canvas.height = h;
+
+    // Tiles
+    for (let row = 0; row < tiles.length; row++) {
+      for (let col = 0; col < tiles[row].length; col++) {
+        ctx.fillStyle = TILE_COLORS[tiles[row][col]] ?? TILE_COLORS[0];
+        ctx.fillRect(col * EDITOR_PX, row * EDITOR_PX, EDITOR_PX, EDITOR_PX);
+      }
+    }
+
+    // Grid lines
+    ctx.strokeStyle = GRID_COLOR;
+    ctx.lineWidth = 1;
+    for (let col = 0; col <= room.width; col++) {
+      ctx.beginPath();
+      ctx.moveTo(col * EDITOR_PX + 0.5, 0);
+      ctx.lineTo(col * EDITOR_PX + 0.5, h);
+      ctx.stroke();
+    }
+    for (let row = 0; row <= room.height; row++) {
+      ctx.beginPath();
+      ctx.moveTo(0, row * EDITOR_PX + 0.5);
+      ctx.lineTo(w, row * EDITOR_PX + 0.5);
+      ctx.stroke();
+    }
+
+    // Objects (red dots)
+    for (const o of room.object_placements) {
+      ctx.fillStyle = '#EF4444';
+      ctx.beginPath();
+      ctx.arc(
+        o.tileX * EDITOR_PX + EDITOR_PX / 2,
+        o.tileY * EDITOR_PX + EDITOR_PX / 2,
+        EDITOR_PX / 4,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
+    }
+
+    // Items (yellow dots)
+    for (const i of room.item_spawns) {
+      ctx.fillStyle = '#F59E0B';
+      ctx.beginPath();
+      ctx.arc(
+        i.tileX * EDITOR_PX + EDITOR_PX / 2,
+        i.tileY * EDITOR_PX + EDITOR_PX / 2,
+        EDITOR_PX / 4,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
+    }
+  }, [tiles, room]);
+
+  useEffect(() => { draw(); }, [draw]);
+
+  function tileAt(e: React.MouseEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const col = Math.floor((e.clientX - rect.left) * scaleX / EDITOR_PX);
+    const row = Math.floor((e.clientY - rect.top) * scaleY / EDITOR_PX);
+    if (row < 0 || row >= room.height || col < 0 || col >= room.width) return null;
+    return { row, col };
+  }
+
+  function paint(e: React.MouseEvent<HTMLCanvasElement>) {
+    const pos = tileAt(e);
+    if (!pos) return;
+    setTiles((prev) => {
+      if (prev[pos.row][pos.col] === brush) return prev;
+      const next = prev.map((r) => [...r]);
+      next[pos.row][pos.col] = brush;
+      return next;
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-[90vw] max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <h3 className="font-semibold text-gray-800 text-sm">
+            Tile Map — {room.name} ({room.width}x{room.height})
+          </h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg">&times;</button>
+        </div>
+
+        {/* Palette */}
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100">
+          <span className="text-xs text-gray-500 mr-1">Brush:</span>
+          {Object.entries(TILE_COLORS).map(([type, color]) => {
+            const t = Number(type);
+            return (
+              <button
+                key={t}
+                onClick={() => setBrush(t)}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors ${
+                  brush === t
+                    ? 'ring-2 ring-blue-500 bg-blue-50 font-medium'
+                    : 'hover:bg-gray-100'
+                }`}
+              >
+                <span
+                  className="inline-block w-4 h-4 rounded-sm border border-gray-300"
+                  style={{ backgroundColor: color }}
+                />
+                {TILE_LABELS[t]}
+              </button>
+            );
+          })}
+          <span className="ml-auto text-[10px] text-gray-400">Click or drag to paint</span>
+        </div>
+
+        {/* Canvas */}
+        <div className="flex-1 overflow-auto p-4">
+          <canvas
+            ref={canvasRef}
+            className="border border-gray-300 rounded cursor-crosshair"
+            style={{
+              width: room.width * EDITOR_PX,
+              height: room.height * EDITOR_PX,
+              imageRendering: 'pixelated',
+            }}
+            onMouseDown={(e) => { painting.current = true; paint(e); }}
+            onMouseMove={(e) => { if (painting.current) paint(e); }}
+            onMouseUp={() => { painting.current = false; }}
+            onMouseLeave={() => { painting.current = false; }}
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+          <button
+            onClick={() => onSave(tiles)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const PX = 4; // pixels per tile in preview
 
@@ -78,9 +263,10 @@ export function RoomsTab() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [jsonField, setJsonField] = useState<'object_placements' | 'item_spawns' | 'tile_map' | null>(null);
+  const [jsonField, setJsonField] = useState<'object_placements' | 'item_spawns' | null>(null);
   const [jsonValue, setJsonValue] = useState('');
   const [jsonError, setJsonError] = useState('');
+  const [tileEditRoom, setTileEditRoom] = useState<Room | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', width: 25, height: 18 });
 
@@ -142,6 +328,13 @@ export function RoomsTab() {
     }
   }
 
+  async function saveTileMap(tileMap: number[][]) {
+    if (!tileEditRoom) return;
+    await supabase.from('rooms').update({ tile_map: tileMap }).eq('id', tileEditRoom.id);
+    setTileEditRoom(null);
+    fetchRooms();
+  }
+
   if (loading) return <p className="text-gray-500 text-sm">Loading...</p>;
 
   return (
@@ -192,6 +385,15 @@ export function RoomsTab() {
             Create
           </button>
         </form>
+      )}
+
+      {/* Visual tile map editor */}
+      {tileEditRoom && (
+        <TileMapEditor
+          room={tileEditRoom}
+          onSave={saveTileMap}
+          onClose={() => setTileEditRoom(null)}
+        />
       )}
 
       {/* JSON editor modal */}
@@ -246,21 +448,23 @@ export function RoomsTab() {
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              {(['tile_map', 'object_placements', 'item_spawns'] as const).map((field) => {
-                const count = field === 'tile_map'
-                  ? `${room.tile_map.length} rows`
-                  : `${(room[field] as unknown[]).length} items`;
-                return (
-                  <button
-                    key={field}
-                    onClick={() => startEditJson(room, field)}
-                    className="text-left px-3 py-2 rounded-md border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors"
-                  >
-                    <span className="block text-xs font-medium text-gray-500">{field.replace(/_/g, ' ')}</span>
-                    <span className="block text-sm text-gray-800">{count}</span>
-                  </button>
-                );
-              })}
+              <button
+                onClick={() => setTileEditRoom(room)}
+                className="text-left px-3 py-2 rounded-md border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+              >
+                <span className="block text-xs font-medium text-gray-500">tile map</span>
+                <span className="block text-sm text-gray-800">{room.tile_map.length} rows</span>
+              </button>
+              {(['object_placements', 'item_spawns'] as const).map((field) => (
+                <button
+                  key={field}
+                  onClick={() => startEditJson(room, field)}
+                  className="text-left px-3 py-2 rounded-md border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                >
+                  <span className="block text-xs font-medium text-gray-500">{field.replace(/_/g, ' ')}</span>
+                  <span className="block text-sm text-gray-800">{(room[field] as unknown[]).length} items</span>
+                </button>
+              ))}
             </div>
           </div>
         ))}

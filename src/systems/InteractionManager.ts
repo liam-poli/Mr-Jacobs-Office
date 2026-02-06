@@ -110,30 +110,44 @@ export class InteractionManager {
   }
 
   update(): void {
+    const store = useGameStore.getState();
+
     // Check for items dropped from inventory (React → Phaser bridge)
-    const { pendingDrop, clearPendingDrop } = useGameStore.getState();
-    if (pendingDrop) {
-      this.spawnDroppedItem(pendingDrop);
-      clearPendingDrop();
+    if (store.pendingDrop) {
+      this.spawnDroppedItem(store.pendingDrop);
+      store.clearPendingDrop();
       soundService.playSfx('drop');
     }
+
+    // Consume pending interaction from menu (React → Phaser bridge)
+    if (store.pendingInteraction) {
+      const { targetId, itemId } = store.pendingInteraction;
+      store.setPendingInteraction(null);
+      const target = this.currentTarget;
+      if (target && target.id === targetId) {
+        this.executeObjectInteraction(target, itemId);
+      }
+    }
+
+    // Don't update nearest target or handle E key while menu is open
+    if (store.interactionMenuOpen) return;
 
     const nearest = this.findNearest();
 
     if (nearest?.id !== this.currentTarget?.id) {
       this.currentTarget = nearest;
       useGameStore.getState().setInteractionTarget(nearest);
-
-      // Clear inventory selection when leaving an object
-      if (nearest?.type !== 'object') {
-        useGameStore.getState().setSelectedInventoryIndex(null);
-      }
     }
 
     this.updatePrompt(nearest);
 
     if (Phaser.Input.Keyboard.JustDown(this.eKey) && nearest) {
-      this.handleInteraction(nearest);
+      if (nearest.type === 'object') {
+        // Open the interaction menu instead of acting immediately
+        useGameStore.getState().openInteractionMenu();
+      } else {
+        this.handleItemPickup(nearest);
+      }
     }
   }
 
@@ -187,60 +201,60 @@ export class InteractionManager {
     this.activeLabel = label;
   }
 
-  private handleInteraction(target: InteractionTarget): void {
+  private handleItemPickup(target: InteractionTarget): void {
     const store = useGameStore.getState();
 
-    if (target.type === 'item') {
-      if (store.inventory.length >= 5) {
-        soundService.playSfx('error');
-        return;
-      }
+    if (store.inventory.length >= 5) {
+      soundService.playSfx('error');
+      return;
+    }
 
-      const def = this.itemDefs.get(target.id)!;
-      store.addItem({
-        id: target.id,
-        name: def.name,
-        tags: def.tags,
-        textureKey: def.textureKey,
-        imageUrl: def.imageUrl,
-      });
-      soundService.playSfx('pickup');
+    const def = this.itemDefs.get(target.id)!;
+    store.addItem({
+      id: target.id,
+      name: def.name,
+      tags: def.tags,
+      textureKey: def.textureKey,
+      imageUrl: def.imageUrl,
+    });
+    soundService.playSfx('pickup');
 
-      // Remove from world
-      const sprite = this.itemSprites.get(target.id);
-      sprite?.destroy();
-      this.itemSprites.delete(target.id);
-      this.itemDefs.delete(target.id);
+    // Remove from world
+    const sprite = this.itemSprites.get(target.id);
+    sprite?.destroy();
+    this.itemSprites.delete(target.id);
+    this.itemDefs.delete(target.id);
 
-      // Remove name label
-      const label = this.nameLabels.get(target.id);
-      label?.destroy();
-      this.nameLabels.delete(target.id);
-      this.activeLabel = null;
+    // Remove name label
+    const label = this.nameLabels.get(target.id);
+    label?.destroy();
+    this.nameLabels.delete(target.id);
+    this.activeLabel = null;
 
-      this.currentTarget = null;
-      store.setInteractionTarget(null);
+    this.currentTarget = null;
+    store.setInteractionTarget(null);
+  }
+
+  private executeObjectInteraction(target: InteractionTarget, itemId: string | null): void {
+    const store = useGameStore.getState();
+    const objDef = this.objectDefs.get(target.id)!;
+
+    if (itemId) {
+      // Use item on object
+      const item = store.inventory.find((i) => i.id === itemId);
+      if (!item) return;
+
+      console.log(
+        `Used ${item.name} [${item.tags}] on ${objDef.name} [${objDef.tags}]`,
+      );
+
+      store.removeItem(item.id);
+      store.updateObjectState(target.id, [...objDef.states, 'INTERACTED']);
+      soundService.playSfx('interact');
     } else {
-      const selectedIdx = store.selectedInventoryIndex;
-
-      if (selectedIdx !== null && store.inventory[selectedIdx]) {
-        // Use item on object
-        const item = store.inventory[selectedIdx];
-        const objDef = this.objectDefs.get(target.id)!;
-        console.log(
-          `Used ${item.name} [${item.tags}] on ${objDef.name} [${objDef.tags}]`,
-        );
-
-        store.removeItem(item.id);
-        store.setSelectedInventoryIndex(null);
-        store.updateObjectState(target.id, [...objDef.states, 'INTERACTED']);
-        soundService.playSfx('interact');
-      } else {
-        // Bare-handed interaction
-        const objDef = this.objectDefs.get(target.id)!;
-        console.log(`Interacted with ${objDef.name} (no item)`);
-        soundService.playSfx('interact');
-      }
+      // Bare-handed interaction
+      console.log(`Interacted with ${objDef.name} (no item)`);
+      soundService.playSfx('interact');
     }
   }
 

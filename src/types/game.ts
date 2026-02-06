@@ -81,8 +81,13 @@ export interface GameState {
   // Interaction
   interactionTarget: InteractionTarget | null;
   setInteractionTarget: (target: InteractionTarget | null) => void;
-  selectedInventoryIndex: number | null;
-  setSelectedInventoryIndex: (index: number | null) => void;
+
+  // Interaction menu (opens when pressing E on an object)
+  interactionMenuOpen: boolean;
+  openInteractionMenu: () => void;
+  closeInteractionMenu: () => void;
+  pendingInteraction: { targetId: string; itemId: string | null } | null;
+  setPendingInteraction: (interaction: { targetId: string; itemId: string | null } | null) => void;
 
   // Drop item back into world (React → Phaser bridge)
   pendingDrop: InventoryItem | null;

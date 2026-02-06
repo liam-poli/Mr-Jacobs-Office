@@ -5,10 +5,11 @@ import { ObjectsTab } from '../components/admin/ObjectsTab';
 import { ItemsTab } from '../components/admin/ItemsTab';
 import { InteractionsTab } from '../components/admin/InteractionsTab';
 import { RoomsTab } from '../components/admin/RoomsTab';
+import { TilesTab } from '../components/admin/TilesTab';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'jacobs';
 
-const TABS = ['Overview', 'Tags', 'Objects', 'Items', 'Interactions', 'Rooms'] as const;
+const TABS = ['Overview', 'Tags', 'Objects', 'Items', 'Interactions', 'Rooms', 'Tiles'] as const;
 type Tab = (typeof TABS)[number];
 
 export function AdminPanel() {
@@ -19,7 +20,7 @@ export function AdminPanel() {
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="fixed inset-0 overflow-auto bg-gray-50 flex items-center justify-center">
         <div className="bg-white p-8 rounded-lg shadow-md w-80">
           <h1 className="text-xl font-semibold text-gray-800 mb-1">J.A.C.O.B.S. Admin</h1>
           <p className="text-sm text-gray-500 mb-4">Enter password to continue</p>
@@ -56,7 +57,7 @@ export function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="fixed inset-0 overflow-auto bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold text-gray-800">J.A.C.O.B.S. Admin</h1>
@@ -87,6 +88,7 @@ export function AdminPanel() {
         {activeTab === 'Items' && <ItemsTab />}
         {activeTab === 'Interactions' && <InteractionsTab />}
         {activeTab === 'Rooms' && <RoomsTab />}
+        {activeTab === 'Tiles' && <TilesTab />}
       </main>
     </div>
   );

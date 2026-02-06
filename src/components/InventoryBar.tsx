@@ -15,16 +15,12 @@ const ITEM_COLORS: Record<string, string> = {
 export function InventoryBar() {
   const inventory = useGameStore((s) => s.inventory);
   const sceneReady = useGameStore((s) => s.sceneReady);
-  const interactionTarget = useGameStore((s) => s.interactionTarget);
-  const selectedIndex = useGameStore((s) => s.selectedInventoryIndex);
-  const setSelectedIndex = useGameStore((s) => s.setSelectedInventoryIndex);
+  const menuOpen = useGameStore((s) => s.interactionMenuOpen);
   const dropItem = useGameStore((s) => s.dropItem);
 
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   if (!sceneReady) return null;
-
-  const nearObject = interactionTarget?.type === 'object';
 
   return (
     <div
@@ -43,33 +39,24 @@ export function InventoryBar() {
         <div className="flex gap-2">
           {Array.from({ length: SLOT_COUNT }).map((_, i) => {
             const item = inventory[i];
-            const isSelected = selectedIndex === i && item != null;
             return (
               <div
                 key={i}
                 className={`relative w-16 h-16 flex flex-col items-center justify-center border rounded transition-colors ${
-                  item ? 'cursor-pointer' : ''
+                  item && !menuOpen ? 'cursor-pointer' : ''
                 }`}
                 style={{
-                  borderColor: isSelected
-                    ? 'var(--color-hud-danger)'
-                    : item
-                      ? 'var(--color-hud-accent)'
-                      : 'var(--color-hud-border)',
-                  backgroundColor: isSelected
-                    ? 'rgba(233, 69, 96, 0.15)'
-                    : 'rgba(0, 0, 0, 0.4)',
+                  borderColor: item
+                    ? 'var(--color-hud-accent)'
+                    : 'var(--color-hud-border)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
                 }}
                 onMouseEnter={() => { if (item) { setHoveredIndex(i); soundService.playSfx('ui-hover'); } }}
                 onMouseLeave={() => setHoveredIndex(null)}
                 onClick={() => {
-                  if (!item) return;
+                  if (!item || menuOpen) return;
                   soundService.playSfx('ui-click');
-                  if (nearObject) {
-                    setSelectedIndex(isSelected ? null : i);
-                  } else {
-                    dropItem(i);
-                  }
+                  dropItem(i);
                 }}
               >
                 {hoveredIndex === i && item && (

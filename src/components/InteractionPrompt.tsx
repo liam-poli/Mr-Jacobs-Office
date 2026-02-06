@@ -3,19 +3,14 @@ import { useGameStore } from '../stores/gameStore';
 export function InteractionPrompt() {
   const target = useGameStore((s) => s.interactionTarget);
   const sceneReady = useGameStore((s) => s.sceneReady);
-  const selectedIndex = useGameStore((s) => s.selectedInventoryIndex);
-  const inventory = useGameStore((s) => s.inventory);
+  const menuOpen = useGameStore((s) => s.interactionMenuOpen);
 
-  if (!sceneReady || !target) return null;
+  if (!sceneReady || !target || menuOpen) return null;
 
-  let actionText: string;
-  if (target.type === 'item') {
-    actionText = `[E] Pick up ${target.name}`;
-  } else if (selectedIndex !== null && inventory[selectedIndex]) {
-    actionText = `[E] Use ${inventory[selectedIndex].name} on ${target.name}`;
-  } else {
-    actionText = `[E] Interact with ${target.name}`;
-  }
+  const actionText =
+    target.type === 'item'
+      ? `[E] Pick up ${target.name}`
+      : `[E] Interact with ${target.name}`;
 
   return (
     <div
