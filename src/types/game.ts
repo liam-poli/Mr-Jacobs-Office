@@ -23,12 +23,11 @@ export interface ItemSpawn {
   tileY: number;
 }
 
-/** Slim placement reference stored in room JSON — ID + position + instance states */
+/** Slim placement reference stored in room JSON — just an ID + position */
 export interface ObjectPlacement {
   object_id: string;
   tileX: number;
   tileY: number;
-  states: string[];
 }
 
 /** Item spawn merged with catalog data from the items table */

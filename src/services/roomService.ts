@@ -51,7 +51,6 @@ function parseObjectPlacements(raw: unknown[]): ObjectPlacement[] {
       object_id: o.object_id as string,
       tileX: (o.tileX ?? o.tile_x) as number,
       tileY: (o.tileY ?? o.tile_y) as number,
-      states: (o.states ?? []) as string[],
     };
   });
 }
@@ -100,7 +99,7 @@ async function resolveObjects(placements: ObjectPlacement[]): Promise<ResolvedOb
   const ids = [...new Set(placements.map((p) => p.object_id))];
   const { data, error } = await supabase
     .from('objects')
-    .select('id, name, tags, sprite_url')
+    .select('id, name, tags, state, sprite_url')
     .in('id', ids);
 
   if (error || !data) {
@@ -122,7 +121,7 @@ async function resolveObjects(placements: ObjectPlacement[]): Promise<ResolvedOb
       object_id: placement.object_id,
       name: entry.name as string,
       tags: entry.tags as string[],
-      states: placement.states,
+      states: [entry.state as string],
       spriteUrl: (entry.sprite_url as string) || undefined,
       tileX: placement.tileX,
       tileY: placement.tileY,
@@ -131,22 +130,31 @@ async function resolveObjects(placements: ObjectPlacement[]): Promise<ResolvedOb
   return resolved;
 }
 
-/** Fetch a room from Supabase by name. Falls back to DEFAULT_ROOM on failure. */
-export async function fetchRoom(name: string): Promise<RoomDef> {
+/** Fetch a room from Supabase by ID, name, or just the first available. Falls back to DEFAULT_ROOM on failure. */
+export async function fetchRoom(opts?: { id?: string; name?: string }): Promise<RoomDef> {
   try {
-    const { data, error } = await supabase
-      .from('rooms')
-      .select('*')
-      .eq('name', name)
-      .single();
+    let query = supabase.from('rooms').select('*');
+
+    if (opts?.id) {
+      query = query.eq('id', opts.id);
+    } else if (opts?.name) {
+      query = query.eq('name', opts.name);
+    }
+
+    // .limit(1).single() works whether filtering or fetching first available
+    const { data, error } = await query.limit(1).single();
 
     if (error || !data) {
-      console.warn(`Room "${name}" not found in Supabase, using default`);
+      console.warn(`Room not found in Supabase (${JSON.stringify(opts)}), using default`);
       return DEFAULT_ROOM;
     }
 
-    const itemSpawns = parseItemSpawns(data.item_spawns as unknown[]);
-    const objectPlacements = parseObjectPlacements(data.object_placements as unknown[]);
+    const rawItems = (data.item_spawns ?? []) as unknown[];
+    const rawObjects = (data.object_placements ?? []) as unknown[];
+    console.log(`Room "${data.name}": ${rawItems.length} item spawns, ${rawObjects.length} object placements`);
+
+    const itemSpawns = parseItemSpawns(rawItems);
+    const objectPlacements = parseObjectPlacements(rawObjects);
 
     const [resolvedItems, resolvedObjects] = await Promise.all([
       resolveItems(itemSpawns),
@@ -161,8 +169,8 @@ export async function fetchRoom(name: string): Promise<RoomDef> {
       objectPlacements: resolvedObjects,
       itemSpawns: resolvedItems,
     };
-  } catch {
-    console.warn('Supabase unavailable, using default room');
+  } catch (err) {
+    console.error('Room loading failed, using default:', err);
     return DEFAULT_ROOM;
   }
 }

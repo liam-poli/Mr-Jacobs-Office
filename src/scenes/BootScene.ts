@@ -102,9 +102,19 @@ export class BootScene extends Phaser.Scene {
 
   private generateFloorTile() {
     const g = this.add.graphics();
-    g.fillStyle(0xB8D4C8, 1);
+    // Base: cool blue-gray institutional panel
+    g.fillStyle(0xbecdd4, 1);
     g.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-    g.lineStyle(1, 0xA0BFB0, 0.5);
+    // Inner highlight (top + left edges)
+    g.lineStyle(1, 0xd6e2e8, 0.6);
+    g.lineBetween(1, 1, TILE_SIZE - 1, 1);
+    g.lineBetween(1, 1, 1, TILE_SIZE - 1);
+    // Inner shadow (bottom + right edges)
+    g.lineStyle(1, 0x9aacb4, 0.5);
+    g.lineBetween(1, TILE_SIZE - 1, TILE_SIZE - 1, TILE_SIZE - 1);
+    g.lineBetween(TILE_SIZE - 1, 1, TILE_SIZE - 1, TILE_SIZE - 1);
+    // Grid gap border
+    g.lineStyle(1, 0x8a9ca6, 0.7);
     g.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
     g.generateTexture('floor-tile', TILE_SIZE, TILE_SIZE);
     g.destroy();

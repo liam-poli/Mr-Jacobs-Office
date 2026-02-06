@@ -38,7 +38,6 @@ interface ObjPlacement {
   object_id: string;
   tileX: number;
   tileY: number;
-  states: string[];
 }
 
 interface ItemSpawnPlacement {
@@ -230,12 +229,10 @@ function RoomEditor({
     if (!selectedObjectId) return;
     setObjPlacements((prev) => {
       const filtered = prev.filter((p) => !(p.tileX === col && p.tileY === row));
-      const entry = objMap.get(selectedObjectId);
       return [...filtered, {
         object_id: selectedObjectId,
         tileX: col,
         tileY: row,
-        states: entry ? [entry.state] : ['UNLOCKED'],
       }];
     });
   }

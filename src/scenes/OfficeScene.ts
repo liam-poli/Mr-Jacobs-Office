@@ -40,7 +40,7 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   async create() {
-    const roomDef = await fetchRoom('Main Office');
+    const roomDef = await fetchRoom();
 
     // Load any sprites from the DB (server-hosted textures)
     await this.loadSprites(roomDef);
@@ -298,7 +298,6 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private onStateChange(state: GameState) {
-    if (!this.sys?.isActive()) return;
     // Update object visuals when states change
     for (const [objectId, objectState] of Object.entries(state.objectStates)) {
       this.applyStateVisuals(objectId, objectState.states);

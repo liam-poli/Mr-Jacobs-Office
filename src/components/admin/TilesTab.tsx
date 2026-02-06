@@ -22,10 +22,23 @@ const TILES: TileDef[] = [
     collision: false,
     note: 'Basic walkable tile',
     draw(ctx) {
-      ctx.fillStyle = '#B8D4C8';
+      ctx.fillStyle = '#becdd4';
       ctx.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-      ctx.strokeStyle = 'rgba(160,191,176,0.5)';
+      // Inner highlight (top + left)
+      ctx.strokeStyle = 'rgba(214,226,232,0.6)';
       ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(1, 1); ctx.lineTo(TILE_SIZE - 1, 1);
+      ctx.moveTo(1, 1); ctx.lineTo(1, TILE_SIZE - 1);
+      ctx.stroke();
+      // Inner shadow (bottom + right)
+      ctx.strokeStyle = 'rgba(154,172,180,0.5)';
+      ctx.beginPath();
+      ctx.moveTo(1, TILE_SIZE - 1); ctx.lineTo(TILE_SIZE - 1, TILE_SIZE - 1);
+      ctx.moveTo(TILE_SIZE - 1, 1); ctx.lineTo(TILE_SIZE - 1, TILE_SIZE - 1);
+      ctx.stroke();
+      // Grid gap border
+      ctx.strokeStyle = 'rgba(138,156,166,0.7)';
       ctx.strokeRect(0.5, 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
     },
   },
