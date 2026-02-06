@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
-import type { RoomDef } from '../types/game';
+import type { RoomDef, ItemSpawn, ObjectPlacement, ResolvedItem, ResolvedObject } from '../types/game';
 
-/** Default room used when Supabase is unavailable */
+/** Default room used when Supabase is unavailable (no items/objects without DB) */
 const DEFAULT_ROOM: RoomDef = {
   name: 'Main Office',
   width: 25,
@@ -27,52 +27,108 @@ const DEFAULT_ROOM: RoomDef = {
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
   ],
-  objectPlacements: [
-    { id: 'coffee-maker-1', name: 'Coffee Maker', tags: ['METALLIC', 'ELECTRONIC', 'CONDUCTIVE'], states: ['POWERED'], textureKey: 'obj-coffee-maker', tileX: 3, tileY: 2 },
-    { id: 'filing-cabinet-1', name: 'Filing Cabinet', tags: ['METALLIC', 'HEAVY'], states: ['LOCKED'], textureKey: 'obj-filing-cabinet', tileX: 21, tileY: 2 },
-    { id: 'door-1', name: 'Door', tags: ['METALLIC', 'ELECTRONIC'], states: ['LOCKED'], textureKey: 'obj-door', tileX: 12, tileY: 1 },
-    { id: 'terminal-1', name: 'Terminal', tags: ['ELECTRONIC'], states: ['POWERED'], textureKey: 'obj-terminal', tileX: 10, tileY: 9 },
-    { id: 'vending-machine-1', name: 'Vending Machine', tags: ['ELECTRONIC', 'HEAVY'], states: ['POWERED'], textureKey: 'obj-vending-machine', tileX: 23, tileY: 9 },
-    { id: 'plant-1', name: 'Office Plant', tags: ['ORGANIC', 'FRAGILE'], states: ['UNLOCKED'], textureKey: 'obj-plant', tileX: 1, tileY: 1 },
-    { id: 'plant-2', name: 'Office Plant', tags: ['ORGANIC', 'FRAGILE'], states: ['UNLOCKED'], textureKey: 'obj-plant', tileX: 23, tileY: 1 },
-    { id: 'plant-3', name: 'Office Plant', tags: ['ORGANIC', 'FRAGILE'], states: ['UNLOCKED'], textureKey: 'obj-plant', tileX: 1, tileY: 16 },
-    { id: 'plant-4', name: 'Office Plant', tags: ['ORGANIC', 'FRAGILE'], states: ['UNLOCKED'], textureKey: 'obj-plant', tileX: 23, tileY: 16 },
-    { id: 'jacobs-screen-1', name: "Jacobs' Screen", tags: ['ELECTRONIC', 'CONDUCTIVE'], states: ['POWERED'], textureKey: 'obj-jacobs-screen', tileX: 19, tileY: 1 },
-  ],
-  itemSpawns: [
-    { id: 'item-1', name: 'Coffee Mug', tags: ['WET', 'FRAGILE'], textureKey: 'item-coffee-mug', tileX: 5, tileY: 3 },
-    { id: 'item-2', name: 'Wrench', tags: ['METALLIC', 'HEAVY'], textureKey: 'item-wrench', tileX: 8, tileY: 12 },
-    { id: 'item-3', name: 'Bucket', tags: ['WET', 'HEAVY'], textureKey: 'item-bucket', tileX: 18, tileY: 8 },
-    { id: 'item-4', name: 'Matches', tags: ['HOT'], textureKey: 'item-matches', tileX: 15, tileY: 14 },
-  ],
+  objectPlacements: [],
+  itemSpawns: [],
 };
 
-/** Converts Supabase snake_case JSON to camelCase RoomDef */
-function parseRoom(row: Record<string, unknown>): RoomDef {
-  return {
-    name: row.name as string,
-    width: row.width as number,
-    height: row.height as number,
-    tileMap: row.tile_map as number[][],
-    objectPlacements: (row.object_placements as Array<Record<string, unknown>>).map((o) => ({
-      id: o.id as string,
-      name: o.name as string,
-      tags: o.tags as string[],
-      states: o.states as string[],
-      textureKey: (o.textureKey ?? o.texture_key) as string,
+/** Parse slim item_spawns from room JSON */
+function parseItemSpawns(raw: unknown[]): ItemSpawn[] {
+  return raw.map((r) => {
+    const o = r as Record<string, unknown>;
+    return {
+      item_id: o.item_id as string,
       tileX: (o.tileX ?? o.tile_x) as number,
       tileY: (o.tileY ?? o.tile_y) as number,
-    })),
-    itemSpawns: (row.item_spawns as Array<Record<string, unknown>>).map((i) => ({
-      id: i.id as string,
-      name: i.name as string,
-      tags: i.tags as string[],
-      textureKey: (i.textureKey ?? i.texture_key) as string,
-      tileX: (i.tileX ?? i.tile_x) as number,
-      tileY: (i.tileY ?? i.tile_y) as number,
-      imageUrl: (i.imageUrl ?? i.image_url) as string | undefined,
-    })),
-  };
+    };
+  });
+}
+
+/** Parse slim object_placements from room JSON */
+function parseObjectPlacements(raw: unknown[]): ObjectPlacement[] {
+  return raw.map((r) => {
+    const o = r as Record<string, unknown>;
+    return {
+      object_id: o.object_id as string,
+      tileX: (o.tileX ?? o.tile_x) as number,
+      tileY: (o.tileY ?? o.tile_y) as number,
+      states: (o.states ?? []) as string[],
+    };
+  });
+}
+
+/** Fetch items from the catalog and merge with spawn positions */
+async function resolveItems(spawns: ItemSpawn[]): Promise<ResolvedItem[]> {
+  if (spawns.length === 0) return [];
+
+  const ids = [...new Set(spawns.map((s) => s.item_id))];
+  const { data, error } = await supabase
+    .from('items')
+    .select('id, name, tags, sprite_url')
+    .in('id', ids);
+
+  if (error || !data) {
+    console.warn('Failed to resolve items from catalog:', error);
+    return [];
+  }
+
+  const catalog = new Map(data.map((row) => [row.id, row]));
+
+  const resolved: ResolvedItem[] = [];
+  for (const spawn of spawns) {
+    const entry = catalog.get(spawn.item_id);
+    if (!entry) {
+      console.warn(`Item ${spawn.item_id} not found in catalog, skipping`);
+      continue;
+    }
+    resolved.push({
+      id: crypto.randomUUID(),
+      item_id: spawn.item_id,
+      name: entry.name as string,
+      tags: entry.tags as string[],
+      spriteUrl: (entry.sprite_url as string) || undefined,
+      tileX: spawn.tileX,
+      tileY: spawn.tileY,
+    });
+  }
+  return resolved;
+}
+
+/** Fetch objects from the catalog and merge with placement positions + instance states */
+async function resolveObjects(placements: ObjectPlacement[]): Promise<ResolvedObject[]> {
+  if (placements.length === 0) return [];
+
+  const ids = [...new Set(placements.map((p) => p.object_id))];
+  const { data, error } = await supabase
+    .from('objects')
+    .select('id, name, tags, sprite_url')
+    .in('id', ids);
+
+  if (error || !data) {
+    console.warn('Failed to resolve objects from catalog:', error);
+    return [];
+  }
+
+  const catalog = new Map(data.map((row) => [row.id, row]));
+
+  const resolved: ResolvedObject[] = [];
+  for (const placement of placements) {
+    const entry = catalog.get(placement.object_id);
+    if (!entry) {
+      console.warn(`Object ${placement.object_id} not found in catalog, skipping`);
+      continue;
+    }
+    resolved.push({
+      id: crypto.randomUUID(),
+      object_id: placement.object_id,
+      name: entry.name as string,
+      tags: entry.tags as string[],
+      states: placement.states,
+      spriteUrl: (entry.sprite_url as string) || undefined,
+      tileX: placement.tileX,
+      tileY: placement.tileY,
+    });
+  }
+  return resolved;
 }
 
 /** Fetch a room from Supabase by name. Falls back to DEFAULT_ROOM on failure. */
@@ -89,7 +145,22 @@ export async function fetchRoom(name: string): Promise<RoomDef> {
       return DEFAULT_ROOM;
     }
 
-    return parseRoom(data);
+    const itemSpawns = parseItemSpawns(data.item_spawns as unknown[]);
+    const objectPlacements = parseObjectPlacements(data.object_placements as unknown[]);
+
+    const [resolvedItems, resolvedObjects] = await Promise.all([
+      resolveItems(itemSpawns),
+      resolveObjects(objectPlacements),
+    ]);
+
+    return {
+      name: data.name as string,
+      width: data.width as number,
+      height: data.height as number,
+      tileMap: data.tile_map as number[][],
+      objectPlacements: resolvedObjects,
+      itemSpawns: resolvedItems,
+    };
   } catch {
     console.warn('Supabase unavailable, using default room');
     return DEFAULT_ROOM;

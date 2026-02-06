@@ -7,6 +7,7 @@ import { SettingsMenu } from './components/SettingsMenu';
 import { LoadingScreen } from './components/LoadingScreen';
 import { InteractionPrompt } from './components/InteractionPrompt';
 import { InteractionMenu } from './components/InteractionMenu';
+import { InteractionToast } from './components/InteractionToast';
 import { useSettingsStore } from './stores/settingsStore';
 import { useGameStore } from './stores/gameStore';
 import { AdminPanel } from './pages/AdminPanel';
@@ -35,6 +36,7 @@ function Game() {
       <HUD />
       <InteractionPrompt />
       <InteractionMenu />
+      <InteractionToast />
       <InventoryBar />
       <SettingsMenu />
       <LoadingScreen />

@@ -4,8 +4,10 @@ export function InteractionPrompt() {
   const target = useGameStore((s) => s.interactionTarget);
   const sceneReady = useGameStore((s) => s.sceneReady);
   const menuOpen = useGameStore((s) => s.interactionMenuOpen);
+  const pending = useGameStore((s) => s.interactionPending);
+  const result = useGameStore((s) => s.interactionResult);
 
-  if (!sceneReady || !target || menuOpen) return null;
+  if (!sceneReady || !target || menuOpen || pending || result) return null;
 
   const actionText =
     target.type === 'item'

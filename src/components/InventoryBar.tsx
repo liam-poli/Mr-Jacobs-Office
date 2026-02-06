@@ -4,13 +4,8 @@ import { soundService } from '../services/soundService';
 
 const SLOT_COUNT = 5;
 
-// Match the Phaser-generated item texture colors
-const ITEM_COLORS: Record<string, string> = {
-  'item-coffee-mug': '#8b4513',
-  'item-wrench': '#708090',
-  'item-bucket': '#4169e1',
-  'item-matches': '#ff4500',
-};
+// Fallback color when no sprite URL is available
+const FALLBACK_ITEM_COLOR = '#888888';
 
 export function InventoryBar() {
   const inventory = useGameStore((s) => s.inventory);
@@ -72,9 +67,9 @@ export function InventoryBar() {
                   </div>
                 )}
                 {item && (
-                  item.imageUrl ? (
+                  item.spriteUrl ? (
                     <img
-                      src={item.imageUrl}
+                      src={item.spriteUrl}
                       alt={item.name}
                       className="w-12 h-12 object-contain"
                       style={{ imageRendering: 'pixelated' }}
@@ -83,7 +78,7 @@ export function InventoryBar() {
                     <div
                       className="w-8 h-8"
                       style={{
-                        backgroundColor: ITEM_COLORS[item.textureKey] ?? '#888',
+                        backgroundColor: FALLBACK_ITEM_COLOR,
                         border: '1px solid rgba(255,255,255,0.3)',
                       }}
                     />

@@ -1,16 +1,17 @@
 import Phaser from 'phaser';
 import { useGameStore } from '../stores/gameStore';
 import { soundService } from '../services/soundService';
+import { resolveInteraction } from '../services/interactionService';
 import type { InteractionTarget, InventoryItem } from '../types';
 
 const INTERACT_RADIUS = 40;
 const LABEL_SCALE = 2;
 
 interface ItemMeta {
+  item_id: string;
   name: string;
   tags: string[];
-  textureKey: string;
-  imageUrl?: string;
+  spriteUrl?: string;
 }
 
 interface ObjectMeta {
@@ -93,7 +94,10 @@ export class InteractionManager {
   private spawnDroppedItem(item: InventoryItem): void {
     const px = this.player.x;
     const py = this.player.y + 16;
-    const sprite = this.scene.add.image(px, py, item.textureKey);
+    const textureKey = item.spriteUrl
+      ? `sprite-item-${item.item_id}`
+      : 'item-default';
+    const sprite = this.scene.add.image(px, py, textureKey);
     sprite.setDepth(py);
 
     // Scale large textures (e.g. server sprites) to match 32px item size
@@ -102,10 +106,10 @@ export class InteractionManager {
       sprite.setScale(32 / Math.max(frame.width, frame.height));
     }
     this.registerItem(item.id, sprite, {
+      item_id: item.item_id,
       name: item.name,
       tags: item.tags,
-      textureKey: item.textureKey,
-      imageUrl: item.imageUrl,
+      spriteUrl: item.spriteUrl,
     });
   }
 
@@ -129,8 +133,8 @@ export class InteractionManager {
       }
     }
 
-    // Don't update nearest target or handle E key while menu is open
-    if (store.interactionMenuOpen) return;
+    // Don't update nearest target or handle E key while menu/resolution is active
+    if (store.interactionMenuOpen || store.interactionPending) return;
 
     const nearest = this.findNearest();
 
@@ -212,10 +216,10 @@ export class InteractionManager {
     const def = this.itemDefs.get(target.id)!;
     store.addItem({
       id: target.id,
+      item_id: def.item_id,
       name: def.name,
       tags: def.tags,
-      textureKey: def.textureKey,
-      imageUrl: def.imageUrl,
+      spriteUrl: def.spriteUrl,
     });
     soundService.playSfx('pickup');
 
@@ -235,26 +239,68 @@ export class InteractionManager {
     store.setInteractionTarget(null);
   }
 
-  private executeObjectInteraction(target: InteractionTarget, itemId: string | null): void {
+  private async executeObjectInteraction(target: InteractionTarget, itemId: string | null): Promise<void> {
     const store = useGameStore.getState();
     const objDef = this.objectDefs.get(target.id)!;
 
-    if (itemId) {
-      // Use item on object
-      const item = store.inventory.find((i) => i.id === itemId);
-      if (!item) return;
+    const item = itemId ? store.inventory.find((i) => i.id === itemId) : null;
+    if (itemId && !item) return;
 
-      console.log(
-        `Used ${item.name} [${item.tags}] on ${objDef.name} [${objDef.tags}]`,
-      );
+    // Freeze player + show pending state
+    store.setInteractionPending(true);
+    soundService.playSfx('interact');
 
-      store.removeItem(item.id);
-      store.updateObjectState(target.id, [...objDef.states, 'INTERACTED']);
-      soundService.playSfx('interact');
-    } else {
-      // Bare-handed interaction
-      console.log(`Interacted with ${objDef.name} (no item)`);
-      soundService.playSfx('interact');
+    try {
+      const itemTags = item ? item.tags : [];
+      const itemName = item ? item.name : '(bare hands)';
+      const objectState = objDef.states[0] ?? null;
+
+      const result = await resolveInteraction({
+        itemTags,
+        objectTags: objDef.tags,
+        objectState,
+        itemName,
+        objectName: objDef.name,
+      });
+
+      // Consume item on success (only if one was used)
+      if (item) {
+        store.removeItem(item.id);
+      }
+
+      // Update object state if the result provides one
+      if (result.result_state) {
+        const newStates = [result.result_state];
+        objDef.states = newStates;
+        store.updateObjectState(target.id, newStates);
+      }
+
+      // Spawn output item if the result provides one
+      if (result.output_item) {
+        const outputItem: InventoryItem = {
+          id: crypto.randomUUID(),
+          item_id: 'output',
+          name: result.output_item,
+          tags: result.output_item_tags ?? [],
+        };
+
+        if (store.inventory.length < 5) {
+          store.addItem(outputItem);
+          soundService.playSfx('pickup');
+        } else {
+          this.spawnDroppedItem(outputItem);
+          soundService.playSfx('drop');
+        }
+      }
+
+      // Show result description
+      store.setInteractionResult({ description: result.description });
+    } catch (err) {
+      console.error('Interaction failed:', err);
+      soundService.playSfx('error');
+      store.setInteractionResult({ description: "Something went wrong..." });
+    } finally {
+      store.setInteractionPending(false);
     }
   }
 

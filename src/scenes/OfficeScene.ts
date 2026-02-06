@@ -42,8 +42,8 @@ export class OfficeScene extends Phaser.Scene {
   async create() {
     const roomDef = await fetchRoom('Main Office');
 
-    // Load any item sprites that have imageUrl (server-hosted textures)
-    await this.loadItemSprites(roomDef);
+    // Load any sprites from the DB (server-hosted textures)
+    await this.loadSprites(roomDef);
 
     // Build the room from the tile map
     this.buildRoom(roomDef);
@@ -130,15 +130,25 @@ export class OfficeScene extends Phaser.Scene {
     }
   }
 
-  private async loadItemSprites(roomDef: RoomDef): Promise<void> {
+  private async loadSprites(roomDef: RoomDef): Promise<void> {
     let loadCount = 0;
 
     for (const item of roomDef.itemSpawns) {
-      if (!item.imageUrl) continue;
-      const textureKey = `server-item-${item.id}`;
-      item.textureKey = textureKey;
-      this.load.image(textureKey, item.imageUrl);
-      loadCount++;
+      if (!item.spriteUrl) continue;
+      const key = `sprite-item-${item.item_id}`;
+      if (!this.textures.exists(key)) {
+        this.load.image(key, item.spriteUrl);
+        loadCount++;
+      }
+    }
+
+    for (const obj of roomDef.objectPlacements) {
+      if (!obj.spriteUrl) continue;
+      const key = `sprite-obj-${obj.object_id}`;
+      if (!this.textures.exists(key)) {
+        this.load.image(key, obj.spriteUrl);
+        loadCount++;
+      }
     }
 
     if (loadCount > 0) {
@@ -155,13 +165,22 @@ export class OfficeScene extends Phaser.Scene {
     for (const obj of roomDef.objectPlacements) {
       const px = obj.tileX * TILE_SIZE + TILE_SIZE / 2;
       const py = obj.tileY * TILE_SIZE + TILE_SIZE / 2;
+      const textureKey = obj.spriteUrl
+        ? `sprite-obj-${obj.object_id}`
+        : 'obj-default';
 
       // Visible sprite
-      const sprite = this.add.image(px, py, obj.textureKey);
+      const sprite = this.add.image(px, py, textureKey);
       sprite.setDepth(py);
 
+      // Scale large textures to fit 32px
+      const frame = sprite.frame;
+      if (frame.width > TILE_SIZE || frame.height > TILE_SIZE) {
+        sprite.setScale(TILE_SIZE / Math.max(frame.width, frame.height));
+      }
+
       // Invisible collision body
-      const collider = this.objectGroup.create(px, py, obj.textureKey) as Phaser.Physics.Arcade.Sprite;
+      const collider = this.objectGroup.create(px, py, 'obj-default') as Phaser.Physics.Arcade.Sprite;
       collider.setVisible(false);
       collider.refreshBody();
 
@@ -188,8 +207,11 @@ export class OfficeScene extends Phaser.Scene {
     for (const item of roomDef.itemSpawns) {
       const px = item.tileX * TILE_SIZE + TILE_SIZE / 2;
       const py = item.tileY * TILE_SIZE + TILE_SIZE / 2;
+      const textureKey = item.spriteUrl
+        ? `sprite-item-${item.item_id}`
+        : 'item-default';
 
-      const sprite = this.add.image(px, py, item.textureKey);
+      const sprite = this.add.image(px, py, textureKey);
       sprite.setDepth(py);
 
       // Scale large textures (e.g. server sprites) to match 32px item size
@@ -200,10 +222,10 @@ export class OfficeScene extends Phaser.Scene {
 
       this.events.once('interaction-ready', () => {
         this.interactionManager.registerItem(item.id, sprite, {
+          item_id: item.item_id,
           name: item.name,
           tags: item.tags,
-          textureKey: item.textureKey,
-          imageUrl: item.imageUrl,
+          spriteUrl: item.spriteUrl,
         });
       });
     }
@@ -276,6 +298,7 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private onStateChange(state: GameState) {
+    if (!this.sys?.isActive()) return;
     // Update object visuals when states change
     for (const [objectId, objectState] of Object.entries(state.objectStates)) {
       this.applyStateVisuals(objectId, objectState.states);

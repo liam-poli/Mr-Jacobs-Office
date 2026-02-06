@@ -30,9 +30,14 @@ export const useGameStore = create<GameState>((set) => ({
 
   interactionMenuOpen: false,
   openInteractionMenu: () => set({ interactionMenuOpen: true }),
-  closeInteractionMenu: () => set({ interactionMenuOpen: false, pendingInteraction: null }),
+  closeInteractionMenu: () => set({ interactionMenuOpen: false }),
   pendingInteraction: null,
   setPendingInteraction: (interaction) => set({ pendingInteraction: interaction }),
+
+  interactionPending: false,
+  setInteractionPending: (pending) => set({ interactionPending: pending }),
+  interactionResult: null,
+  setInteractionResult: (result) => set({ interactionResult: result }),
 
   pendingDrop: null,
   dropItem: (index) =>

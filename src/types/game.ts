@@ -4,10 +4,10 @@ export type Direction = 'down' | 'up' | 'left' | 'right';
 /** Portable resource with Tags. Consumed on use. */
 export interface InventoryItem {
   id: string;
+  item_id: string;
   name: string;
   tags: string[];
-  textureKey: string;
-  imageUrl?: string;
+  spriteUrl?: string;
 }
 
 /** Mutable world object state. Tags are permanent, states are mutable. */
@@ -16,26 +16,42 @@ export interface ObjectState {
   states: string[];
 }
 
-/** An interactive object placed in a room */
-export interface ObjectPlacement {
-  id: string;
-  name: string;
-  tags: string[];
-  states: string[];
-  textureKey: string;
+/** Slim spawn reference stored in room JSON — just an ID + position */
+export interface ItemSpawn {
+  item_id: string;
   tileX: number;
   tileY: number;
 }
 
-/** An item spawned on the floor in a room */
-export interface ItemSpawn {
-  id: string;
-  name: string;
-  tags: string[];
-  textureKey: string;
+/** Slim placement reference stored in room JSON — ID + position + instance states */
+export interface ObjectPlacement {
+  object_id: string;
   tileX: number;
   tileY: number;
-  imageUrl?: string;
+  states: string[];
+}
+
+/** Item spawn merged with catalog data from the items table */
+export interface ResolvedItem {
+  id: string;
+  item_id: string;
+  name: string;
+  tags: string[];
+  spriteUrl?: string;
+  tileX: number;
+  tileY: number;
+}
+
+/** Object placement merged with catalog data from the objects table */
+export interface ResolvedObject {
+  id: string;
+  object_id: string;
+  name: string;
+  tags: string[];
+  states: string[];
+  spriteUrl?: string;
+  tileX: number;
+  tileY: number;
 }
 
 /** Full room definition — loaded from Supabase or fallback */
@@ -44,8 +60,8 @@ export interface RoomDef {
   width: number;
   height: number;
   tileMap: number[][];
-  objectPlacements: ObjectPlacement[];
-  itemSpawns: ItemSpawn[];
+  objectPlacements: ResolvedObject[];
+  itemSpawns: ResolvedItem[];
 }
 
 /** What the player is currently close enough to interact with */
@@ -53,6 +69,15 @@ export interface InteractionTarget {
   type: 'item' | 'object';
   id: string;
   name: string;
+}
+
+/** Result returned by the interact edge function */
+export interface InteractionResult {
+  result_state: string | null;
+  output_item: string | null;
+  output_item_tags: string[] | null;
+  description: string;
+  cached: boolean;
 }
 
 /** Complete game state interface for the Zustand store. */
@@ -88,6 +113,12 @@ export interface GameState {
   closeInteractionMenu: () => void;
   pendingInteraction: { targetId: string; itemId: string | null } | null;
   setPendingInteraction: (interaction: { targetId: string; itemId: string | null } | null) => void;
+
+  // Interaction resolution (edge function call in progress)
+  interactionPending: boolean;
+  setInteractionPending: (pending: boolean) => void;
+  interactionResult: { description: string } | null;
+  setInteractionResult: (result: { description: string } | null) => void;
 
   // Drop item back into world (React → Phaser bridge)
   pendingDrop: InventoryItem | null;

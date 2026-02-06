@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../services/supabase';
 
+/* ─── Interfaces ─────────────────────────────────────────── */
+
 interface Placement {
   tileX: number;
   tileY: number;
@@ -16,6 +18,36 @@ interface Room {
   object_placements: Placement[];
   item_spawns: Placement[];
 }
+
+interface CatalogItem {
+  id: string;
+  name: string;
+  tags: string[];
+  sprite_url: string | null;
+}
+
+interface CatalogObject {
+  id: string;
+  name: string;
+  tags: string[];
+  state: string;
+  sprite_url: string | null;
+}
+
+interface ObjPlacement {
+  object_id: string;
+  tileX: number;
+  tileY: number;
+  states: string[];
+}
+
+interface ItemSpawnPlacement {
+  item_id: string;
+  tileX: number;
+  tileY: number;
+}
+
+/* ─── Constants ──────────────────────────────────────────── */
 
 const TILE_COLORS: Record<number, string> = {
   0: '#B8D4C8', // floor
@@ -34,23 +66,62 @@ const TILE_LABELS: Record<number, string> = {
 const EDITOR_PX = 24; // pixels per tile in editor
 const GRID_COLOR = '#00000020';
 
-/* ─── Visual Tile Map Editor ──────────────────────────────── */
+type EditorMode = 'tiles' | 'objects' | 'items';
 
-function TileMapEditor({
+/* ─── Visual Room Editor ─────────────────────────────────── */
+
+function RoomEditor({
   room,
   onSave,
   onClose,
 }: {
   room: Room;
-  onSave: (tileMap: number[][]) => void;
+  onSave: (tileMap: number[][], objectPlacements: ObjPlacement[], itemSpawns: ItemSpawnPlacement[]) => void;
   onClose: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Tile state
   const [tiles, setTiles] = useState<number[][]>(() =>
     room.tile_map.map((row) => [...row]),
   );
   const [brush, setBrush] = useState(0);
   const painting = useRef(false);
+
+  // Placement state
+  const [objPlacements, setObjPlacements] = useState<ObjPlacement[]>(() =>
+    (room.object_placements as unknown as ObjPlacement[]).map((p) => ({ ...p })),
+  );
+  const [itemSpawns, setItemSpawns] = useState<ItemSpawnPlacement[]>(() =>
+    (room.item_spawns as unknown as ItemSpawnPlacement[]).map((p) => ({ ...p })),
+  );
+
+  // Mode & selection
+  const [mode, setMode] = useState<EditorMode>('tiles');
+  const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
+  // Catalog data
+  const [catalogObjects, setCatalogObjects] = useState<CatalogObject[]>([]);
+  const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
+
+  // Fetch catalogs on mount
+  useEffect(() => {
+    (async () => {
+      const [objRes, itemRes] = await Promise.all([
+        supabase.from('objects').select('id, name, tags, state, sprite_url').order('name'),
+        supabase.from('items').select('id, name, tags, sprite_url').order('name'),
+      ]);
+      setCatalogObjects((objRes.data ?? []) as CatalogObject[]);
+      setCatalogItems((itemRes.data ?? []) as CatalogItem[]);
+    })();
+  }, []);
+
+  // Build lookup maps for drawing labels
+  const objMap = new Map(catalogObjects.map((o) => [o.id, o]));
+  const itemMap = new Map(catalogItems.map((i) => [i.id, i]));
+
+  /* ─── Canvas Drawing ─────────────────────────────────── */
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -87,36 +158,50 @@ function TileMapEditor({
       ctx.stroke();
     }
 
-    // Objects (red dots)
-    for (const o of room.object_placements) {
+    // Object placements (red circles with label)
+    for (const o of objPlacements) {
+      const cx = o.tileX * EDITOR_PX + EDITOR_PX / 2;
+      const cy = o.tileY * EDITOR_PX + EDITOR_PX / 2;
+      const r = EDITOR_PX / 3;
       ctx.fillStyle = '#EF4444';
       ctx.beginPath();
-      ctx.arc(
-        o.tileX * EDITOR_PX + EDITOR_PX / 2,
-        o.tileY * EDITOR_PX + EDITOR_PX / 2,
-        EDITOR_PX / 4,
-        0,
-        Math.PI * 2,
-      );
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.fill();
+      // White letter
+      const entry = objMap.get(o.object_id);
+      if (entry) {
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${Math.round(EDITOR_PX * 0.4)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(entry.name[0], cx, cy + 1);
+      }
     }
 
-    // Items (yellow dots)
-    for (const i of room.item_spawns) {
+    // Item spawns (yellow circles with label)
+    for (const i of itemSpawns) {
+      const cx = i.tileX * EDITOR_PX + EDITOR_PX / 2;
+      const cy = i.tileY * EDITOR_PX + EDITOR_PX / 2;
+      const r = EDITOR_PX / 3;
       ctx.fillStyle = '#F59E0B';
       ctx.beginPath();
-      ctx.arc(
-        i.tileX * EDITOR_PX + EDITOR_PX / 2,
-        i.tileY * EDITOR_PX + EDITOR_PX / 2,
-        EDITOR_PX / 4,
-        0,
-        Math.PI * 2,
-      );
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.fill();
+      // White letter
+      const entry = itemMap.get(i.item_id);
+      if (entry) {
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${Math.round(EDITOR_PX * 0.4)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(entry.name[0], cx, cy + 1);
+      }
     }
-  }, [tiles, room]);
+  }, [tiles, objPlacements, itemSpawns, room, objMap, itemMap]);
 
   useEffect(() => { draw(); }, [draw]);
+
+  /* ─── Mouse Handling ─────────────────────────────────── */
 
   function tileAt(e: React.MouseEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
@@ -130,7 +215,7 @@ function TileMapEditor({
     return { row, col };
   }
 
-  function paint(e: React.MouseEvent<HTMLCanvasElement>) {
+  function paintTile(e: React.MouseEvent<HTMLCanvasElement>) {
     const pos = tileAt(e);
     if (!pos) return;
     setTiles((prev) => {
@@ -141,73 +226,223 @@ function TileMapEditor({
     });
   }
 
+  function placeObject(col: number, row: number) {
+    if (!selectedObjectId) return;
+    setObjPlacements((prev) => {
+      const filtered = prev.filter((p) => !(p.tileX === col && p.tileY === row));
+      const entry = objMap.get(selectedObjectId);
+      return [...filtered, {
+        object_id: selectedObjectId,
+        tileX: col,
+        tileY: row,
+        states: entry ? [entry.state] : ['UNLOCKED'],
+      }];
+    });
+  }
+
+  function removeObject(col: number, row: number) {
+    setObjPlacements((prev) => prev.filter((p) => !(p.tileX === col && p.tileY === row)));
+  }
+
+  function placeItem(col: number, row: number) {
+    if (!selectedItemId) return;
+    setItemSpawns((prev) => {
+      const filtered = prev.filter((p) => !(p.tileX === col && p.tileY === row));
+      return [...filtered, { item_id: selectedItemId, tileX: col, tileY: row }];
+    });
+  }
+
+  function removeItem(col: number, row: number) {
+    setItemSpawns((prev) => prev.filter((p) => !(p.tileX === col && p.tileY === row)));
+  }
+
+  function handleCanvasMouseDown(e: React.MouseEvent<HTMLCanvasElement>) {
+    if (mode === 'tiles') {
+      painting.current = true;
+      paintTile(e);
+      return;
+    }
+    const pos = tileAt(e);
+    if (!pos) return;
+    if (e.button === 2) {
+      // Right-click → remove
+      if (mode === 'objects') removeObject(pos.col, pos.row);
+      else removeItem(pos.col, pos.row);
+    } else {
+      // Left-click → place
+      if (mode === 'objects') placeObject(pos.col, pos.row);
+      else placeItem(pos.col, pos.row);
+    }
+  }
+
+  function handleCanvasMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
+    if (mode === 'tiles' && painting.current) paintTile(e);
+  }
+
+  /* ─── Render ─────────────────────────────────────────── */
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-[90vw] max-h-[90vh] flex flex-col">
+        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
           <h3 className="font-semibold text-gray-800 text-sm">
-            Tile Map — {room.name} ({room.width}x{room.height})
+            Room Editor — {room.name} ({room.width}x{room.height})
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg">&times;</button>
         </div>
 
-        {/* Palette */}
+        {/* Mode selector + context toolbar */}
         <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100">
-          <span className="text-xs text-gray-500 mr-1">Brush:</span>
-          {Object.entries(TILE_COLORS).map(([type, color]) => {
-            const t = Number(type);
-            return (
-              <button
-                key={t}
-                onClick={() => setBrush(t)}
-                className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors ${
-                  brush === t
-                    ? 'ring-2 ring-blue-500 bg-blue-50 font-medium'
-                    : 'hover:bg-gray-100'
-                }`}
-              >
-                <span
-                  className="inline-block w-4 h-4 rounded-sm border border-gray-300"
-                  style={{ backgroundColor: color }}
-                />
-                {TILE_LABELS[t]}
-              </button>
-            );
-          })}
-          <span className="ml-auto text-[10px] text-gray-400">Click or drag to paint</span>
+          {/* Mode tabs */}
+          {(['tiles', 'objects', 'items'] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                mode === m
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              {m === 'tiles' ? 'Tiles' : m === 'objects' ? 'Objects' : 'Items'}
+            </button>
+          ))}
+
+          <div className="w-px h-5 bg-gray-200 mx-1" />
+
+          {/* Tiles mode: brush palette */}
+          {mode === 'tiles' && (
+            <>
+              <span className="text-xs text-gray-500">Brush:</span>
+              {Object.entries(TILE_COLORS).map(([type, color]) => {
+                const t = Number(type);
+                return (
+                  <button
+                    key={t}
+                    onClick={() => setBrush(t)}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors ${
+                      brush === t
+                        ? 'ring-2 ring-blue-500 bg-blue-50 font-medium'
+                        : 'hover:bg-gray-100'
+                    }`}
+                  >
+                    <span
+                      className="inline-block w-4 h-4 rounded-sm border border-gray-300"
+                      style={{ backgroundColor: color }}
+                    />
+                    {TILE_LABELS[t]}
+                  </button>
+                );
+              })}
+              <span className="ml-auto text-[10px] text-gray-400">Click or drag to paint</span>
+            </>
+          )}
+
+          {/* Objects/Items mode: hint */}
+          {mode !== 'tiles' && (
+            <span className="ml-auto text-[10px] text-gray-400">
+              Left-click to place &middot; Right-click to remove
+            </span>
+          )}
         </div>
 
-        {/* Canvas */}
-        <div className="flex-1 overflow-auto p-4">
-          <canvas
-            ref={canvasRef}
-            className="border border-gray-300 rounded cursor-crosshair"
-            style={{
-              width: room.width * EDITOR_PX,
-              height: room.height * EDITOR_PX,
-              imageRendering: 'pixelated',
-            }}
-            onMouseDown={(e) => { painting.current = true; paint(e); }}
-            onMouseMove={(e) => { if (painting.current) paint(e); }}
-            onMouseUp={() => { painting.current = false; }}
-            onMouseLeave={() => { painting.current = false; }}
-          />
+        {/* Body: sidebar (objects/items) + canvas */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Catalog sidebar */}
+          {mode !== 'tiles' && (
+            <div className="w-48 border-r border-gray-200 overflow-y-auto p-2 shrink-0">
+              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-1 px-1">
+                {mode === 'objects' ? 'Objects' : 'Items'} catalog
+              </p>
+              {mode === 'objects' && catalogObjects.map((obj) => (
+                <button
+                  key={obj.id}
+                  onClick={() => setSelectedObjectId(obj.id)}
+                  className={`w-full text-left px-2 py-1.5 rounded text-xs mb-0.5 transition-colors ${
+                    selectedObjectId === obj.id
+                      ? 'bg-red-50 text-red-700 ring-1 ring-red-300'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <span className="font-medium">{obj.name}</span>
+                  <span className="block text-[10px] text-gray-400 mt-0.5">
+                    {obj.tags.join(', ') || 'no tags'} &middot; {obj.state}
+                  </span>
+                </button>
+              ))}
+              {mode === 'items' && catalogItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setSelectedItemId(item.id)}
+                  className={`w-full text-left px-2 py-1.5 rounded text-xs mb-0.5 transition-colors ${
+                    selectedItemId === item.id
+                      ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-300'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <span className="font-medium">{item.name}</span>
+                  <span className="block text-[10px] text-gray-400 mt-0.5">
+                    {item.tags.join(', ') || 'no tags'}
+                  </span>
+                </button>
+              ))}
+              {mode === 'objects' && catalogObjects.length === 0 && (
+                <p className="text-[10px] text-gray-400 px-1">No objects in DB. Add them in the Objects tab.</p>
+              )}
+              {mode === 'items' && catalogItems.length === 0 && (
+                <p className="text-[10px] text-gray-400 px-1">No items in DB. Add them in the Items tab.</p>
+              )}
+            </div>
+          )}
+
+          {/* Canvas */}
+          <div className="flex-1 overflow-auto p-4">
+            <canvas
+              ref={canvasRef}
+              className="border border-gray-300 rounded cursor-crosshair"
+              style={{
+                width: room.width * EDITOR_PX,
+                height: room.height * EDITOR_PX,
+                imageRendering: 'pixelated',
+              }}
+              onMouseDown={handleCanvasMouseDown}
+              onMouseMove={handleCanvasMouseMove}
+              onMouseUp={() => { painting.current = false; }}
+              onMouseLeave={() => { painting.current = false; }}
+              onContextMenu={(e) => e.preventDefault()}
+            />
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
-          <button
-            onClick={() => onSave(tiles)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
-          >
-            Save
-          </button>
+        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+          <div className="flex gap-3 text-[10px] text-gray-400">
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-2 h-2 rounded-full bg-red-500" />
+              {objPlacements.length} objects
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
+              {itemSpawns.length} items
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+            <button
+              onClick={() => onSave(tiles, objPlacements, itemSpawns)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
+/* ─── Room Preview ───────────────────────────────────────── */
 
 const PX = 4; // pixels per tile in preview
 
@@ -225,7 +460,7 @@ function RoomPreview({ room }: { room: Room }) {
     canvas.width = w;
     canvas.height = h;
 
-    // Draw tile map (includes desks as tile type 3)
+    // Draw tile map
     for (let row = 0; row < room.tile_map.length; row++) {
       for (let col = 0; col < room.tile_map[row].length; col++) {
         ctx.fillStyle = TILE_COLORS[room.tile_map[row][col]] ?? TILE_COLORS[0];
@@ -259,6 +494,8 @@ function RoomPreview({ room }: { room: Room }) {
   );
 }
 
+/* ─── Rooms Tab ──────────────────────────────────────────── */
+
 export function RoomsTab() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -266,7 +503,7 @@ export function RoomsTab() {
   const [jsonField, setJsonField] = useState<'object_placements' | 'item_spawns' | null>(null);
   const [jsonValue, setJsonValue] = useState('');
   const [jsonError, setJsonError] = useState('');
-  const [tileEditRoom, setTileEditRoom] = useState<Room | null>(null);
+  const [editRoom, setEditRoom] = useState<Room | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', width: 25, height: 18 });
 
@@ -307,6 +544,13 @@ export function RoomsTab() {
     fetchRooms();
   }
 
+  async function renameRoom(id: string, newName: string) {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    await supabase.from('rooms').update({ name: trimmed }).eq('id', id);
+    fetchRooms();
+  }
+
   function startEditJson(room: Room, field: typeof jsonField) {
     if (!field) return;
     setEditingId(room.id);
@@ -328,10 +572,14 @@ export function RoomsTab() {
     }
   }
 
-  async function saveTileMap(tileMap: number[][]) {
-    if (!tileEditRoom) return;
-    await supabase.from('rooms').update({ tile_map: tileMap }).eq('id', tileEditRoom.id);
-    setTileEditRoom(null);
+  async function saveRoom(tileMap: number[][], objectPlacements: ObjPlacement[], itemSpawns: ItemSpawnPlacement[]) {
+    if (!editRoom) return;
+    await supabase.from('rooms').update({
+      tile_map: tileMap,
+      object_placements: objectPlacements,
+      item_spawns: itemSpawns,
+    }).eq('id', editRoom.id);
+    setEditRoom(null);
     fetchRooms();
   }
 
@@ -387,12 +635,12 @@ export function RoomsTab() {
         </form>
       )}
 
-      {/* Visual tile map editor */}
-      {tileEditRoom && (
-        <TileMapEditor
-          room={tileEditRoom}
-          onSave={saveTileMap}
-          onClose={() => setTileEditRoom(null)}
+      {/* Visual room editor */}
+      {editRoom && (
+        <RoomEditor
+          room={editRoom}
+          onSave={saveRoom}
+          onClose={() => setEditRoom(null)}
         />
       )}
 
@@ -425,46 +673,39 @@ export function RoomsTab() {
       <div className="flex gap-4 text-[10px] text-gray-500 mb-3">
         <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-red-500" /> Objects</span>
         <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-amber-500" /> Items</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm" style={{ backgroundColor: '#6B5040' }} /> Desks (tile 3)</span>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
         {rooms.map((room) => (
-          <div key={room.id} className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex gap-4 mb-3">
-              <RoomPreview room={room} />
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-800">{room.name}</h3>
-                    <p className="text-xs text-gray-500">{room.width} x {room.height} tiles</p>
-                  </div>
-                  <button onClick={() => handleDelete(room.id)} className="text-red-500 text-xs hover:underline">Delete</button>
-                </div>
-                <div className="flex gap-3 mt-2 text-xs">
-                  <span className="text-blue-600">{room.object_placements.length} objects</span>
-                  <span className="text-green-600">{room.item_spawns.length} items</span>
-                </div>
+          <div key={room.id} className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <input
+                  className="font-semibold text-gray-800 text-sm bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none w-full"
+                  defaultValue={room.name}
+                  onBlur={(e) => { if (e.target.value !== room.name) renameRoom(room.id, e.target.value); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                />
+                <p className="text-[10px] text-gray-500">{room.width} x {room.height} tiles</p>
               </div>
+              <button onClick={() => handleDelete(room.id)} className="text-red-400 text-[10px] hover:underline">Delete</button>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="flex justify-center mb-2">
+              <RoomPreview room={room} />
+            </div>
+            <div className="mt-auto flex flex-col gap-1.5 items-center">
               <button
-                onClick={() => setTileEditRoom(room)}
-                className="text-left px-3 py-2 rounded-md border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                onClick={() => setEditRoom(room)}
+                className="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors cursor-pointer"
               >
-                <span className="block text-xs font-medium text-gray-500">tile map</span>
-                <span className="block text-sm text-gray-800">{room.tile_map.length} rows</span>
+                Edit Room
               </button>
-              {(['object_placements', 'item_spawns'] as const).map((field) => (
-                <button
-                  key={field}
-                  onClick={() => startEditJson(room, field)}
-                  className="text-left px-3 py-2 rounded-md border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors"
-                >
-                  <span className="block text-xs font-medium text-gray-500">{field.replace(/_/g, ' ')}</span>
-                  <span className="block text-sm text-gray-800">{(room[field] as unknown[]).length} items</span>
-                </button>
-              ))}
+              <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                <span>{room.object_placements.length} objects &middot; {room.item_spawns.length} items</span>
+                <span>&middot;</span>
+                <button onClick={() => startEditJson(room, 'object_placements')} className="hover:text-blue-500 underline cursor-pointer">objects json</button>
+                <button onClick={() => startEditJson(room, 'item_spawns')} className="hover:text-blue-500 underline cursor-pointer">items json</button>
+              </div>
             </div>
           </div>
         ))}

@@ -80,8 +80,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   update(): void {
     if (!this.inputManager) return;
 
-    // Freeze movement while interaction menu is open
-    if (useGameStore.getState().interactionMenuOpen) {
+    // Freeze movement while interaction menu is open or interaction is resolving
+    const gameState = useGameStore.getState();
+    if (gameState.interactionMenuOpen || gameState.interactionPending) {
       const body = this.body as Phaser.Physics.Arcade.Body;
       body.setVelocity(0, 0);
       if (this.isMoving) {

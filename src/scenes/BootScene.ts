@@ -33,8 +33,7 @@ export class BootScene extends Phaser.Scene {
     this.generateFloorTile();
     this.generateWallTile();
     this.generateCarpetTile();
-    this.generateItemTextures();
-    this.generateObjectTextures();
+    this.generateFallbackTextures();
     this.generateDeskTile();
     this.generateIndicatorTextures();
     this.generatePromptTexture();
@@ -81,43 +80,24 @@ export class BootScene extends Phaser.Scene {
     }
   }
 
-  private generateItemTextures() {
-    const items: Array<{ key: string; color: number }> = [
-      { key: 'item-coffee-mug', color: 0x8b4513 },
-      { key: 'item-wrench', color: 0x708090 },
-      { key: 'item-bucket', color: 0x4169e1 },
-      { key: 'item-matches', color: 0xff4500 },
-    ];
-    for (const { key, color } of items) {
-      const g = this.add.graphics();
-      g.fillStyle(color, 1);
-      g.fillRect(0, 0, 16, 16);
-      g.lineStyle(1, 0xffffff, 0.4);
-      g.strokeRect(0, 0, 16, 16);
-      g.generateTexture(key, 16, 16);
-      g.destroy();
-    }
-  }
+  private generateFallbackTextures() {
+    // Generic item fallback (16x16 gray square)
+    const itemG = this.add.graphics();
+    itemG.fillStyle(0x888888, 1);
+    itemG.fillRect(0, 0, 16, 16);
+    itemG.lineStyle(1, 0xffffff, 0.4);
+    itemG.strokeRect(0, 0, 16, 16);
+    itemG.generateTexture('item-default', 16, 16);
+    itemG.destroy();
 
-  private generateObjectTextures() {
-    const objects: Array<{ key: string; color: number }> = [
-      { key: 'obj-coffee-maker', color: 0x2f4f4f },
-      { key: 'obj-filing-cabinet', color: 0x696969 },
-      { key: 'obj-desk', color: 0x8b7355 },
-      { key: 'obj-door', color: 0x8b6914 },
-      { key: 'obj-terminal', color: 0x1a3a2a },
-      { key: 'obj-vending-machine', color: 0x3a1a5a },
-      { key: 'obj-jacobs-screen', color: 0x0a0a14 },
-    ];
-    for (const { key, color } of objects) {
-      const g = this.add.graphics();
-      g.fillStyle(color, 1);
-      g.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-      g.lineStyle(1, 0xffffff, 0.3);
-      g.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
-      g.generateTexture(key, TILE_SIZE, TILE_SIZE);
-      g.destroy();
-    }
+    // Generic object fallback (32x32 gray square)
+    const objG = this.add.graphics();
+    objG.fillStyle(0x666666, 1);
+    objG.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
+    objG.lineStyle(1, 0xffffff, 0.3);
+    objG.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
+    objG.generateTexture('obj-default', TILE_SIZE, TILE_SIZE);
+    objG.destroy();
   }
 
   private generateFloorTile() {

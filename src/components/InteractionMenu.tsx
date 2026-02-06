@@ -2,12 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { soundService } from '../services/soundService';
 
-const ITEM_COLORS: Record<string, string> = {
-  'item-coffee-mug': '#8b4513',
-  'item-wrench': '#708090',
-  'item-bucket': '#4169e1',
-  'item-matches': '#ff4500',
-};
+const FALLBACK_ITEM_COLOR = '#888888';
 
 /** Each option: null itemId = bare-hand, string = use item, 'cancel' = close */
 type MenuOption = { type: 'interact'; itemId: null } | { type: 'item'; itemId: string } | { type: 'cancel' };
@@ -18,6 +13,7 @@ export function InteractionMenu() {
   const inventory = useGameStore((s) => s.inventory);
   const closeMenu = useGameStore((s) => s.closeInteractionMenu);
   const setPendingInteraction = useGameStore((s) => s.setPendingInteraction);
+  const pending = useGameStore((s) => s.interactionPending);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -92,7 +88,7 @@ export function InteractionMenu() {
     }
   }, [menuOpen, target, closeMenu]);
 
-  if (!menuOpen || !target || target.type !== 'object') return null;
+  if (pending || !menuOpen || !target || target.type !== 'object') return null;
 
   return (
     <div
@@ -143,9 +139,9 @@ export function InteractionMenu() {
                 <span className="w-5 h-5 flex items-center justify-center text-[16px]">
                   &gt;
                 </span>
-              ) : item?.imageUrl ? (
+              ) : item?.spriteUrl ? (
                 <img
-                  src={item.imageUrl}
+                  src={item.spriteUrl}
                   alt={item.name}
                   className="w-5 h-5 object-contain"
                   style={{ imageRendering: 'pixelated' }}
@@ -154,7 +150,7 @@ export function InteractionMenu() {
                 <span
                   className="w-5 h-5 inline-block"
                   style={{
-                    backgroundColor: ITEM_COLORS[item?.textureKey ?? ''] ?? '#888',
+                    backgroundColor: FALLBACK_ITEM_COLOR,
                     border: '1px solid rgba(255,255,255,0.3)',
                   }}
                 />
