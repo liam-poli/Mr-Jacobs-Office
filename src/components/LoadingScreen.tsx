@@ -9,12 +9,15 @@ export function LoadingScreen() {
   useEffect(() => {
     if (!sceneReady) return;
 
-    // Start fade-out
-    setFading(true);
+    // Buffer so the scene is fully stable before we go semi-transparent
+    const fadeTimer = setTimeout(() => setFading(true), 1200);
 
-    // Remove from DOM after transition
-    const timer = setTimeout(() => setVisible(false), 600);
-    return () => clearTimeout(timer);
+    // Remove from DOM after fade completes
+    const removeTimer = setTimeout(() => setVisible(false), 1800);
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(removeTimer);
+    };
   }, [sceneReady]);
 
   if (!visible) return null;

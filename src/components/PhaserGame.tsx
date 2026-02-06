@@ -2,12 +2,10 @@ import { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { BootScene } from '../scenes/BootScene';
 import { OfficeScene } from '../scenes/OfficeScene';
-import { useGameStore } from '../stores/gameStore';
 
 export function PhaserGame() {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
-  const sceneReady = useGameStore((s) => s.sceneReady);
 
   useEffect(() => {
     if (gameRef.current || !gameContainerRef.current) return;
@@ -42,10 +40,5 @@ export function PhaserGame() {
     };
   }, []);
 
-  return (
-    <div
-      ref={gameContainerRef}
-      className={`w-full h-full transition-opacity duration-300 ${sceneReady ? 'opacity-100' : 'opacity-0'}`}
-    />
-  );
+  return <div ref={gameContainerRef} className="w-full h-full" />;
 }

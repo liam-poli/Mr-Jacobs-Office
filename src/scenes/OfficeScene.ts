@@ -43,7 +43,7 @@ export class OfficeScene extends Phaser.Scene {
     // Spawn local player at center of room
     const startX = 12 * TILE_SIZE + TILE_SIZE / 2;
     const startY = 9 * TILE_SIZE + TILE_SIZE / 2;
-    this.player = new Player(this, startX, startY, 'player-0', 'MACRODATA 2', true);
+    this.player = new Player(this, startX, startY, 'player-0', 'PLAYER 1', true);
 
     // Player collides with walls
     this.physics.add.collider(this.player, this.wallGroup);
@@ -67,10 +67,18 @@ export class OfficeScene extends Phaser.Scene {
     // Clean up subscription when scene shuts down
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
 
-    // Wait a few frames so Phaser actually renders before the loading screen fades
-    this.time.delayedCall(150, () => {
-      useGameStore.getState().setSceneReady('OfficeScene');
-    });
+    // Wait for actual rendered frames + ScaleManager to settle before revealing.
+    // delayedCall fires during update (BEFORE render), so we use the game-level
+    // postrender event to guarantee the scene has actually been painted to canvas
+    // and the ScaleManager has finished its FIT + CENTER_BOTH adjustments.
+    const createTime = performance.now();
+    const onPostRender = () => {
+      if (performance.now() - createTime >= 400) {
+        this.game.events.off('postrender', onPostRender);
+        useGameStore.getState().setSceneReady('OfficeScene');
+      }
+    };
+    this.game.events.on('postrender', onPostRender);
   }
 
   private buildRoom() {

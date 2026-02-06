@@ -18,10 +18,10 @@
 - [ ] Objects display visual state indicators (locked icon, powered glow, etc.)
 
 ### 3. Player Movement
-- [ ] Player sprite with walk animation
-- [ ] Keyboard input (WASD / arrow keys)
-- [ ] Collision with walls and objects
-- [ ] Player faces direction of movement
+- [x] Player sprite with walk animation
+- [x] Keyboard input (WASD / arrow keys)
+- [x] Collision with walls and objects
+- [x] Player faces direction of movement
 
 ### 4. Items & Inventory
 - [ ] Items spawned in the room (on desks, shelves, floor)
