@@ -30,3 +30,4 @@ dist-ssr
 
 # Supabase local
 .supabase/
+supabase/.temp/
