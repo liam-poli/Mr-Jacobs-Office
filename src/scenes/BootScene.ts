@@ -36,6 +36,7 @@ export class BootScene extends Phaser.Scene {
     this.generateFallbackTextures();
     this.generateDeskTile();
     this.generateIndicatorTextures();
+    this.generateJacobsFaces();
     this.generatePromptTexture();
     this.createPlayerAnimations('player-0');
     this.scene.start('OfficeScene');
@@ -173,32 +174,236 @@ export class BootScene extends Phaser.Scene {
   }
 
   private generateIndicatorTextures() {
-    const S = 10; // indicator icon size
+    const S = 16; // indicator icon size
 
-    // Lock — yellow padlock
+    // Lock — yellow padlock with shackle
     const lock = this.add.graphics();
     lock.fillStyle(0xffd700, 1);
-    lock.fillRect(1, 4, 8, 6);
+    lock.fillRoundedRect(2, 7, 12, 8, 1);
+    lock.fillStyle(0xe6c200, 1);
+    lock.fillRect(3, 8, 10, 6);
     lock.lineStyle(2, 0xffd700, 1);
-    lock.strokeCircle(5, 4, 3);
+    lock.beginPath();
+    lock.arc(8, 7, 4, Math.PI, 0, false);
+    lock.strokePath();
+    lock.fillStyle(0x8b7500, 1);
+    lock.fillRect(7, 10, 2, 3);
     lock.generateTexture('indicator-lock', S, S);
     lock.destroy();
 
-    // Power — green lightning bolt
+    // Power — green lightning bolt with outline
     const power = this.add.graphics();
+    power.fillStyle(0x00cc66, 1);
+    power.fillTriangle(9, 0, 3, 7, 8, 7);
+    power.fillTriangle(7, 7, 13, 7, 6, 16);
     power.fillStyle(0x00ff88, 1);
-    power.fillTriangle(5, 0, 2, 5, 6, 5);
-    power.fillTriangle(4, 5, 8, 5, 5, 10);
+    power.fillTriangle(9, 1, 4, 7, 8, 7);
+    power.fillTriangle(7, 7, 12, 7, 7, 15);
     power.generateTexture('indicator-power', S, S);
     power.destroy();
 
-    // Broken — red X
+    // Broken — red X with thick outline
     const broken = this.add.graphics();
+    broken.lineStyle(3, 0xcc2222, 1);
+    broken.lineBetween(2, 2, 14, 14);
+    broken.lineBetween(14, 2, 2, 14);
     broken.lineStyle(2, 0xff4444, 1);
-    broken.lineBetween(1, 1, 9, 9);
-    broken.lineBetween(9, 1, 1, 9);
+    broken.lineBetween(2, 2, 14, 14);
+    broken.lineBetween(14, 2, 2, 14);
     broken.generateTexture('indicator-broken', S, S);
     broken.destroy();
+
+    // Burning — orange/yellow flame with layers
+    const burn = this.add.graphics();
+    burn.fillStyle(0xcc4400, 1);
+    burn.fillTriangle(8, 0, 1, 14, 15, 14);
+    burn.fillStyle(0xff8844, 1);
+    burn.fillTriangle(8, 2, 2, 14, 14, 14);
+    burn.fillStyle(0xffcc44, 1);
+    burn.fillTriangle(8, 5, 4, 14, 12, 14);
+    burn.fillStyle(0xffee88, 1);
+    burn.fillTriangle(8, 8, 6, 14, 10, 14);
+    burn.generateTexture('indicator-burning', S, S);
+    burn.destroy();
+
+    // Flooded — blue water droplet with highlight
+    const flood = this.add.graphics();
+    flood.fillStyle(0x4466aa, 1);
+    flood.fillTriangle(8, 1, 1, 10, 15, 10);
+    flood.fillCircle(8, 11, 7);
+    flood.fillStyle(0x6688cc, 1);
+    flood.fillTriangle(8, 2, 2, 10, 14, 10);
+    flood.fillCircle(8, 11, 6);
+    flood.fillStyle(0x88aaee, 0.5);
+    flood.fillCircle(6, 9, 2);
+    flood.generateTexture('indicator-flooded', S, S);
+    flood.destroy();
+
+    // Jammed — amber gear with teeth
+    const jam = this.add.graphics();
+    jam.fillStyle(0xccaa44, 1);
+    jam.fillCircle(8, 8, 6);
+    jam.fillRect(6, 1, 4, 3);
+    jam.fillRect(6, 12, 4, 3);
+    jam.fillRect(1, 6, 3, 4);
+    jam.fillRect(12, 6, 3, 4);
+    jam.fillStyle(0x8a7430, 1);
+    jam.fillCircle(8, 8, 3);
+    jam.fillStyle(0xccaa44, 1);
+    jam.fillCircle(8, 8, 1);
+    jam.generateTexture('indicator-jammed', S, S);
+    jam.destroy();
+
+    // Hacked — green terminal brackets with cursor
+    const hack = this.add.graphics();
+    hack.lineStyle(2, 0x22cc66, 1);
+    hack.lineBetween(1, 2, 5, 2);
+    hack.lineBetween(1, 2, 1, 14);
+    hack.lineBetween(1, 14, 5, 14);
+    hack.lineBetween(11, 2, 15, 2);
+    hack.lineBetween(15, 2, 15, 14);
+    hack.lineBetween(11, 14, 15, 14);
+    hack.fillStyle(0x44ff88, 1);
+    hack.fillRect(6, 7, 4, 2);
+    hack.generateTexture('indicator-hacked', S, S);
+    hack.destroy();
+
+    // Contaminated — purple hazard with exclamation
+    const contam = this.add.graphics();
+    contam.lineStyle(2, 0x7733aa, 1);
+    contam.strokeTriangle(8, 1, 1, 15, 15, 15);
+    contam.fillStyle(0xaa44cc, 1);
+    contam.fillTriangle(8, 3, 3, 14, 13, 14);
+    contam.fillStyle(0x220033, 1);
+    contam.fillRect(7, 6, 2, 4);
+    contam.fillRect(7, 11, 2, 2);
+    contam.generateTexture('indicator-contaminated', S, S);
+    contam.destroy();
+  }
+
+  private generateJacobsFaces() {
+    const S = TILE_SIZE;
+    const CX = S / 2;
+    const CY = S / 2;
+
+    // Helper: draw CRT screen background (dark border + dark interior)
+    const drawScreen = (g: Phaser.GameObjects.Graphics) => {
+      g.fillStyle(0x222222, 1);
+      g.fillRect(0, 0, S, S);
+      g.fillStyle(0x1a1a2e, 1);
+      g.fillRect(2, 2, S - 4, S - 4);
+    };
+
+    // ─── PLEASED ─────────────────────────────────────
+    const pleased = this.add.graphics();
+    drawScreen(pleased);
+    pleased.fillStyle(0xffdd44, 1);
+    pleased.fillCircle(CX, CY, 10);
+    pleased.fillStyle(0x222222, 1);
+    pleased.fillCircle(CX - 4, CY - 2, 2);
+    pleased.fillCircle(CX + 4, CY - 2, 2);
+    pleased.lineStyle(2, 0x222222, 1);
+    pleased.beginPath();
+    pleased.arc(CX, CY + 1, 5, 0.3, Math.PI - 0.3, false);
+    pleased.strokePath();
+    pleased.generateTexture('jacobs-face-PLEASED', S, S);
+    pleased.destroy();
+
+    // ─── NEUTRAL ─────────────────────────────────────
+    const neutral = this.add.graphics();
+    drawScreen(neutral);
+    neutral.fillStyle(0xffdd44, 1);
+    neutral.fillCircle(CX, CY, 10);
+    neutral.fillStyle(0x222222, 1);
+    neutral.fillCircle(CX - 4, CY - 2, 2);
+    neutral.fillCircle(CX + 4, CY - 2, 2);
+    neutral.lineStyle(2, 0x222222, 1);
+    neutral.lineBetween(CX - 4, CY + 4, CX + 4, CY + 4);
+    neutral.generateTexture('jacobs-face-NEUTRAL', S, S);
+    neutral.destroy();
+
+    // ─── SUSPICIOUS ──────────────────────────────────
+    const suspicious = this.add.graphics();
+    drawScreen(suspicious);
+    suspicious.fillStyle(0xffdd44, 1);
+    suspicious.fillCircle(CX, CY, 10);
+    suspicious.fillStyle(0x222222, 1);
+    // Narrowed eyes (thin rectangles)
+    suspicious.fillRect(CX - 6, CY - 3, 5, 2);
+    suspicious.fillRect(CX + 1, CY - 3, 5, 2);
+    // Slight frown
+    suspicious.lineStyle(2, 0x222222, 1);
+    suspicious.beginPath();
+    suspicious.arc(CX, CY + 8, 5, Math.PI + 0.4, -0.4, false);
+    suspicious.strokePath();
+    suspicious.generateTexture('jacobs-face-SUSPICIOUS', S, S);
+    suspicious.destroy();
+
+    // ─── DISAPPOINTED ────────────────────────────────
+    const disappointed = this.add.graphics();
+    drawScreen(disappointed);
+    disappointed.fillStyle(0xffdd44, 1);
+    disappointed.fillCircle(CX, CY, 10);
+    disappointed.fillStyle(0x222222, 1);
+    disappointed.fillCircle(CX - 4, CY - 2, 2);
+    disappointed.fillCircle(CX + 4, CY - 2, 2);
+    // Frown
+    disappointed.lineStyle(2, 0x222222, 1);
+    disappointed.beginPath();
+    disappointed.arc(CX, CY + 9, 5, Math.PI + 0.3, -0.3, false);
+    disappointed.strokePath();
+    // Glitch artifacts
+    disappointed.fillStyle(0xff0044, 0.6);
+    disappointed.fillRect(3, 24, 4, 2);
+    disappointed.fillStyle(0x00ffaa, 0.5);
+    disappointed.fillRect(22, 6, 5, 2);
+    disappointed.fillStyle(0xff0044, 0.4);
+    disappointed.fillRect(8, 28, 6, 1);
+    disappointed.generateTexture('jacobs-face-DISAPPOINTED', S, S);
+    disappointed.destroy();
+
+    // ─── UNHINGED ────────────────────────────────────
+    const unhinged = this.add.graphics();
+    drawScreen(unhinged);
+    // Distorted face (offset, double-exposed)
+    unhinged.fillStyle(0xffaa00, 0.5);
+    unhinged.fillCircle(CX - 1, CY + 1, 10);
+    unhinged.fillStyle(0xffdd44, 1);
+    unhinged.fillCircle(CX + 1, CY - 1, 10);
+    // Misaligned eyes (different sizes)
+    unhinged.fillStyle(0x222222, 1);
+    unhinged.fillCircle(CX - 5, CY - 3, 3);
+    unhinged.fillCircle(CX + 4, CY - 1, 1);
+    // Jagged mouth
+    unhinged.lineStyle(2, 0x222222, 1);
+    unhinged.beginPath();
+    unhinged.moveTo(CX - 6, CY + 3);
+    unhinged.lineTo(CX - 3, CY + 6);
+    unhinged.lineTo(CX, CY + 2);
+    unhinged.lineTo(CX + 3, CY + 6);
+    unhinged.lineTo(CX + 6, CY + 3);
+    unhinged.strokePath();
+    // Heavy corruption lines
+    unhinged.fillStyle(0xff0044, 0.8);
+    unhinged.fillRect(0, 22, S, 2);
+    unhinged.fillStyle(0x00ff88, 0.6);
+    unhinged.fillRect(0, 6, S, 1);
+    unhinged.fillStyle(0xff00ff, 0.5);
+    unhinged.fillRect(4, 28, 10, 2);
+    unhinged.fillRect(18, 2, 8, 2);
+    unhinged.generateTexture('jacobs-face-UNHINGED', S, S);
+    unhinged.destroy();
+
+    // ─── STATIC OVERLAY ──────────────────────────────
+    const staticG = this.add.graphics();
+    for (let y = 0; y < S; y += 2) {
+      for (let x = 0; x < S; x += 2) {
+        staticG.fillStyle(0xffffff, Math.random() * 0.3);
+        staticG.fillRect(x, y, 2, 2);
+      }
+    }
+    staticG.generateTexture('jacobs-static', S, S);
+    staticG.destroy();
   }
 
   private generatePromptTexture() {

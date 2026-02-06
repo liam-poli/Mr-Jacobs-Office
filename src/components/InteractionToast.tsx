@@ -72,7 +72,7 @@ export function InteractionToast() {
 
   return (
     <div
-      className="absolute bottom-36 left-1/2 -translate-x-1/2 z-20 max-w-md"
+      className="absolute bottom-36 left-1/2 -translate-x-1/2 z-20 w-[420px]"
       style={{ fontFamily: 'var(--font-hud)' }}
     >
       <div
@@ -89,18 +89,25 @@ export function InteractionToast() {
             <LoadingDots />
           </>
         ) : (
-          <>
-            <span style={{ color: 'var(--color-hud-accent)' }}>&gt; </span>
-            {displayText}
-            <span
-              style={{
-                opacity: showCursor ? 1 : 0,
-                color: 'var(--color-hud-accent)',
-              }}
-            >
-              _
+          <div className="relative">
+            {/* Invisible full text to reserve the final box height */}
+            <span className="invisible" aria-hidden="true">
+              &gt; {fullText}_
             </span>
-          </>
+            {/* Visible typewriter text layered on top */}
+            <div className="absolute inset-0">
+              <span style={{ color: 'var(--color-hud-accent)' }}>&gt; </span>
+              {displayText}
+              <span
+                style={{
+                  opacity: showCursor ? 1 : 0,
+                  color: 'var(--color-hud-accent)',
+                }}
+              >
+                _
+              </span>
+            </div>
+          </div>
         )}
       </div>
     </div>

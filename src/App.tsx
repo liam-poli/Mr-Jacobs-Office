@@ -8,6 +8,7 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { InteractionPrompt } from './components/InteractionPrompt';
 import { InteractionMenu } from './components/InteractionMenu';
 import { InteractionToast } from './components/InteractionToast';
+import { JacobsSpeech } from './components/JacobsSpeech';
 import { useSettingsStore } from './stores/settingsStore';
 import { useGameStore } from './stores/gameStore';
 import { AdminPanel } from './pages/AdminPanel';
@@ -37,6 +38,7 @@ function Game() {
       <InteractionPrompt />
       <InteractionMenu />
       <InteractionToast />
+      <JacobsSpeech />
       <InventoryBar />
       <SettingsMenu />
       <LoadingScreen />

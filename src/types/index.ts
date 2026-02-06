@@ -11,3 +11,12 @@ export type {
   InteractionResult,
   GameState,
 } from './game';
+
+export type {
+  JacobsMood,
+  JacobsEventType,
+  JacobsEvent,
+  JacobsEffect,
+  JacobsReaction,
+  JacobsState,
+} from './jacobs';

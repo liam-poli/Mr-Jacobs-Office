@@ -57,4 +57,5 @@ export function checkRateLimit(
 export const RATE_LIMITS = {
   interact: { maxRequests: 60, windowMs: 60_000 },
   sprite: { maxRequests: 20, windowMs: 60_000 },
+  jacobsReact: { maxRequests: 10, windowMs: 60_000 },
 };

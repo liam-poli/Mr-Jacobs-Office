@@ -1,0 +1,98 @@
+import { useEffect, useState, useRef } from 'react';
+import { useJacobsStore } from '../stores/jacobsStore';
+
+const CHAR_DELAY = 40;
+const DISMISS_DELAY = 5000;
+
+export function JacobsSpeech() {
+  const speech = useJacobsStore((s) => s.currentSpeech);
+  const mood = useJacobsStore((s) => s.mood);
+  const setSpeech = useJacobsStore((s) => s.setSpeech);
+  const faceUrl = useJacobsStore((s) => s.faceDataUrls[s.mood]);
+
+  const [displayText, setDisplayText] = useState('');
+  const [showCursor, setShowCursor] = useState(true);
+  const fullText = speech ?? '';
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Typewriter effect
+  useEffect(() => {
+    if (!fullText) {
+      setDisplayText('');
+      return;
+    }
+    setDisplayText('');
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      setDisplayText(fullText.slice(0, i));
+      if (i >= fullText.length) clearInterval(interval);
+    }, CHAR_DELAY);
+    return () => clearInterval(interval);
+  }, [fullText]);
+
+  // Blinking cursor
+  useEffect(() => {
+    if (!speech) return;
+    const interval = setInterval(() => setShowCursor((c) => !c), 500);
+    return () => clearInterval(interval);
+  }, [speech]);
+
+  // Auto-dismiss after typing finishes
+  useEffect(() => {
+    if (!fullText || displayText.length < fullText.length) return;
+    timerRef.current = setTimeout(() => setSpeech(null), DISMISS_DELAY);
+    return () => clearTimeout(timerRef.current);
+  }, [displayText, fullText, setSpeech]);
+
+  if (!speech) return null;
+
+  const moodColor =
+    mood === 'UNHINGED' || mood === 'DISAPPOINTED'
+      ? 'var(--color-hud-danger)'
+      : 'var(--color-hud-accent)';
+
+  return (
+    <div
+      className="absolute top-24 left-1/2 -translate-x-1/2 z-30 w-[420px]"
+      style={{ fontFamily: 'var(--font-hud)' }}
+    >
+      <div
+        className="border rounded-md px-5 py-3 text-[13px] flex items-start gap-3"
+        style={{
+          backgroundColor: 'var(--color-hud-bg)',
+          borderColor: moodColor,
+          color: 'var(--color-hud-text)',
+        }}
+      >
+        <div className="shrink-0 flex flex-col items-center gap-1">
+          {faceUrl && (
+            <img
+              src={faceUrl}
+              alt="Mr. Jacobs"
+              className="w-8 h-8 rounded-sm"
+              style={{ imageRendering: 'pixelated', borderColor: moodColor, borderWidth: 1 }}
+            />
+          )}
+          <span className="text-[9px]" style={{ color: moodColor }}>
+            JACOBS
+          </span>
+        </div>
+        <div className="min-w-0 flex-1 relative">
+          {/* Invisible full text to reserve the final box height */}
+          <span className="invisible" aria-hidden="true">
+            &gt; {fullText}_
+          </span>
+          {/* Visible typewriter text layered on top */}
+          <div className="absolute inset-0">
+            <span style={{ color: moodColor }}>&gt; </span>
+            {displayText}
+            <span style={{ opacity: showCursor ? 1 : 0, color: moodColor }}>
+              _
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { useGameStore } from '../stores/gameStore';
+import { useJacobsStore } from '../stores/jacobsStore';
 import { soundService } from '../services/soundService';
 import { resolveInteraction } from '../services/interactionService';
 import type { InteractionTarget, InventoryItem } from '../types';
@@ -118,9 +119,16 @@ export class InteractionManager {
 
     // Check for items dropped from inventory (React → Phaser bridge)
     if (store.pendingDrop) {
-      this.spawnDroppedItem(store.pendingDrop);
+      const dropped = store.pendingDrop;
+      this.spawnDroppedItem(dropped);
       store.clearPendingDrop();
       soundService.playSfx('drop');
+      useJacobsStore.getState().logEvent({
+        type: 'DROP',
+        timestamp: Date.now(),
+        player: 'PLAYER 1',
+        details: { itemName: dropped.name },
+      });
     }
 
     // Consume pending interaction from menu (React → Phaser bridge)
@@ -222,6 +230,12 @@ export class InteractionManager {
       spriteUrl: def.spriteUrl,
     });
     soundService.playSfx('pickup');
+    useJacobsStore.getState().logEvent({
+      type: 'PICKUP',
+      timestamp: Date.now(),
+      player: 'PLAYER 1',
+      details: { itemName: def.name, itemTags: def.tags },
+    });
 
     // Remove from world
     const sprite = this.itemSprites.get(target.id);
@@ -273,6 +287,12 @@ export class InteractionManager {
         const newStates = [result.result_state];
         objDef.states = newStates;
         store.updateObjectState(target.id, newStates);
+        useJacobsStore.getState().logEvent({
+          type: 'STATE_CHANGE',
+          timestamp: Date.now(),
+          player: 'PLAYER 1',
+          details: { objectName: objDef.name, objectId: target.id, newState: result.result_state },
+        });
       }
 
       // Spawn output item if the result provides one
@@ -295,6 +315,19 @@ export class InteractionManager {
 
       // Show result description
       store.setInteractionResult({ description: result.description });
+
+      // Log interaction for Mr. Jacobs
+      useJacobsStore.getState().logEvent({
+        type: 'INTERACTION',
+        timestamp: Date.now(),
+        player: 'PLAYER 1',
+        details: {
+          objectName: objDef.name,
+          itemName,
+          resultState: result.result_state,
+          description: result.description,
+        },
+      });
     } catch (err) {
       console.error('Interaction failed:', err);
       soundService.playSfx('error');
