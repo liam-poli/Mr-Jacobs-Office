@@ -21,7 +21,7 @@ export const useGameStore = create<GameState>((set) => ({
     set((s) => ({
       objectStates: {
         ...s.objectStates,
-        [objectId]: { ...s.objectStates[objectId], states },
+        [objectId]: { ...{ tags: [] }, ...s.objectStates[objectId], states },
       },
     })),
 }));

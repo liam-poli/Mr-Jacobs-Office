@@ -67,7 +67,10 @@ export class OfficeScene extends Phaser.Scene {
     // Clean up subscription when scene shuts down
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
 
-    useGameStore.getState().setSceneReady('OfficeScene');
+    // Wait a few frames so Phaser actually renders before the loading screen fades
+    this.time.delayedCall(150, () => {
+      useGameStore.getState().setSceneReady('OfficeScene');
+    });
   }
 
   private buildRoom() {

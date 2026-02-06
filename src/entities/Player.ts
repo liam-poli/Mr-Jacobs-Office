@@ -10,6 +10,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private nameLabel: Phaser.GameObjects.Image;
   private inputManager: InputManager | null = null;
   private texturePrefix: string;
+  private postUpdateHandler: () => void;
 
   constructor(
     scene: Phaser.Scene,
@@ -32,19 +33,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setOffset(16, 32);
     body.setCollideWorldBounds(true);
 
-    // Render label text to a texture, then display as Image (benefits from roundPixels)
+    // Render label at 2x so it's 1:1 screen pixels after camera zoom (avoids NEAREST blur)
+    const LABEL_SCALE = 2;
     const labelKey = `label-${textureKey}`;
     const tempText = scene.add.text(0, 0, playerName, {
       fontFamily: '"Courier New", monospace',
-      fontSize: '10px',
+      fontSize: `${10 * LABEL_SCALE}px`,
       color: '#ffffff',
       backgroundColor: '#1a1a2ecc',
-      padding: { x: 3, y: 1 },
-      resolution: 2,
+      padding: { x: 3 * LABEL_SCALE, y: 1 * LABEL_SCALE },
     });
     tempText.setOrigin(0.5, 1);
 
-    // Snapshot text to a texture, then destroy the Text object
     const tw = Math.ceil(tempText.width);
     const th = Math.ceil(tempText.height);
     const rt = scene.add.renderTexture(0, 0, tw, th);
@@ -53,22 +53,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     rt.destroy();
     tempText.destroy();
 
-    // Use an Image for the label — goes through WebGL sprite pipeline, roundPixels works
     this.nameLabel = scene.add.image(x, y - 24, labelKey);
     this.nameLabel.setOrigin(0.5, 1);
+    this.nameLabel.setScale(1 / LABEL_SCALE);
     this.nameLabel.setDepth(100);
 
     if (isLocal) {
       this.inputManager = new InputManager(scene);
     }
 
+    // Sync label AFTER physics resolves — no manual rounding; camera roundPixels
+    // handles both sprite and label identically so they always shift together.
+    this.postUpdateHandler = () => {
+      this.nameLabel.setPosition(this.x, this.y - 24);
+    };
+    scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.postUpdateHandler, this);
+
     this.play(`${this.texturePrefix}-idle-down`);
   }
 
   update(): void {
-    // Label position tracks sprite — roundPixels handles sub-pixel snapping automatically
-    this.nameLabel.setPosition(this.x, this.y - 24);
-
     if (!this.inputManager) return;
 
     const { velocity, direction } = this.inputManager.getMovement(PLAYER_SPEED);
@@ -93,6 +97,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   destroy(fromScene?: boolean): void {
+    this.scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.postUpdateHandler, this);
     this.nameLabel.destroy();
     super.destroy(fromScene);
   }

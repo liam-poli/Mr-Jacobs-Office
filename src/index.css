@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+@theme {
+  --color-hud-bg: rgba(0, 0, 0, 0.82);
+  --color-hud-border: #3a7c6a;
+  --color-hud-text: #c8e6d0;
+  --color-hud-accent: #5ee6b0;
+  --color-hud-dim: #537791;
+  --color-hud-danger: #e94560;
+  --font-hud: "Courier New", "Courier", monospace;
+}
