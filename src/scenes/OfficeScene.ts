@@ -246,6 +246,7 @@ export class OfficeScene extends Phaser.Scene {
       // Register with interaction manager (created below, so defer)
       this.events.once('interaction-ready', () => {
         this.interactionManager.registerObject(obj.id, sprite, {
+          object_id: obj.object_id,
           name: obj.name,
           tags: obj.tags,
           states: obj.states,

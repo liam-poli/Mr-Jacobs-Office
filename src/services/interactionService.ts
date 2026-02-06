@@ -2,6 +2,8 @@ import { supabase } from './supabase';
 import type { InteractionResult } from '../types/game';
 
 interface InteractionParams {
+  itemId: string | null;
+  objectId: string;
   itemTags: string[];
   objectTags: string[];
   objectState: string | null;
@@ -24,6 +26,8 @@ export async function resolveInteraction(
   try {
     const { data, error } = await supabase.functions.invoke('interact', {
       body: {
+        item_id: params.itemId,
+        object_id: params.objectId,
         item_tags: params.itemTags,
         object_tags: params.objectTags,
         object_state: params.objectState,

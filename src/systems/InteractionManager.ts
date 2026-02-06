@@ -16,6 +16,7 @@ interface ItemMeta {
 }
 
 interface ObjectMeta {
+  object_id: string;
   name: string;
   tags: string[];
   states: string[];
@@ -270,6 +271,8 @@ export class InteractionManager {
       const objectState = objDef.states[0] ?? null;
 
       const result = await resolveInteraction({
+        itemId: item ? item.item_id : null,
+        objectId: objDef.object_id,
         itemTags,
         objectTags: objDef.tags,
         objectState,
