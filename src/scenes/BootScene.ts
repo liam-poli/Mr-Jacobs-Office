@@ -32,6 +32,9 @@ export class BootScene extends Phaser.Scene {
   create() {
     this.generateFloorTile();
     this.generateWallTile();
+    this.generateItemTextures();
+    this.generateObjectTextures();
+    this.generatePromptTexture();
     this.createPlayerAnimations('player-0');
     this.scene.start('OfficeScene');
   }
@@ -73,6 +76,50 @@ export class BootScene extends Phaser.Scene {
         repeat: -1,
       });
     }
+  }
+
+  private generateItemTextures() {
+    const items: Array<{ key: string; color: number }> = [
+      { key: 'item-coffee-mug', color: 0x8b4513 },
+      { key: 'item-wrench', color: 0x708090 },
+      { key: 'item-bucket', color: 0x4169e1 },
+      { key: 'item-matches', color: 0xff4500 },
+    ];
+    for (const { key, color } of items) {
+      const g = this.add.graphics();
+      g.fillStyle(color, 1);
+      g.fillRect(0, 0, 16, 16);
+      g.lineStyle(1, 0xffffff, 0.4);
+      g.strokeRect(0, 0, 16, 16);
+      g.generateTexture(key, 16, 16);
+      g.destroy();
+    }
+  }
+
+  private generateObjectTextures() {
+    const objects: Array<{ key: string; color: number }> = [
+      { key: 'obj-coffee-maker', color: 0x2f4f4f },
+      { key: 'obj-filing-cabinet', color: 0x696969 },
+      { key: 'obj-desk', color: 0x8b7355 },
+    ];
+    for (const { key, color } of objects) {
+      const g = this.add.graphics();
+      g.fillStyle(color, 1);
+      g.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
+      g.lineStyle(1, 0xffffff, 0.3);
+      g.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
+      g.generateTexture(key, TILE_SIZE, TILE_SIZE);
+      g.destroy();
+    }
+  }
+
+  private generatePromptTexture() {
+    // Small downward-pointing triangle as interaction indicator
+    const g = this.add.graphics();
+    g.fillStyle(0x5ee6b0, 1);
+    g.fillTriangle(4, 0, 0, 8, 8, 8);
+    g.generateTexture('prompt-e', 8, 8);
+    g.destroy();
   }
 
   private generateFloorTile() {

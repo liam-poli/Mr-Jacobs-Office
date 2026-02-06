@@ -15,6 +15,13 @@ export interface ObjectState {
   states: string[];
 }
 
+/** What the player is currently close enough to interact with */
+export interface InteractionTarget {
+  type: 'item' | 'object';
+  id: string;
+  name: string;
+}
+
 /** Complete game state interface for the Zustand store. */
 export interface GameState {
   // Scene lifecycle
@@ -37,4 +44,10 @@ export interface GameState {
   // World objects
   objectStates: Record<string, ObjectState>;
   updateObjectState: (objectId: string, states: string[]) => void;
+
+  // Interaction
+  interactionTarget: InteractionTarget | null;
+  setInteractionTarget: (target: InteractionTarget | null) => void;
+  selectedInventoryIndex: number | null;
+  setSelectedInventoryIndex: (index: number | null) => void;
 }

@@ -24,4 +24,10 @@ export const useGameStore = create<GameState>((set) => ({
         [objectId]: { ...{ tags: [] }, ...s.objectStates[objectId], states },
       },
     })),
+
+  interactionTarget: null,
+  setInteractionTarget: (target) => set({ interactionTarget: target }),
+
+  selectedInventoryIndex: null,
+  setSelectedInventoryIndex: (index) => set({ selectedInventoryIndex: index }),
 }));

@@ -1,12 +1,15 @@
+import { Routes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
 import { PhaserGame } from './components/PhaserGame';
 import { HUD } from './components/HUD';
 import { InventoryBar } from './components/InventoryBar';
 import { SettingsMenu } from './components/SettingsMenu';
 import { LoadingScreen } from './components/LoadingScreen';
+import { InteractionPrompt } from './components/InteractionPrompt';
 import { useSettingsStore } from './stores/settingsStore';
+import { AdminPanel } from './pages/AdminPanel';
 
-export function App() {
+function Game() {
   const menuOpen = useSettingsStore((s) => s.menuOpen);
   const toggleMenu = useSettingsStore((s) => s.toggleMenu);
 
@@ -26,9 +29,19 @@ export function App() {
         <PhaserGame />
       </div>
       <HUD />
+      <InteractionPrompt />
       <InventoryBar />
       <SettingsMenu />
       <LoadingScreen />
     </div>
+  );
+}
+
+export function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Game />} />
+      <Route path="/admin" element={<AdminPanel />} />
+    </Routes>
   );
 }

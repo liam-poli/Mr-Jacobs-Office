@@ -1,3 +1,4 @@
+import { Settings } from 'lucide-react';
 import { useGameStore } from '../stores/gameStore';
 import { useSettingsStore } from '../stores/settingsStore';
 
@@ -49,7 +50,7 @@ export function HUD() {
         }}
         title="Settings"
       >
-        [=]
+        <Settings size={16} />
       </button>
     </div>
   );
