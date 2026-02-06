@@ -130,7 +130,7 @@ async function resolveObjects(placements: ObjectPlacement[]): Promise<ResolvedOb
   return resolved;
 }
 
-/** Fetch a room from Supabase by ID, name, or just the first available. Falls back to DEFAULT_ROOM on failure. */
+/** Fetch a room from Supabase by ID, name, or the active room. Falls back to DEFAULT_ROOM on failure. */
 export async function fetchRoom(opts?: { id?: string; name?: string }): Promise<RoomDef> {
   try {
     let query = supabase.from('rooms').select('*');
@@ -139,9 +139,11 @@ export async function fetchRoom(opts?: { id?: string; name?: string }): Promise<
       query = query.eq('id', opts.id);
     } else if (opts?.name) {
       query = query.eq('name', opts.name);
+    } else {
+      // No filter: prefer the active room, fall back to first available
+      query = query.order('is_active', { ascending: false });
     }
 
-    // .limit(1).single() works whether filtering or fetching first available
     const { data, error } = await query.limit(1).single();
 
     if (error || !data) {

@@ -17,6 +17,7 @@ interface Room {
   tile_map: number[][];
   object_placements: Placement[];
   item_spawns: Placement[];
+  is_active: boolean;
 }
 
 interface CatalogItem {
@@ -536,6 +537,13 @@ export function RoomsTab() {
     fetchRooms();
   }
 
+  async function setActiveRoom(id: string) {
+    // Deactivate all, then activate the selected one
+    await supabase.from('rooms').update({ is_active: false }).neq('id', id);
+    await supabase.from('rooms').update({ is_active: true }).eq('id', id);
+    fetchRooms();
+  }
+
   async function handleDelete(id: string) {
     await supabase.from('rooms').delete().eq('id', id);
     fetchRooms();
@@ -674,15 +682,18 @@ export function RoomsTab() {
 
       <div className="grid grid-cols-2 gap-3">
         {rooms.map((room) => (
-          <div key={room.id} className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
+          <div key={room.id} className={`bg-white rounded-lg border p-3 flex flex-col ${room.is_active ? 'border-green-400 ring-1 ring-green-200' : 'border-gray-200'}`}>
             <div className="flex items-start justify-between mb-2">
               <div>
-                <input
-                  className="font-semibold text-gray-800 text-sm bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none w-full"
-                  defaultValue={room.name}
-                  onBlur={(e) => { if (e.target.value !== room.name) renameRoom(room.id, e.target.value); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                />
+                <div className="flex items-center gap-1.5">
+                  <input
+                    className="font-semibold text-gray-800 text-sm bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none"
+                    defaultValue={room.name}
+                    onBlur={(e) => { if (e.target.value !== room.name) renameRoom(room.id, e.target.value); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                  />
+                  {room.is_active && <span className="text-[9px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">ACTIVE</span>}
+                </div>
                 <p className="text-[10px] text-gray-500">{room.width} x {room.height} tiles</p>
               </div>
               <button onClick={() => handleDelete(room.id)} className="text-red-400 text-[10px] hover:underline">Delete</button>
@@ -691,12 +702,22 @@ export function RoomsTab() {
               <RoomPreview room={room} />
             </div>
             <div className="mt-auto flex flex-col gap-1.5 items-center">
-              <button
-                onClick={() => setEditRoom(room)}
-                className="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors cursor-pointer"
-              >
-                Edit Room
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditRoom(room)}
+                  className="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors cursor-pointer"
+                >
+                  Edit Room
+                </button>
+                {!room.is_active && (
+                  <button
+                    onClick={() => setActiveRoom(room.id)}
+                    className="px-4 py-2 rounded-md bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors cursor-pointer"
+                  >
+                    Set Active
+                  </button>
+                )}
+              </div>
               <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
                 <span>{room.object_placements.length} objects &middot; {room.item_spawns.length} items</span>
                 <span>&middot;</span>
