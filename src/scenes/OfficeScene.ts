@@ -3,6 +3,7 @@ import { Player } from '../entities/Player';
 import { InteractionManager } from '../systems/InteractionManager';
 import { fetchRoom } from '../services/roomService';
 import { fetchItemsByIds } from '../services/itemService';
+import { soundService } from '../services/soundService';
 import type { RoomDef, GameState, ItemSpawn } from '../types/game';
 
 // Server item IDs to fetch from Supabase
@@ -43,7 +44,6 @@ export class OfficeScene extends Phaser.Scene {
   private player!: Player;
   private wallGroup!: Phaser.Physics.Arcade.StaticGroup;
   private objectGroup!: Phaser.Physics.Arcade.StaticGroup;
-  private furnitureGroup!: Phaser.Physics.Arcade.StaticGroup;
   private interactionManager!: InteractionManager;
   private objectVisuals = new Map<string, ObjectVisual>();
   private unsubscribe?: () => void;
@@ -65,9 +65,6 @@ export class OfficeScene extends Phaser.Scene {
     // Build the room from the tile map
     this.buildRoom(roomDef);
 
-    // Place furniture (desks, plants, screen)
-    this.placeFurniture(roomDef);
-
     // Spawn local player at center of room
     const startX = Math.floor(roomDef.width / 2) * TILE_SIZE + TILE_SIZE / 2;
     const startY = Math.floor(roomDef.height / 2) * TILE_SIZE + TILE_SIZE / 2;
@@ -75,7 +72,6 @@ export class OfficeScene extends Phaser.Scene {
 
     // Collisions
     this.physics.add.collider(this.player, this.wallGroup);
-    this.physics.add.collider(this.player, this.furnitureGroup);
 
     // Merge server items into room item spawns
     const allItems: RoomDef = {
@@ -112,6 +108,10 @@ export class OfficeScene extends Phaser.Scene {
     // Clean up subscription when scene shuts down
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
 
+    // Initialize sound system and start ambient music
+    soundService.init();
+    soundService.playMusic('ambient-office');
+
     // Wait for actual rendered frames + ScaleManager to settle before revealing.
     const createTime = performance.now();
     const onPostRender = () => {
@@ -136,30 +136,19 @@ export class OfficeScene extends Phaser.Scene {
           this.add.image(x, y, 'floor-tile');
         } else if (tile === 2) {
           this.add.image(x, y, 'carpet-tile');
+        } else if (tile === 3) {
+          // Desk: floor underneath + desk sprite with depth sorting + collision
+          this.add.image(x, y, 'floor-tile');
+          this.add.image(x, y, 'desk-tile').setDepth(y);
+          const wall = this.wallGroup.create(x, y, 'desk-tile') as Phaser.Physics.Arcade.Sprite;
+          wall.setVisible(false);
+          wall.refreshBody();
         } else {
           this.add.image(x, y, 'wall-tile');
           const wall = this.wallGroup.create(x, y, 'wall-tile') as Phaser.Physics.Arcade.Sprite;
           wall.setVisible(false);
           wall.refreshBody();
         }
-      }
-    }
-  }
-
-  private placeFurniture(roomDef: RoomDef) {
-    this.furnitureGroup = this.physics.add.staticGroup();
-
-    for (const furn of roomDef.furniture) {
-      const px = furn.tileX * TILE_SIZE + TILE_SIZE / 2;
-      const py = furn.tileY * TILE_SIZE + TILE_SIZE / 2;
-
-      const sprite = this.add.image(px, py, furn.textureKey);
-      sprite.setDepth(py);
-
-      if (furn.hasCollision) {
-        const body = this.furnitureGroup.create(px, py, furn.textureKey) as Phaser.Physics.Arcade.Sprite;
-        body.setVisible(false);
-        body.refreshBody();
       }
     }
   }
@@ -336,6 +325,7 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private cleanup() {
+    soundService.stopMusic();
     this.unsubscribe?.();
     this.interactionManager.destroy();
     for (const visual of this.objectVisuals.values()) {

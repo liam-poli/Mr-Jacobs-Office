@@ -1,6 +1,7 @@
 import { Settings } from 'lucide-react';
 import { useGameStore } from '../stores/gameStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { soundService } from '../services/soundService';
 
 export function HUD() {
   const bucks = useGameStore((s) => s.bucks);
@@ -31,7 +32,7 @@ export function HUD() {
 
       {/* Gear icon */}
       <button
-        onClick={toggleMenu}
+        onClick={() => { soundService.playSfx('ui-click'); toggleMenu(); }}
         className="border rounded-md px-3 py-3 text-hud-dim hover:text-hud-accent hover:border-hud-accent transition-colors cursor-pointer"
         style={{
           backgroundColor: 'var(--color-hud-bg)',

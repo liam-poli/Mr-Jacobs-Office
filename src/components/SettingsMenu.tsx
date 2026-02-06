@@ -1,4 +1,5 @@
 import { useSettingsStore } from '../stores/settingsStore';
+import { soundService } from '../services/soundService';
 
 function ToggleRow({
   label,
@@ -13,7 +14,7 @@ function ToggleRow({
     <div className="flex items-center justify-between py-3">
       <span className="text-hud-accent text-[16px]">{label}</span>
       <button
-        onClick={onToggle}
+        onClick={() => { soundService.playSfx('ui-click'); onToggle(); }}
         className="min-w-20 px-4 py-2 border rounded text-[14px] transition-colors cursor-pointer"
         style={{
           borderColor: enabled
@@ -55,7 +56,7 @@ export function SettingsMenu() {
     <div
       className="absolute inset-0 z-50 flex items-center justify-center"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
-      onClick={() => setMenuOpen(false)}
+      onClick={() => { soundService.playSfx('ui-click'); setMenuOpen(false); }}
     >
       <div
         className="relative w-80 border rounded-md p-8"
@@ -68,7 +69,7 @@ export function SettingsMenu() {
       >
         {/* Close button */}
         <button
-          onClick={() => setMenuOpen(false)}
+          onClick={() => { soundService.playSfx('ui-click'); setMenuOpen(false); }}
           className="absolute top-3 right-4 text-hud-dim hover:text-hud-accent text-[16px] cursor-pointer transition-colors"
         >
           [X]
@@ -90,7 +91,7 @@ export function SettingsMenu() {
 
         {/* Fullscreen */}
         <button
-          onClick={handleFullscreen}
+          onClick={() => { soundService.playSfx('ui-click'); handleFullscreen(); }}
           className="w-full py-3 border rounded text-[14px] text-hud-accent hover:text-hud-accent hover:border-hud-accent transition-colors cursor-pointer"
           style={{
             borderColor: 'var(--color-hud-border)',

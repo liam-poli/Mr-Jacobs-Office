@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '../stores/gameStore';
+import { soundService } from '../services/soundService';
 
 const SLOT_COUNT = 5;
 
@@ -24,7 +25,6 @@ export function InventoryBar() {
   if (!sceneReady) return null;
 
   const nearObject = interactionTarget?.type === 'object';
-  const hoveredItem = hoveredIndex !== null ? inventory[hoveredIndex] : null;
 
   return (
     <div
@@ -60,10 +60,11 @@ export function InventoryBar() {
                     ? 'rgba(233, 69, 96, 0.15)'
                     : 'rgba(0, 0, 0, 0.4)',
                 }}
-                onMouseEnter={() => item && setHoveredIndex(i)}
+                onMouseEnter={() => { if (item) { setHoveredIndex(i); soundService.playSfx('ui-hover'); } }}
                 onMouseLeave={() => setHoveredIndex(null)}
                 onClick={() => {
                   if (!item) return;
+                  soundService.playSfx('ui-click');
                   if (nearObject) {
                     setSelectedIndex(isSelected ? null : i);
                   } else {

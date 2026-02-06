@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { InputManager } from '../systems/InputManager';
+import { soundService } from '../services/soundService';
 import type { Direction } from '../types';
 
 const PLAYER_SPEED = 160;
@@ -11,6 +12,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private inputManager: InputManager | null = null;
   private texturePrefix: string;
   private postUpdateHandler: () => void;
+  private footstepCooldown = 0;
+  private static readonly FOOTSTEP_INTERVAL = 300;
 
   constructor(
     scene: Phaser.Scene,
@@ -85,6 +88,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.currentDirection = direction;
         this.isMoving = true;
         this.play(`${this.texturePrefix}-walk-${direction}`, true);
+      }
+
+      const now = performance.now();
+      if (now - this.footstepCooldown > Player.FOOTSTEP_INTERVAL) {
+        this.footstepCooldown = now;
+        soundService.playSfx('footstep');
       }
     } else if (this.isMoving) {
       this.isMoving = false;

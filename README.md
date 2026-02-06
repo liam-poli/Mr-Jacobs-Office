@@ -34,6 +34,10 @@ npm run dev
 npx supabase start
 ```
 
+## Credits
+
+- Sound effects from [freesound.org](https://freesound.org)
+
 ## License
 
 MIT

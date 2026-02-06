@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { useGameStore } from '../stores/gameStore';
+import { soundService } from '../services/soundService';
 import type { InteractionTarget, InventoryItem } from '../types';
 
 const INTERACT_RADIUS = 40;
@@ -114,6 +115,7 @@ export class InteractionManager {
     if (pendingDrop) {
       this.spawnDroppedItem(pendingDrop);
       clearPendingDrop();
+      soundService.playSfx('drop');
     }
 
     const nearest = this.findNearest();
@@ -189,8 +191,10 @@ export class InteractionManager {
     const store = useGameStore.getState();
 
     if (target.type === 'item') {
-      // Inventory full — silently block
-      if (store.inventory.length >= 5) return;
+      if (store.inventory.length >= 5) {
+        soundService.playSfx('error');
+        return;
+      }
 
       const def = this.itemDefs.get(target.id)!;
       store.addItem({
@@ -200,6 +204,7 @@ export class InteractionManager {
         textureKey: def.textureKey,
         imageUrl: def.imageUrl,
       });
+      soundService.playSfx('pickup');
 
       // Remove from world
       const sprite = this.itemSprites.get(target.id);
@@ -229,10 +234,12 @@ export class InteractionManager {
         store.removeItem(item.id);
         store.setSelectedInventoryIndex(null);
         store.updateObjectState(target.id, [...objDef.states, 'INTERACTED']);
+        soundService.playSfx('interact');
       } else {
         // Bare-handed interaction
         const objDef = this.objectDefs.get(target.id)!;
         console.log(`Interacted with ${objDef.name} (no item)`);
+        soundService.playSfx('interact');
       }
     }
   }
