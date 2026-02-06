@@ -12,10 +12,11 @@
 - [x] Folder structure and basic routing
 
 ### 2. The Room
-- [ ] Single room tilemap (top-down/isometric) with walls, floor, furniture
-- [ ] Objects placed in the room (Coffee Maker, Filing Cabinet, Door, Terminal, Vending Machine)
-- [ ] Each object has Tags and an initial State
-- [ ] Objects display visual state indicators (locked icon, powered glow, etc.)
+- [x] Room definitions stored in Supabase `rooms` table (layout, objects, items, furniture)
+- [x] OfficeScene loads room from DB with fallback to DEFAULT_ROOM
+- [x] Objects placed from DB catalog with tags and initial state
+- [x] Procedural textures for furniture, state indicators (lock, power, broken)
+- [ ] Objects display visual state indicators polished (sparks, glow, puddles)
 
 ### 3. Player Movement
 - [x] Player sprite with walk animation
@@ -24,19 +25,23 @@
 - [x] Player faces direction of movement
 
 ### 4. Items & Inventory
-- [x] Items spawned in the room (on desks, shelves, floor)
-- [x] Player walks near item → pickup prompt
-- [x] Items added to inventory (3–4 slots)
-- [x] React inventory UI overlay (shows held items with their tags)
+- [x] Item definitions stored in Supabase `items` table (name, tags, sprite)
+- [x] AI-generated sprites for items via Replicate Flux 2 Pro + rembg
+- [ ] Items spawned in room at runtime from catalog (placed on desks, shelves, floor)
+- [ ] Player walks near item → pickup prompt
+- [ ] Items added to inventory (3–4 slots)
+- [ ] React inventory UI overlay (shows held items with their tags)
+- [ ] Drop item back to world
 
 ### 5. Object Interactions
 - [ ] Player walks near object → interact prompt
 - [ ] "Use item on object" action (select item from inventory, apply to object)
-- [ ] Tag-matching logic resolves outcome (cached lookup table)
+- [ ] Hash-based interaction cache (`interactions` table, see `docs/plans/interaction-engine.md`)
+- [ ] `interact` edge function: hash lookup → instant on cache hit, AI fallback on miss → store result
 - [ ] Object state updates visually (e.g., LOCKED → UNLOCKED, POWERED → BROKEN)
 - [ ] New item created from interaction goes to inventory (e.g., Knife + Coffee Bag → Coffee Grounds)
 - [ ] Item consumed on use
-- [ ] AI fallback for interactions not in the cache (edge cases)
+- [ ] Seed 8–10 common interactions so game works without AI calls
 
 ### 6. Mr. Jacobs — Bit-Screen
 - [ ] Bit-screen object on the wall displaying Mr. Jacobs' face
@@ -58,14 +63,17 @@
 - [ ] Bucks deducted on terminal use
 
 ### 9. Admin Panel
-- [ ] Separate `/admin` route (React page, not in-game)
-- [x] Live view of all objects — current tags, states
-- [] Live view of all items — where they are (world, inventory, consumed)
+- [x] Separate `/admin` route with password gate
+- [x] Tags tab — full CRUD for tags (name, category badges)
+- [x] Objects tab — full CRUD for object definitions (name, tags, state, sprite preview + AI generation)
+- [x] Items tab — full CRUD for item definitions (name, tags, sprite preview + AI generation)
+- [x] Rooms tab — view room definitions from Supabase
+- [ ] Interactions tab — CRUD for cached interaction results (see `docs/plans/interaction-engine.md`)
 - [ ] Player overview — state, inventory, Bucks, job, quota progress
 - [ ] Mr. Jacobs status — current mood, per-player attention levels
-- [ ] Interaction log — feed of every item-on-object and item-on-player action with results
+- [ ] Interaction log — live feed of item-on-object and item-on-player actions
 - [ ] Terminal log — history of all player ↔ Mr. Jacobs conversations
-- [ ] Manual overrides — change object states, give/remove items, adjust Bucks, shift Mr. Jacobs' mood (dev tools)
+- [ ] Manual overrides — change object states, give/remove items, adjust Bucks, shift Mr. Jacobs' mood
 
 ---
 
@@ -81,9 +89,11 @@
 - [ ] Session end states: escape, fired, or clock runs out (everyone loses)
 
 ### 11. Multiple Rooms
-- [ ] 3–4 preloaded room layouts (Break Room, Server Room, Supply Closet, Boss's Office)
+- [x] Room definitions stored in Supabase `rooms` table (name, width, height, objects, items)
+- [x] Admin RoomsTab for viewing/managing room definitions
+- [ ] 3–4 room layouts created (Break Room, Server Room, Supply Closet, Boss's Office)
 - [ ] Rooms connected by doors/hallways — player moves between them
-- [ ] Each room type spawns appropriate objects and items
+- [ ] Each room type spawns objects and items from catalog at runtime
 - [ ] Camera placement per room — some fully watched, some blind spots
 - [ ] Camera indicators visible to the player
 
@@ -137,7 +147,8 @@
 **Goal:** Make it look and feel great. Replace bots with real players if time allows. Record the demo.
 
 ### 18. Multiplayer (Stretch)
-- [ ] Supabase Realtime — sync player positions, actions, and world state
+- [ ] Supabase Realtime broadcasts for player positions and actions
+- [ ] Zustand stores sync runtime state (not direct DB writes for every move)
 - [ ] Replace AI bots with real player connections
 - [ ] Handle player join/leave
 - [ ] Proximity-based communication (local chat or emotes)

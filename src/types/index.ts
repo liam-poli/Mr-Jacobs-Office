@@ -4,7 +4,6 @@ export type {
   ObjectState,
   ObjectPlacement,
   ItemSpawn,
-  FurniturePlacement,
   RoomDef,
   InteractionTarget,
   GameState,

@@ -38,14 +38,6 @@ export interface ItemSpawn {
   imageUrl?: string;
 }
 
-/** A piece of furniture (non-interactive) placed in a room */
-export interface FurniturePlacement {
-  textureKey: string;
-  tileX: number;
-  tileY: number;
-  hasCollision: boolean;
-}
-
 /** Full room definition — loaded from Supabase or fallback */
 export interface RoomDef {
   name: string;
@@ -54,7 +46,6 @@ export interface RoomDef {
   tileMap: number[][];
   objectPlacements: ObjectPlacement[];
   itemSpawns: ItemSpawn[];
-  furniture: FurniturePlacement[];
 }
 
 /** What the player is currently close enough to interact with */

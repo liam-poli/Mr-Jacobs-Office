@@ -4,7 +4,6 @@ import { supabase } from '../../services/supabase';
 interface Placement {
   tileX: number;
   tileY: number;
-  hasCollision?: boolean;
   [key: string]: unknown;
 }
 
@@ -16,13 +15,13 @@ interface Room {
   tile_map: number[][];
   object_placements: Placement[];
   item_spawns: Placement[];
-  furniture: Placement[];
 }
 
 const TILE_COLORS: Record<number, string> = {
   0: '#B8D4C8', // floor
   1: '#D4CAB8', // wall
   2: '#5C6B7A', // carpet
+  3: '#6B5040', // desk
 };
 
 const PX = 4; // pixels per tile in preview
@@ -41,18 +40,12 @@ function RoomPreview({ room }: { room: Room }) {
     canvas.width = w;
     canvas.height = h;
 
-    // Draw tile map
+    // Draw tile map (includes desks as tile type 3)
     for (let row = 0; row < room.tile_map.length; row++) {
       for (let col = 0; col < room.tile_map[row].length; col++) {
         ctx.fillStyle = TILE_COLORS[room.tile_map[row][col]] ?? TILE_COLORS[0];
         ctx.fillRect(col * PX, row * PX, PX, PX);
       }
-    }
-
-    // Draw furniture
-    for (const f of room.furniture) {
-      ctx.fillStyle = f.hasCollision ? '#6B5040' : '#3A7A30';
-      ctx.fillRect(f.tileX * PX + 1, f.tileY * PX + 1, PX - 1, PX - 1);
     }
 
     // Draw objects (red dots)
@@ -85,7 +78,7 @@ export function RoomsTab() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [jsonField, setJsonField] = useState<'object_placements' | 'item_spawns' | 'furniture' | 'tile_map' | null>(null);
+  const [jsonField, setJsonField] = useState<'object_placements' | 'item_spawns' | 'tile_map' | null>(null);
   const [jsonValue, setJsonValue] = useState('');
   const [jsonError, setJsonError] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -117,7 +110,6 @@ export function RoomsTab() {
       tile_map: tileMap,
       object_placements: [],
       item_spawns: [],
-      furniture: [],
     });
     setForm({ name: '', width: 25, height: 18 });
     setShowForm(false);
@@ -231,8 +223,7 @@ export function RoomsTab() {
       <div className="flex gap-4 text-[10px] text-gray-500 mb-3">
         <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-red-500" /> Objects</span>
         <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-amber-500" /> Items</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm" style={{ backgroundColor: '#6B5040' }} /> Desks</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm" style={{ backgroundColor: '#3A7A30' }} /> Plants</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm" style={{ backgroundColor: '#6B5040' }} /> Desks (tile 3)</span>
       </div>
 
       <div className="space-y-3">
@@ -251,12 +242,11 @@ export function RoomsTab() {
                 <div className="flex gap-3 mt-2 text-xs">
                   <span className="text-blue-600">{room.object_placements.length} objects</span>
                   <span className="text-green-600">{room.item_spawns.length} items</span>
-                  <span className="text-amber-600">{room.furniture.length} furniture</span>
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {(['tile_map', 'object_placements', 'item_spawns', 'furniture'] as const).map((field) => {
+            <div className="grid grid-cols-3 gap-2">
+              {(['tile_map', 'object_placements', 'item_spawns'] as const).map((field) => {
                 const count = field === 'tile_map'
                   ? `${room.tile_map.length} rows`
                   : `${(room[field] as unknown[]).length} items`;

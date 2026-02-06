@@ -35,7 +35,7 @@ export class BootScene extends Phaser.Scene {
     this.generateCarpetTile();
     this.generateItemTextures();
     this.generateObjectTextures();
-    this.generateFurnitureTextures();
+    this.generateDeskTile();
     this.generateIndicatorTextures();
     this.generatePromptTexture();
     this.createPlayerAnimations('player-0');
@@ -107,6 +107,7 @@ export class BootScene extends Phaser.Scene {
       { key: 'obj-door', color: 0x8b6914 },
       { key: 'obj-terminal', color: 0x1a3a2a },
       { key: 'obj-vending-machine', color: 0x3a1a5a },
+      { key: 'obj-jacobs-screen', color: 0x0a0a14 },
     ];
     for (const { key, color } of objects) {
       const g = this.add.graphics();
@@ -156,8 +157,7 @@ export class BootScene extends Phaser.Scene {
     g.destroy();
   }
 
-  private generateFurnitureTextures() {
-    // Desk — warm brown with highlight edge
+  private generateDeskTile() {
     const desk = this.add.graphics();
     desk.fillStyle(0x6b5040, 1);
     desk.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
@@ -165,10 +165,10 @@ export class BootScene extends Phaser.Scene {
     desk.fillRect(2, 2, TILE_SIZE - 4, TILE_SIZE - 4);
     desk.lineStyle(1, 0x4a3828, 0.8);
     desk.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
-    desk.generateTexture('furn-desk', TILE_SIZE, TILE_SIZE);
+    desk.generateTexture('desk-tile', TILE_SIZE, TILE_SIZE);
     desk.destroy();
 
-    // Plant — green circle on transparent
+    // Plant object — green circle with pot
     const plant = this.add.graphics();
     plant.fillStyle(0x2d5a27, 1);
     plant.fillCircle(16, 16, 10);
@@ -176,22 +176,10 @@ export class BootScene extends Phaser.Scene {
     plant.fillCircle(14, 14, 7);
     plant.fillStyle(0x4a9a40, 0.6);
     plant.fillCircle(12, 12, 4);
-    // Pot
     plant.fillStyle(0x8b5e3c, 1);
     plant.fillRect(10, 22, 12, 8);
-    plant.generateTexture('furn-plant', TILE_SIZE, TILE_SIZE);
+    plant.generateTexture('obj-plant', TILE_SIZE, TILE_SIZE);
     plant.destroy();
-
-    // Jacobs' screen — dark monitor with glowing edge
-    const screen = this.add.graphics();
-    screen.fillStyle(0x0a0a14, 1);
-    screen.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-    screen.fillStyle(0x1a2a20, 1);
-    screen.fillRect(3, 3, TILE_SIZE - 6, TILE_SIZE - 6);
-    screen.lineStyle(1, 0x5ee6b0, 0.6);
-    screen.strokeRect(2, 2, TILE_SIZE - 4, TILE_SIZE - 4);
-    screen.generateTexture('furn-jacobs-screen', TILE_SIZE, TILE_SIZE);
-    screen.destroy();
   }
 
   private generateIndicatorTextures() {
