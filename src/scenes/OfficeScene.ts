@@ -211,11 +211,10 @@ export class OfficeScene extends Phaser.Scene {
       const sprite = this.add.image(px, py, textureKey);
       sprite.setDepth(py);
 
-      // Scale large textures to fit 32px
+      // Normalize sprite to 1-tile size, then apply catalog scale multiplier
       const frame = sprite.frame;
-      if (frame.width > TILE_SIZE || frame.height > TILE_SIZE) {
-        sprite.setScale(TILE_SIZE / Math.max(frame.width, frame.height));
-      }
+      const baseScale = TILE_SIZE / Math.max(frame.width, frame.height);
+      sprite.setScale(baseScale * obj.scale);
 
       // Invisible collision body
       const collider = this.objectGroup.create(px, py, 'obj-default') as Phaser.Physics.Arcade.Sprite;

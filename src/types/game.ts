@@ -49,6 +49,7 @@ export interface ResolvedObject {
   tags: string[];
   states: string[];
   spriteUrl?: string;
+  scale: number;
   tileX: number;
   tileY: number;
 }

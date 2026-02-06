@@ -99,7 +99,7 @@ async function resolveObjects(placements: ObjectPlacement[]): Promise<ResolvedOb
   const ids = [...new Set(placements.map((p) => p.object_id))];
   const { data, error } = await supabase
     .from('objects')
-    .select('id, name, tags, state, sprite_url')
+    .select('id, name, tags, state, sprite_url, scale')
     .in('id', ids);
 
   if (error || !data) {
@@ -123,6 +123,7 @@ async function resolveObjects(placements: ObjectPlacement[]): Promise<ResolvedOb
       tags: entry.tags as string[],
       states: [entry.state as string],
       spriteUrl: (entry.sprite_url as string) || undefined,
+      scale: (entry.scale as number) ?? 1.0,
       tileX: placement.tileX,
       tileY: placement.tileY,
     });

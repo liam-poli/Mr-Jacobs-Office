@@ -1,6 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../services/supabase';
 import { SpritePreview } from './SpritePreview';
+
+async function uploadSprite(type: 'object' | 'item', id: string, file: File): Promise<string> {
+  const filePath = `${type}/${id}.png`;
+  const { error } = await supabase.storage
+    .from('sprites')
+    .upload(filePath, file, { contentType: file.type, upsert: true });
+  if (error) throw error;
+  const { data } = supabase.storage.from('sprites').getPublicUrl(filePath);
+  return `${data.publicUrl}?v=${Date.now()}`;
+}
 
 async function generateSpriteForItem(item: Item) {
   const { data, error } = await supabase.functions.invoke('generate-sprite', {
@@ -31,6 +41,9 @@ export function ItemsTab() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', tags: [] as string[], sprite_url: '' });
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadTargetId = useRef<string | null>(null);
 
   async function fetchData() {
     const [itemsRes, tagsRes] = await Promise.all([
@@ -98,6 +111,29 @@ export function ItemsTab() {
     }
   }
 
+  function triggerUpload(id: string) {
+    uploadTargetId.current = id;
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    const id = uploadTargetId.current;
+    if (!file || !id) return;
+    e.target.value = '';
+    setUploadingId(id);
+    try {
+      const url = await uploadSprite('item', id, file);
+      await supabase.from('items').update({ sprite_url: url }).eq('id', id);
+      fetchData();
+    } catch (err) {
+      console.error('Sprite upload failed:', err);
+      alert('Sprite upload failed. Check console for details.');
+    } finally {
+      setUploadingId(null);
+    }
+  }
+
   if (loading) return <p className="text-gray-500 text-sm">Loading...</p>;
 
   return (
@@ -160,6 +196,8 @@ export function ItemsTab() {
         </form>
       )}
 
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelected} />
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {items.map((item) => (
           <div key={item.id} className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
@@ -183,9 +221,16 @@ export function ItemsTab() {
               <button onClick={() => startEdit(item)} className="text-blue-600 hover:underline">Edit</button>
               <button onClick={() => handleDelete(item.id)} className="text-red-500 hover:underline">Delete</button>
               <button
+                onClick={() => triggerUpload(item.id)}
+                disabled={uploadingId === item.id}
+                className="ml-auto text-teal-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
+              >
+                {uploadingId === item.id ? 'Uploading...' : 'Upload'}
+              </button>
+              <button
                 onClick={() => handleGenerate(item)}
                 disabled={generatingId === item.id}
-                className="ml-auto text-purple-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
+                className="text-purple-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
               >
                 {generatingId === item.id ? 'Generating...' : item.sprite_url ? 'Regen' : 'Generate'}
               </button>

@@ -1,6 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../services/supabase';
 import { SpritePreview } from './SpritePreview';
+
+async function uploadSprite(type: 'object' | 'item', id: string, file: File): Promise<string> {
+  const filePath = `${type}/${id}.png`;
+  const { error } = await supabase.storage
+    .from('sprites')
+    .upload(filePath, file, { contentType: file.type, upsert: true });
+  if (error) throw error;
+  const { data } = supabase.storage.from('sprites').getPublicUrl(filePath);
+  return `${data.publicUrl}?v=${Date.now()}`;
+}
 
 async function generateSpriteForEntity(entity: GameObject) {
   const { data, error } = await supabase.functions.invoke('generate-sprite', {
@@ -16,6 +26,7 @@ interface GameObject {
   tags: string[];
   state: string;
   sprite_url: string | null;
+  scale: number;
   metadata: Record<string, unknown>;
 }
 
@@ -33,8 +44,11 @@ export function ObjectsTab() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', tags: [] as string[], state: 'UNLOCKED', sprite_url: '' });
+  const [form, setForm] = useState({ name: '', tags: [] as string[], state: 'UNLOCKED', sprite_url: '', scale: 1.0 });
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadTargetId = useRef<string | null>(null);
 
   async function fetchData() {
     const [objectsRes, tagsRes] = await Promise.all([
@@ -49,7 +63,7 @@ export function ObjectsTab() {
   useEffect(() => { fetchData(); }, []);
 
   function resetForm() {
-    setForm({ name: '', tags: [], state: 'UNLOCKED', sprite_url: '' });
+    setForm({ name: '', tags: [], state: 'UNLOCKED', sprite_url: '', scale: 1.0 });
     setShowForm(false);
     setEditingId(null);
   }
@@ -68,6 +82,7 @@ export function ObjectsTab() {
       tags: form.tags,
       state: form.state,
       sprite_url: form.sprite_url || null,
+      scale: form.scale,
     };
 
     if (editingId) {
@@ -85,7 +100,7 @@ export function ObjectsTab() {
   }
 
   function startEdit(obj: GameObject) {
-    setForm({ name: obj.name, tags: obj.tags, state: obj.state, sprite_url: obj.sprite_url ?? '' });
+    setForm({ name: obj.name, tags: obj.tags, state: obj.state, sprite_url: obj.sprite_url ?? '', scale: obj.scale ?? 1.0 });
     setEditingId(obj.id);
     setShowForm(true);
   }
@@ -100,6 +115,29 @@ export function ObjectsTab() {
       alert('Sprite generation failed. Check console for details.');
     } finally {
       setGeneratingId(null);
+    }
+  }
+
+  function triggerUpload(id: string) {
+    uploadTargetId.current = id;
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    const id = uploadTargetId.current;
+    if (!file || !id) return;
+    e.target.value = '';
+    setUploadingId(id);
+    try {
+      const url = await uploadSprite('object', id, file);
+      await supabase.from('objects').update({ sprite_url: url }).eq('id', id);
+      fetchData();
+    } catch (err) {
+      console.error('Sprite upload failed:', err);
+      alert('Sprite upload failed. Check console for details.');
+    } finally {
+      setUploadingId(null);
     }
   }
 
@@ -140,6 +178,18 @@ export function ObjectsTab() {
                 {OBJECT_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
+            <div className="w-20">
+              <label className="block text-xs font-medium text-gray-500 mb-1">Scale</label>
+              <input
+                type="number"
+                value={form.scale}
+                onChange={(e) => setForm({ ...form, scale: parseFloat(e.target.value) || 1.0 })}
+                min={0.1}
+                max={10}
+                step={0.1}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              />
+            </div>
             <div className="flex-1">
               <label className="block text-xs font-medium text-gray-500 mb-1">Sprite URL</label>
               <input
@@ -175,6 +225,8 @@ export function ObjectsTab() {
         </form>
       )}
 
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelected} />
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {objects.map((obj) => (
           <div key={obj.id} className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
@@ -187,14 +239,21 @@ export function ObjectsTab() {
             )}
             <div className="flex items-start justify-between mb-1">
               <h3 className="font-semibold text-gray-800 text-sm leading-tight">{obj.name}</h3>
-              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ml-1 ${
-                obj.state === 'BROKEN' ? 'bg-red-100 text-red-700' :
-                obj.state === 'POWERED' ? 'bg-green-100 text-green-700' :
-                obj.state === 'LOCKED' ? 'bg-yellow-100 text-yellow-700' :
-                'bg-gray-100 text-gray-600'
-              }`}>
-                {obj.state}
-              </span>
+              <div className="flex gap-1 shrink-0 ml-1">
+                {obj.scale !== 1.0 && (
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-50 text-purple-600">
+                    {obj.scale}x
+                  </span>
+                )}
+                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                  obj.state === 'BROKEN' ? 'bg-red-100 text-red-700' :
+                  obj.state === 'POWERED' ? 'bg-green-100 text-green-700' :
+                  obj.state === 'LOCKED' ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-gray-100 text-gray-600'
+                }`}>
+                  {obj.state}
+                </span>
+              </div>
             </div>
             <div className="flex flex-wrap gap-1 mb-2">
               {obj.tags.map((tag) => (
@@ -208,9 +267,16 @@ export function ObjectsTab() {
               <button onClick={() => startEdit(obj)} className="text-blue-600 hover:underline">Edit</button>
               <button onClick={() => handleDelete(obj.id)} className="text-red-500 hover:underline">Delete</button>
               <button
+                onClick={() => triggerUpload(obj.id)}
+                disabled={uploadingId === obj.id}
+                className="ml-auto text-teal-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
+              >
+                {uploadingId === obj.id ? 'Uploading...' : 'Upload'}
+              </button>
+              <button
                 onClick={() => handleGenerate(obj)}
                 disabled={generatingId === obj.id}
-                className="ml-auto text-purple-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
+                className="text-purple-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
               >
                 {generatingId === obj.id ? 'Generating...' : obj.sprite_url ? 'Regen' : 'Generate'}
               </button>
