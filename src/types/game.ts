@@ -7,12 +7,54 @@ export interface InventoryItem {
   name: string;
   tags: string[];
   textureKey: string;
+  imageUrl?: string;
 }
 
 /** Mutable world object state. Tags are permanent, states are mutable. */
 export interface ObjectState {
   tags: string[];
   states: string[];
+}
+
+/** An interactive object placed in a room */
+export interface ObjectPlacement {
+  id: string;
+  name: string;
+  tags: string[];
+  states: string[];
+  textureKey: string;
+  tileX: number;
+  tileY: number;
+}
+
+/** An item spawned on the floor in a room */
+export interface ItemSpawn {
+  id: string;
+  name: string;
+  tags: string[];
+  textureKey: string;
+  tileX: number;
+  tileY: number;
+  imageUrl?: string;
+}
+
+/** A piece of furniture (non-interactive) placed in a room */
+export interface FurniturePlacement {
+  textureKey: string;
+  tileX: number;
+  tileY: number;
+  hasCollision: boolean;
+}
+
+/** Full room definition — loaded from Supabase or fallback */
+export interface RoomDef {
+  name: string;
+  width: number;
+  height: number;
+  tileMap: number[][];
+  objectPlacements: ObjectPlacement[];
+  itemSpawns: ItemSpawn[];
+  furniture: FurniturePlacement[];
 }
 
 /** What the player is currently close enough to interact with */
@@ -50,4 +92,9 @@ export interface GameState {
   setInteractionTarget: (target: InteractionTarget | null) => void;
   selectedInventoryIndex: number | null;
   setSelectedInventoryIndex: (index: number | null) => void;
+
+  // Drop item back into world (React → Phaser bridge)
+  pendingDrop: InventoryItem | null;
+  dropItem: (index: number) => void;
+  clearPendingDrop: () => void;
 }

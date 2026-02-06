@@ -32,8 +32,11 @@ export class BootScene extends Phaser.Scene {
   create() {
     this.generateFloorTile();
     this.generateWallTile();
+    this.generateCarpetTile();
     this.generateItemTextures();
     this.generateObjectTextures();
+    this.generateFurnitureTextures();
+    this.generateIndicatorTextures();
     this.generatePromptTexture();
     this.createPlayerAnimations('player-0');
     this.scene.start('OfficeScene');
@@ -101,6 +104,9 @@ export class BootScene extends Phaser.Scene {
       { key: 'obj-coffee-maker', color: 0x2f4f4f },
       { key: 'obj-filing-cabinet', color: 0x696969 },
       { key: 'obj-desk', color: 0x8b7355 },
+      { key: 'obj-door', color: 0x8b6914 },
+      { key: 'obj-terminal', color: 0x1a3a2a },
+      { key: 'obj-vending-machine', color: 0x3a1a5a },
     ];
     for (const { key, color } of objects) {
       const g = this.add.graphics();
@@ -111,15 +117,6 @@ export class BootScene extends Phaser.Scene {
       g.generateTexture(key, TILE_SIZE, TILE_SIZE);
       g.destroy();
     }
-  }
-
-  private generatePromptTexture() {
-    // Small downward-pointing triangle as interaction indicator
-    const g = this.add.graphics();
-    g.fillStyle(0x5ee6b0, 1);
-    g.fillTriangle(4, 0, 0, 8, 8, 8);
-    g.generateTexture('prompt-e', 8, 8);
-    g.destroy();
   }
 
   private generateFloorTile() {
@@ -142,5 +139,111 @@ export class BootScene extends Phaser.Scene {
     g.lineBetween(1, 1, TILE_SIZE - 1, 1);
     g.generateTexture('wall-tile', TILE_SIZE, TILE_SIZE);
     g.destroy();
+  }
+
+  private generateCarpetTile() {
+    const g = this.add.graphics();
+    g.fillStyle(0x5c6b7a, 1);
+    g.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
+    // Subtle striped texture
+    g.fillStyle(0x526170, 0.3);
+    for (let i = 0; i < TILE_SIZE; i += 4) {
+      g.fillRect(i, 0, 2, TILE_SIZE);
+    }
+    g.lineStyle(1, 0x4a5a68, 0.5);
+    g.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
+    g.generateTexture('carpet-tile', TILE_SIZE, TILE_SIZE);
+    g.destroy();
+  }
+
+  private generateFurnitureTextures() {
+    // Desk — warm brown with highlight edge
+    const desk = this.add.graphics();
+    desk.fillStyle(0x6b5040, 1);
+    desk.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
+    desk.fillStyle(0x7d6050, 1);
+    desk.fillRect(2, 2, TILE_SIZE - 4, TILE_SIZE - 4);
+    desk.lineStyle(1, 0x4a3828, 0.8);
+    desk.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
+    desk.generateTexture('furn-desk', TILE_SIZE, TILE_SIZE);
+    desk.destroy();
+
+    // Plant — green circle on transparent
+    const plant = this.add.graphics();
+    plant.fillStyle(0x2d5a27, 1);
+    plant.fillCircle(16, 16, 10);
+    plant.fillStyle(0x3a7a30, 1);
+    plant.fillCircle(14, 14, 7);
+    plant.fillStyle(0x4a9a40, 0.6);
+    plant.fillCircle(12, 12, 4);
+    // Pot
+    plant.fillStyle(0x8b5e3c, 1);
+    plant.fillRect(10, 22, 12, 8);
+    plant.generateTexture('furn-plant', TILE_SIZE, TILE_SIZE);
+    plant.destroy();
+
+    // Jacobs' screen — dark monitor with glowing edge
+    const screen = this.add.graphics();
+    screen.fillStyle(0x0a0a14, 1);
+    screen.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
+    screen.fillStyle(0x1a2a20, 1);
+    screen.fillRect(3, 3, TILE_SIZE - 6, TILE_SIZE - 6);
+    screen.lineStyle(1, 0x5ee6b0, 0.6);
+    screen.strokeRect(2, 2, TILE_SIZE - 4, TILE_SIZE - 4);
+    screen.generateTexture('furn-jacobs-screen', TILE_SIZE, TILE_SIZE);
+    screen.destroy();
+  }
+
+  private generateIndicatorTextures() {
+    const S = 10; // indicator icon size
+
+    // Lock — yellow padlock
+    const lock = this.add.graphics();
+    lock.fillStyle(0xffd700, 1);
+    lock.fillRect(1, 4, 8, 6);
+    lock.lineStyle(2, 0xffd700, 1);
+    lock.strokeCircle(5, 4, 3);
+    lock.generateTexture('indicator-lock', S, S);
+    lock.destroy();
+
+    // Power — green lightning bolt
+    const power = this.add.graphics();
+    power.fillStyle(0x00ff88, 1);
+    power.fillTriangle(5, 0, 2, 5, 6, 5);
+    power.fillTriangle(4, 5, 8, 5, 5, 10);
+    power.generateTexture('indicator-power', S, S);
+    power.destroy();
+
+    // Broken — red X
+    const broken = this.add.graphics();
+    broken.lineStyle(2, 0xff4444, 1);
+    broken.lineBetween(1, 1, 9, 9);
+    broken.lineBetween(9, 1, 1, 9);
+    broken.generateTexture('indicator-broken', S, S);
+    broken.destroy();
+  }
+
+  private generatePromptTexture() {
+    // "E" key prompt — small rounded box with letter
+    const g = this.add.graphics();
+    g.fillStyle(0x1a1a2e, 0.9);
+    g.fillRoundedRect(0, 0, 14, 14, 3);
+    g.lineStyle(1, 0x5ee6b0, 0.8);
+    g.strokeRoundedRect(0, 0, 14, 14, 3);
+    g.generateTexture('prompt-e-bg', 14, 14);
+    g.destroy();
+
+    // Create text label "E"
+    const txt = this.add.text(0, 0, 'E', {
+      fontFamily: '"Courier New", monospace',
+      fontSize: '10px',
+      color: '#5ee6b0',
+    });
+    txt.setOrigin(0.5, 0.5);
+    const rt = this.add.renderTexture(0, 0, 14, 14);
+    rt.draw(txt, 7, 7);
+    rt.saveTexture('prompt-e');
+    rt.destroy();
+    txt.destroy();
   }
 }

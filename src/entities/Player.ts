@@ -57,6 +57,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.nameLabel.setOrigin(0.5, 1);
     this.nameLabel.setScale(1 / LABEL_SCALE);
     this.nameLabel.setDepth(100);
+    this.nameLabel.setVisible(false);
 
     if (isLocal) {
       this.inputManager = new InputManager(scene);

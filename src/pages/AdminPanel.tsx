@@ -4,10 +4,11 @@ import { TagsTab } from '../components/admin/TagsTab';
 import { ObjectsTab } from '../components/admin/ObjectsTab';
 import { ItemsTab } from '../components/admin/ItemsTab';
 import { InteractionsTab } from '../components/admin/InteractionsTab';
+import { RoomsTab } from '../components/admin/RoomsTab';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'jacobs';
 
-const TABS = ['Overview', 'Tags', 'Objects', 'Items', 'Interactions'] as const;
+const TABS = ['Overview', 'Tags', 'Objects', 'Items', 'Interactions', 'Rooms'] as const;
 type Tab = (typeof TABS)[number];
 
 export function AdminPanel() {
@@ -85,6 +86,7 @@ export function AdminPanel() {
         {activeTab === 'Objects' && <ObjectsTab />}
         {activeTab === 'Items' && <ItemsTab />}
         {activeTab === 'Interactions' && <InteractionsTab />}
+        {activeTab === 'Rooms' && <RoomsTab />}
       </main>
     </div>
   );

@@ -1,1 +1,11 @@
-export type { Direction, InventoryItem, ObjectState, InteractionTarget, GameState } from './game';
+export type {
+  Direction,
+  InventoryItem,
+  ObjectState,
+  ObjectPlacement,
+  ItemSpawn,
+  FurniturePlacement,
+  RoomDef,
+  InteractionTarget,
+  GameState,
+} from './game';

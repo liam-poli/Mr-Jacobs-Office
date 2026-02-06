@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../services/supabase';
+import { SpritePreview } from './SpritePreview';
+
+async function generateSpriteForItem(item: Item) {
+  const { data, error } = await supabase.functions.invoke('generate-sprite', {
+    body: { type: 'item', id: item.id, name: item.name, tags: item.tags },
+  });
+  if (error) throw error;
+  return data.sprite_url as string;
+}
 
 interface Item {
   id: string;
@@ -21,6 +30,7 @@ export function ItemsTab() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', tags: [] as string[], sprite_url: '' });
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
 
   async function fetchData() {
     const [itemsRes, tagsRes] = await Promise.all([
@@ -73,6 +83,19 @@ export function ItemsTab() {
     setForm({ name: item.name, tags: item.tags, sprite_url: item.sprite_url ?? '' });
     setEditingId(item.id);
     setShowForm(true);
+  }
+
+  async function handleGenerate(item: Item) {
+    setGeneratingId(item.id);
+    try {
+      await generateSpriteForItem(item);
+      fetchData();
+    } catch (err) {
+      console.error('Sprite generation failed:', err);
+      alert('Sprite generation failed. Check console for details.');
+    } finally {
+      setGeneratingId(null);
+    }
   }
 
   if (loading) return <p className="text-gray-500 text-sm">Loading...</p>;
@@ -137,24 +160,35 @@ export function ItemsTab() {
         </form>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {items.map((item) => (
-          <div key={item.id} className="bg-white rounded-lg border border-gray-200 p-4">
-            <h3 className="font-semibold text-gray-800 mb-2">{item.name}</h3>
-            <div className="flex flex-wrap gap-1 mb-3">
+          <div key={item.id} className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
+            {item.sprite_url ? (
+              <SpritePreview src={item.sprite_url} alt={item.name} />
+            ) : (
+              <div className="mb-2 flex justify-center bg-gray-50 rounded p-2 aspect-square items-center">
+                <span className="text-gray-300 text-xs">No sprite</span>
+              </div>
+            )}
+            <h3 className="font-semibold text-gray-800 text-sm leading-tight mb-1">{item.name}</h3>
+            <div className="flex flex-wrap gap-1 mb-2">
               {item.tags.map((tag) => (
-                <span key={tag} className="bg-green-50 text-green-700 text-xs px-2 py-0.5 rounded font-mono">
+                <span key={tag} className="bg-green-50 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-mono">
                   {tag}
                 </span>
               ))}
-              {item.tags.length === 0 && <span className="text-gray-400 text-xs">No tags</span>}
+              {item.tags.length === 0 && <span className="text-gray-400 text-[10px]">No tags</span>}
             </div>
-            {item.sprite_url && (
-              <p className="text-xs text-gray-400 truncate mb-2">{item.sprite_url}</p>
-            )}
-            <div className="flex gap-2 text-xs">
+            <div className="flex gap-2 text-xs mt-auto">
               <button onClick={() => startEdit(item)} className="text-blue-600 hover:underline">Edit</button>
               <button onClick={() => handleDelete(item.id)} className="text-red-500 hover:underline">Delete</button>
+              <button
+                onClick={() => handleGenerate(item)}
+                disabled={generatingId === item.id}
+                className="ml-auto text-purple-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
+              >
+                {generatingId === item.id ? 'Generating...' : item.sprite_url ? 'Regen' : 'Generate'}
+              </button>
             </div>
           </div>
         ))}

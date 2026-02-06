@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../services/supabase';
+import { SpritePreview } from './SpritePreview';
+
+async function generateSpriteForEntity(entity: GameObject) {
+  const { data, error } = await supabase.functions.invoke('generate-sprite', {
+    body: { type: 'object', id: entity.id, name: entity.name, tags: entity.tags, state: entity.state },
+  });
+  if (error) throw error;
+  return data.sprite_url as string;
+}
 
 interface GameObject {
   id: string;
@@ -25,6 +34,7 @@ export function ObjectsTab() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', tags: [] as string[], state: 'UNLOCKED', sprite_url: '' });
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
 
   async function fetchData() {
     const [objectsRes, tagsRes] = await Promise.all([
@@ -78,6 +88,19 @@ export function ObjectsTab() {
     setForm({ name: obj.name, tags: obj.tags, state: obj.state, sprite_url: obj.sprite_url ?? '' });
     setEditingId(obj.id);
     setShowForm(true);
+  }
+
+  async function handleGenerate(obj: GameObject) {
+    setGeneratingId(obj.id);
+    try {
+      await generateSpriteForEntity(obj);
+      fetchData();
+    } catch (err) {
+      console.error('Sprite generation failed:', err);
+      alert('Sprite generation failed. Check console for details.');
+    } finally {
+      setGeneratingId(null);
+    }
   }
 
   if (loading) return <p className="text-gray-500 text-sm">Loading...</p>;
@@ -152,12 +175,19 @@ export function ObjectsTab() {
         </form>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {objects.map((obj) => (
-          <div key={obj.id} className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-gray-800">{obj.name}</h3>
-              <span className={`text-xs font-mono px-2 py-0.5 rounded ${
+          <div key={obj.id} className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
+            {obj.sprite_url ? (
+              <SpritePreview src={obj.sprite_url} alt={obj.name} />
+            ) : (
+              <div className="mb-2 flex justify-center bg-gray-50 rounded p-2 aspect-square items-center">
+                <span className="text-gray-300 text-xs">No sprite</span>
+              </div>
+            )}
+            <div className="flex items-start justify-between mb-1">
+              <h3 className="font-semibold text-gray-800 text-sm leading-tight">{obj.name}</h3>
+              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded shrink-0 ml-1 ${
                 obj.state === 'BROKEN' ? 'bg-red-100 text-red-700' :
                 obj.state === 'POWERED' ? 'bg-green-100 text-green-700' :
                 obj.state === 'LOCKED' ? 'bg-yellow-100 text-yellow-700' :
@@ -166,20 +196,24 @@ export function ObjectsTab() {
                 {obj.state}
               </span>
             </div>
-            <div className="flex flex-wrap gap-1 mb-3">
+            <div className="flex flex-wrap gap-1 mb-2">
               {obj.tags.map((tag) => (
-                <span key={tag} className="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded font-mono">
+                <span key={tag} className="bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded font-mono">
                   {tag}
                 </span>
               ))}
-              {obj.tags.length === 0 && <span className="text-gray-400 text-xs">No tags</span>}
+              {obj.tags.length === 0 && <span className="text-gray-400 text-[10px]">No tags</span>}
             </div>
-            {obj.sprite_url && (
-              <p className="text-xs text-gray-400 truncate mb-2">{obj.sprite_url}</p>
-            )}
-            <div className="flex gap-2 text-xs">
+            <div className="flex gap-2 text-xs mt-auto">
               <button onClick={() => startEdit(obj)} className="text-blue-600 hover:underline">Edit</button>
               <button onClick={() => handleDelete(obj.id)} className="text-red-500 hover:underline">Delete</button>
+              <button
+                onClick={() => handleGenerate(obj)}
+                disabled={generatingId === obj.id}
+                className="ml-auto text-purple-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
+              >
+                {generatingId === obj.id ? 'Generating...' : obj.sprite_url ? 'Regen' : 'Generate'}
+              </button>
             </div>
           </div>
         ))}

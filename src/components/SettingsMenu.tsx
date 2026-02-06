@@ -10,11 +10,11 @@ function ToggleRow({
   onToggle: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between py-2">
-      <span className="text-hud-text text-sm tracking-wider">{label}</span>
+    <div className="flex items-center justify-between py-3">
+      <span className="text-hud-accent text-[16px]">{label}</span>
       <button
         onClick={onToggle}
-        className="min-w-16 px-3 py-1 border text-xs tracking-widest transition-colors cursor-pointer"
+        className="min-w-20 px-4 py-2 border rounded text-[14px] transition-colors cursor-pointer"
         style={{
           borderColor: enabled
             ? 'var(--color-hud-accent)'
@@ -58,7 +58,7 @@ export function SettingsMenu() {
       onClick={() => setMenuOpen(false)}
     >
       <div
-        className="relative w-72 border p-6"
+        className="relative w-80 border rounded-md p-8"
         style={{
           fontFamily: 'var(--font-hud)',
           backgroundColor: 'var(--color-hud-bg)',
@@ -69,14 +69,14 @@ export function SettingsMenu() {
         {/* Close button */}
         <button
           onClick={() => setMenuOpen(false)}
-          className="absolute top-2 right-3 text-hud-dim hover:text-hud-accent text-sm cursor-pointer transition-colors"
+          className="absolute top-3 right-4 text-hud-dim hover:text-hud-accent text-[16px] cursor-pointer transition-colors"
         >
           [X]
         </button>
 
         {/* Header */}
-        <div className="mb-4 pb-2" style={{ borderBottom: '1px solid var(--color-hud-border)' }}>
-          <h2 className="text-hud-accent text-base tracking-[0.3em] uppercase">
+        <div className="mb-5 pb-3" style={{ borderBottom: '1px solid var(--color-hud-border)' }}>
+          <h2 className="text-hud-accent text-[20px] tracking-[0.3em]">
             SETTINGS
           </h2>
         </div>
@@ -86,12 +86,12 @@ export function SettingsMenu() {
         <ToggleRow label="MUSIC" enabled={musicEnabled} onToggle={toggleMusic} />
 
         {/* Divider */}
-        <div className="my-3" style={{ borderTop: '1px solid var(--color-hud-border)' }} />
+        <div className="my-4" style={{ borderTop: '1px solid var(--color-hud-border)' }} />
 
         {/* Fullscreen */}
         <button
           onClick={handleFullscreen}
-          className="w-full py-2 border text-xs tracking-widest text-hud-text hover:text-hud-accent hover:border-hud-accent transition-colors cursor-pointer"
+          className="w-full py-3 border rounded text-[14px] text-hud-accent hover:text-hud-accent hover:border-hud-accent transition-colors cursor-pointer"
           style={{
             borderColor: 'var(--color-hud-border)',
             backgroundColor: 'transparent',
@@ -101,7 +101,7 @@ export function SettingsMenu() {
         </button>
 
         {/* Version */}
-        <div className="mt-4 text-center text-hud-dim text-[10px] tracking-wider">
+        <div className="mt-5 text-center text-hud-dim text-[12px]">
           J.A.C.O.B.S. v0.1
         </div>
       </div>

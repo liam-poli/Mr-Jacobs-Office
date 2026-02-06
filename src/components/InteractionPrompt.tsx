@@ -19,7 +19,7 @@ export function InteractionPrompt() {
 
   return (
     <div
-      className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 border text-sm"
+      className="absolute bottom-36 left-1/2 -translate-x-1/2 z-10 px-5 py-3 border rounded-md text-[14px]"
       style={{
         fontFamily: 'var(--font-hud)',
         backgroundColor: 'var(--color-hud-bg)',

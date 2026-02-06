@@ -30,4 +30,17 @@ export const useGameStore = create<GameState>((set) => ({
 
   selectedInventoryIndex: null,
   setSelectedInventoryIndex: (index) => set({ selectedInventoryIndex: index }),
+
+  pendingDrop: null,
+  dropItem: (index) =>
+    set((s) => {
+      const item = s.inventory[index];
+      if (!item) return s;
+      return {
+        inventory: s.inventory.filter((_, i) => i !== index),
+        pendingDrop: item,
+        selectedInventoryIndex: null,
+      };
+    }),
+  clearPendingDrop: () => set({ pendingDrop: null }),
 }));

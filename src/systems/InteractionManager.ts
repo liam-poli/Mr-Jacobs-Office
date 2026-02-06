@@ -1,13 +1,15 @@
 import Phaser from 'phaser';
 import { useGameStore } from '../stores/gameStore';
-import type { InteractionTarget } from '../types';
+import type { InteractionTarget, InventoryItem } from '../types';
 
 const INTERACT_RADIUS = 40;
+const LABEL_SCALE = 2;
 
 interface ItemMeta {
   name: string;
   tags: string[];
   textureKey: string;
+  imageUrl?: string;
 }
 
 interface ObjectMeta {
@@ -20,7 +22,6 @@ export class InteractionManager {
   private scene: Phaser.Scene;
   private player: Phaser.Physics.Arcade.Sprite;
   private eKey: Phaser.Input.Keyboard.Key;
-  private promptSprite: Phaser.GameObjects.Image | null = null;
   private currentTarget: InteractionTarget | null = null;
 
   private itemSprites = new Map<string, Phaser.GameObjects.Image>();
@@ -28,6 +29,9 @@ export class InteractionManager {
 
   private objectSprites = new Map<string, Phaser.GameObjects.Image>();
   private objectDefs = new Map<string, ObjectMeta>();
+
+  private nameLabels = new Map<string, Phaser.GameObjects.Image>();
+  private activeLabel: Phaser.GameObjects.Image | null = null;
 
   constructor(scene: Phaser.Scene, player: Phaser.Physics.Arcade.Sprite) {
     this.scene = scene;
@@ -42,6 +46,7 @@ export class InteractionManager {
   ): void {
     this.itemSprites.set(id, sprite);
     this.itemDefs.set(id, def);
+    this.createNameLabel(id, def.name);
   }
 
   registerObject(
@@ -51,9 +56,66 @@ export class InteractionManager {
   ): void {
     this.objectSprites.set(id, sprite);
     this.objectDefs.set(id, def);
+    this.createNameLabel(id, def.name);
+  }
+
+  private createNameLabel(id: string, name: string): void {
+    const textureKey = `label-${id}`;
+    if (this.scene.textures.exists(textureKey)) {
+      this.scene.textures.remove(textureKey);
+    }
+    const tempText = this.scene.add.text(0, 0, name, {
+      fontFamily: '"Courier New", monospace',
+      fontSize: `${7 * LABEL_SCALE}px`,
+      color: '#5ee6b0',
+      backgroundColor: '#1a1a2ecc',
+      padding: { x: 2 * LABEL_SCALE, y: 1 * LABEL_SCALE },
+    });
+    tempText.setOrigin(0.5, 1);
+
+    const tw = Math.ceil(tempText.width);
+    const th = Math.ceil(tempText.height);
+    const rt = this.scene.add.renderTexture(0, 0, tw, th);
+    rt.draw(tempText, tw / 2, th);
+    rt.saveTexture(textureKey);
+    rt.destroy();
+    tempText.destroy();
+
+    const label = this.scene.add.image(0, 0, textureKey);
+    label.setOrigin(0.5, 1);
+    label.setScale(1 / LABEL_SCALE);
+    label.setDepth(10000);
+    label.setVisible(false);
+    this.nameLabels.set(id, label);
+  }
+
+  private spawnDroppedItem(item: InventoryItem): void {
+    const px = this.player.x;
+    const py = this.player.y + 16;
+    const sprite = this.scene.add.image(px, py, item.textureKey);
+    sprite.setDepth(py);
+
+    // Scale large textures (e.g. server sprites) to match 32px item size
+    const frame = sprite.frame;
+    if (frame.width > 32 || frame.height > 32) {
+      sprite.setScale(32 / Math.max(frame.width, frame.height));
+    }
+    this.registerItem(item.id, sprite, {
+      name: item.name,
+      tags: item.tags,
+      textureKey: item.textureKey,
+      imageUrl: item.imageUrl,
+    });
   }
 
   update(): void {
+    // Check for items dropped from inventory (React → Phaser bridge)
+    const { pendingDrop, clearPendingDrop } = useGameStore.getState();
+    if (pendingDrop) {
+      this.spawnDroppedItem(pendingDrop);
+      clearPendingDrop();
+    }
+
     const nearest = this.findNearest();
 
     if (nearest?.id !== this.currentTarget?.id) {
@@ -101,24 +163,26 @@ export class InteractionManager {
   }
 
   private updatePrompt(target: InteractionTarget | null): void {
-    if (!target) {
-      this.promptSprite?.setVisible(false);
-      return;
+    // Hide the previously active label if target changed
+    if (this.activeLabel && (!target || this.nameLabels.get(target.id) !== this.activeLabel)) {
+      this.activeLabel.setVisible(false);
+      this.activeLabel = null;
     }
 
-    if (!this.promptSprite) {
-      this.promptSprite = this.scene.add.image(0, 0, 'prompt-e');
-      this.promptSprite.setScale(0.5); // rendered at 2x, display at 1x world
-      this.promptSprite.setDepth(200);
-    }
+    if (!target) return;
+
+    const label = this.nameLabels.get(target.id);
+    if (!label) return;
 
     const sprite =
       target.type === 'item'
         ? this.itemSprites.get(target.id)!
         : this.objectSprites.get(target.id)!;
 
-    this.promptSprite.setPosition(sprite.x, sprite.y - 20);
-    this.promptSprite.setVisible(true);
+    const offsetY = target.type === 'item' ? 12 : 20;
+    label.setPosition(sprite.x, sprite.y - offsetY);
+    label.setVisible(true);
+    this.activeLabel = label;
   }
 
   private handleInteraction(target: InteractionTarget): void {
@@ -126,7 +190,7 @@ export class InteractionManager {
 
     if (target.type === 'item') {
       // Inventory full — silently block
-      if (store.inventory.length >= 4) return;
+      if (store.inventory.length >= 5) return;
 
       const def = this.itemDefs.get(target.id)!;
       store.addItem({
@@ -134,6 +198,7 @@ export class InteractionManager {
         name: def.name,
         tags: def.tags,
         textureKey: def.textureKey,
+        imageUrl: def.imageUrl,
       });
 
       // Remove from world
@@ -141,6 +206,12 @@ export class InteractionManager {
       sprite?.destroy();
       this.itemSprites.delete(target.id);
       this.itemDefs.delete(target.id);
+
+      // Remove name label
+      const label = this.nameLabels.get(target.id);
+      label?.destroy();
+      this.nameLabels.delete(target.id);
+      this.activeLabel = null;
 
       this.currentTarget = null;
       store.setInteractionTarget(null);
@@ -167,7 +238,8 @@ export class InteractionManager {
   }
 
   destroy(): void {
-    this.promptSprite?.destroy();
+    for (const label of this.nameLabels.values()) label.destroy();
+    this.nameLabels.clear();
     this.itemSprites.clear();
     this.objectSprites.clear();
     this.itemDefs.clear();

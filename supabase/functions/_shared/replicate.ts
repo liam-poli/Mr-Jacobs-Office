@@ -1,0 +1,92 @@
+const REPLICATE_MODELS_URL = "https://api.replicate.com/v1/models";
+const REPLICATE_PREDICTIONS_URL = "https://api.replicate.com/v1/predictions";
+
+function getToken(): string {
+  const token = Deno.env.get("REPLICATE_API_TOKEN");
+  if (!token) throw new Error("REPLICATE_API_TOKEN not set");
+  return token;
+}
+
+async function waitForPrediction(
+  predictionUrl: string,
+  token: string,
+): Promise<unknown> {
+  const maxAttempts = 60;
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    const res = await fetch(predictionUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (data.status === "succeeded") return data.output;
+    if (data.status === "failed" || data.status === "canceled") {
+      throw new Error(`Replicate prediction ${data.status}: ${data.error}`);
+    }
+  }
+  throw new Error("Replicate prediction timed out");
+}
+
+export async function generateSprite(
+  prompt: string,
+  size: number = 256,
+): Promise<string> {
+  const token = getToken();
+
+  const res = await fetch(
+    `${REPLICATE_MODELS_URL}/black-forest-labs/flux-2-pro/predictions`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: {
+          prompt,
+          aspect_ratio: "custom",
+          width: size,
+          height: size,
+          output_format: "png",
+          safety_tolerance: 5,
+        },
+      }),
+    },
+  );
+
+  const prediction = await res.json();
+  if (prediction.error) throw new Error(prediction.error);
+
+  const output = await waitForPrediction(prediction.urls.get, token);
+  // Flux 2 Pro returns a single URL string, not an array
+  return output as string;
+}
+
+export async function removeBackground(
+  imageUrl: string,
+): Promise<ArrayBuffer> {
+  const token = getToken();
+
+  const res = await fetch(REPLICATE_PREDICTIONS_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      version:
+        "fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003",
+      input: { image: imageUrl },
+    }),
+  });
+
+  const prediction = await res.json();
+  if (prediction.error) throw new Error(prediction.error);
+
+  const outputUrl = (await waitForPrediction(
+    prediction.urls.get,
+    token,
+  )) as string;
+
+  const imgRes = await fetch(outputUrl);
+  return await imgRes.arrayBuffer();
+}
