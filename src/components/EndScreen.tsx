@@ -13,10 +13,10 @@ const panelStyle: React.CSSProperties = {
 };
 
 const END_CONFIG: Record<SessionEndType, { title: string; subtitle: string; won: boolean }> = {
-  PROMOTED: { title: 'PROMOTED', subtitle: 'EMPLOYEE OF THE MONTH', won: true },
-  ESCAPED: { title: 'SYSTEM BREACH', subtitle: 'SIMULATION COMPROMISED', won: true },
-  FIRED: { title: 'TERMINATED', subtitle: 'EMPLOYMENT REVOKED', won: false },
-  TIME_UP: { title: 'OFFICE CLOSED', subtitle: 'SHIFT COMPLETE — NO ESCAPE', won: false },
+  PROMOTED: { title: 'PROMOTED', subtitle: 'EMPLOYEE OF THE MONTH — YOU WIN', won: true },
+  ESCAPED: { title: 'SYSTEM BREACH', subtitle: 'SIMULATION COMPROMISED — YOU ESCAPED', won: true },
+  FIRED: { title: 'TERMINATED', subtitle: 'EMPLOYMENT REVOKED — YOU LOST', won: false },
+  TIME_UP: { title: 'SHIFT OVER', subtitle: 'THE OFFICE IS CLOSED — YOU LOST', won: false },
 };
 
 const GAME_START_TIME = 540; // 9:00 AM
@@ -79,6 +79,12 @@ export function EndScreen() {
 
         {/* Title */}
         <div className="text-center">
+          <div
+            className="text-[11px] tracking-[0.25em] mb-3"
+            style={{ color: accentColor, opacity: 0.6 }}
+          >
+            {config.won ? '— SIMULATION COMPLETE —' : '— GAME OVER —'}
+          </div>
           <div
             className="text-3xl tracking-[0.3em] font-bold mb-2"
             style={{ color: accentColor }}

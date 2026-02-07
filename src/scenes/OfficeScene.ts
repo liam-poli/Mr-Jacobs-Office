@@ -71,6 +71,7 @@ export class OfficeScene extends Phaser.Scene {
   private transitioning = false;
   private doorGraceUntil = 0;
   private matrixBg: MatrixBackground | null = null;
+  private worldStripped = false;
 
   constructor() {
     super('OfficeScene');
@@ -490,10 +491,11 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number) {
-    if (!this.player) return; // async create() still loading
+    this.matrixBg?.update(_time, delta);
+    if (this.worldStripped || !this.player) return;
+
     this.player.update();
     this.interactionManager.update();
-    this.matrixBg?.update(_time, delta);
 
     // Depth sort player so it renders in front/behind objects correctly
     this.player.setDepth(this.player.y);
@@ -556,6 +558,12 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private onStateChange(state: GameState) {
+    // Strip the world when the session ends — leave only the matrix background
+    if (state.sessionStatus !== 'PLAYING') {
+      this.stripWorld();
+      return;
+    }
+
     // Disable Phaser keyboard when terminal chat is open so keys reach the React input.
     // clearCaptures() removes keycodes from the KeyboardManager capture set so
     // preventDefault() is no longer called — letting WASD/E flow into the <input>.
@@ -577,6 +585,54 @@ export class OfficeScene extends Phaser.Scene {
     for (const [objectId, objectState] of Object.entries(state.objectStates)) {
       this.applyStateVisuals(objectId, objectState.states);
     }
+  }
+
+  /** Destroy all game world content but keep the matrix background running. */
+  private stripWorld(): void {
+    if (this.worldStripped) return;
+    this.worldStripped = true;
+
+    // Stop game services
+    stopJacobsLoop();
+    stopJobCycle();
+
+    // Kill all tweens and timers
+    this.tweens.killAll();
+    this.jacobsBobTween?.destroy();
+    this.jacobsBlinkTimer?.destroy();
+    this.jacobsGlitchTimer?.destroy();
+    this.interactionManager?.destroy();
+
+    // Clean up visual tracking
+    for (const visual of this.objectVisuals.values()) {
+      visual.tween?.destroy();
+      visual.indicator?.destroy();
+    }
+    this.objectVisuals.clear();
+    for (const door of this.doorZones) {
+      door.zone.destroy();
+    }
+    this.doorZones = [];
+
+    // Preserve matrix background reference, destroy everything else
+    const matrixRef = this.matrixBg;
+    this.matrixBg = null;
+
+    // Destroy all scene children (tiles, sprites, physics bodies)
+    this.children.removeAll(true);
+    this.physics.world.shutdown();
+
+    // Re-create the matrix background on the now-empty scene
+    this.matrixBg = matrixRef ? new MatrixBackground(this) : null;
+
+    // Reset camera
+    this.cameras.main.stopFollow();
+    this.cameras.main.setZoom(1);
+    this.cameras.main.centerOn(0, 0);
+
+    this.player = null!;
+    this.jacobsScreenSprite = null;
+    this.jacobsStaticOverlay = null;
   }
 
   private startJacobsAnimations(): void {
@@ -714,26 +770,26 @@ export class OfficeScene extends Phaser.Scene {
 
   private cleanup() {
     // Music intentionally NOT stopped here — persists across room transitions.
-    stopJacobsLoop();
-    stopJobCycle();
+    if (!this.worldStripped) {
+      stopJacobsLoop();
+      stopJobCycle();
+      this.jacobsBobTween?.destroy();
+      this.jacobsBlinkTimer?.destroy();
+      this.jacobsGlitchTimer?.destroy();
+      this.interactionManager?.destroy();
+      for (const visual of this.objectVisuals.values()) {
+        visual.tween?.destroy();
+        visual.indicator?.destroy();
+      }
+      this.objectVisuals.clear();
+      for (const door of this.doorZones) {
+        door.zone.destroy();
+      }
+      this.doorZones = [];
+    }
+
     this.unsubscribe?.();
     this.jacobsUnsubscribe?.();
-    this.jacobsBobTween?.destroy();
-    this.jacobsBlinkTimer?.destroy();
-    this.jacobsGlitchTimer?.destroy();
-    this.interactionManager?.destroy();
-    for (const visual of this.objectVisuals.values()) {
-      visual.tween?.destroy();
-      visual.indicator?.destroy();
-    }
-    this.objectVisuals.clear();
-
-    // Destroy door zones
-    for (const door of this.doorZones) {
-      door.zone.destroy();
-    }
-    this.doorZones = [];
-
     this.matrixBg?.destroy();
     this.matrixBg = null;
   }

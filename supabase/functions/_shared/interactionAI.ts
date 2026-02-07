@@ -118,6 +118,7 @@ Valid object states: ${VALID_STATES.join(", ")}
 Valid item tags: ${VALID_TAGS.join(", ")}
 
 Rules:
+- BARE HANDS: If the item is "(bare hands)" with no tags, the employee is INSPECTING the object. ALWAYS set result_state to null — bare hands NEVER change object state. However, you CAN produce an output_item if it makes sense (e.g. finding a paper clip in a filing cabinet, grabbing a loose screw from a machine). The description should be observational — what the employee sees, touches, or discovers.
 - If the combination doesn't make physical/logical sense, set result_state to null (no change).
 - Only create an output_item if the interaction would logically produce something new.
 - Keep the description short, dark, and corporate-dystopian in humor.
@@ -130,6 +131,11 @@ Rules:
 
   // Validate result_state
   if (parsed.result_state && !VALID_STATES.includes(parsed.result_state)) {
+    parsed.result_state = null;
+  }
+
+  // Hard guard: bare hands never change object state
+  if (itemTags.length === 0) {
     parsed.result_state = null;
   }
 
