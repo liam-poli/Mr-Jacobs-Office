@@ -5,15 +5,13 @@ import { InteractionManager } from '../systems/InteractionManager';
 import { fetchRoom } from '../services/roomService';
 import { soundService } from '../services/soundService';
 import { startJacobsLoop, stopJacobsLoop } from '../services/jacobsService';
-import type { RoomDef, GameState } from '../types/game';
+import type { RoomDef, GameState, DoorTarget } from '../types/game';
 import type { JacobsMood } from '../types/jacobs';
 
 const TILE_SIZE = 32;
 
 // State → tint color mappings
 const STATE_TINTS: Record<string, number> = {
-  POWERED: 0xccffff,
-  UNPOWERED: 0x666666,
   BROKEN: 0xff6666,
   BURNING: 0xff8844,
   FLOODED: 0x6688cc,
@@ -25,7 +23,6 @@ const STATE_TINTS: Record<string, number> = {
 // State → indicator texture mappings
 const STATE_INDICATORS: Record<string, string> = {
   LOCKED: 'indicator-lock',
-  POWERED: 'indicator-power',
   BROKEN: 'indicator-broken',
   BURNING: 'indicator-burning',
   FLOODED: 'indicator-flooded',
@@ -38,6 +35,18 @@ interface ObjectVisual {
   sprite: Phaser.GameObjects.Image;
   indicator?: Phaser.GameObjects.Image;
   tween?: Phaser.Tweens.Tween;
+}
+
+interface SceneData {
+  roomId?: string;
+  spawnX?: number;
+  spawnY?: number;
+}
+
+interface DoorZone {
+  zone: Phaser.GameObjects.Zone;
+  objectId: string;
+  doorTarget: DoorTarget;
 }
 
 export class OfficeScene extends Phaser.Scene {
@@ -55,13 +64,31 @@ export class OfficeScene extends Phaser.Scene {
   private jacobsBobTween?: Phaser.Tweens.Tween;
   private jacobsBlinkTimer?: Phaser.Time.TimerEvent;
   private jacobsGlitchTimer?: Phaser.Time.TimerEvent;
+  private sceneData: SceneData = {};
+  private doorZones: DoorZone[] = [];
+  private transitioning = false;
+  private doorGraceUntil = 0;
 
   constructor() {
     super('OfficeScene');
   }
 
+  init(data?: SceneData) {
+    this.sceneData = data ?? {};
+    this.doorZones = [];
+    this.transitioning = false;
+    this.objectVisuals = new Map();
+    this.player = null!;
+  }
+
   async create() {
-    const roomDef = await fetchRoom();
+   try {
+    const roomDef = this.sceneData.roomId
+      ? await fetchRoom({ id: this.sceneData.roomId })
+      : await fetchRoom();
+
+    // Track current room
+    useGameStore.getState().setCurrentRoomId(roomDef.id);
 
     // Load any sprites from the DB (server-hosted textures)
     await this.loadSprites(roomDef);
@@ -69,9 +96,11 @@ export class OfficeScene extends Phaser.Scene {
     // Build the room from the tile map
     this.buildRoom(roomDef);
 
-    // Spawn local player at center of room
-    const startX = Math.floor(roomDef.width / 2) * TILE_SIZE + TILE_SIZE / 2;
-    const startY = Math.floor(roomDef.height / 2) * TILE_SIZE + TILE_SIZE / 2;
+    // Spawn local player — use scene data position if provided (room transition), otherwise center
+    const spawnTileX = this.sceneData.spawnX ?? Math.floor(roomDef.width / 2);
+    const spawnTileY = this.sceneData.spawnY ?? Math.floor(roomDef.height / 2);
+    const startX = spawnTileX * TILE_SIZE + TILE_SIZE / 2;
+    const startY = spawnTileY * TILE_SIZE + TILE_SIZE / 2;
     this.player = new Player(this, startX, startY, 'player-0', 'PLAYER 1', true);
 
     // Collisions
@@ -150,6 +179,16 @@ export class OfficeScene extends Phaser.Scene {
       }
     };
     this.game.events.on('postrender', onPostRender);
+
+    // Grace period: don't trigger door overlaps for 500ms after spawn
+    // (prevents instant bounce-back when spawning on/near a door)
+    this.doorGraceUntil = Date.now() + 500;
+
+    // Fade in camera on room entry (smooth transition between rooms)
+    this.cameras.main.fadeIn(400, 0, 0, 0);
+   } catch (err) {
+    console.error('OfficeScene create() failed:', err);
+   }
   }
 
   private buildRoom(roomDef: RoomDef) {
@@ -231,7 +270,7 @@ export class OfficeScene extends Phaser.Scene {
 
     for (const obj of roomDef.objectPlacements) {
       if (!obj.spriteUrl) continue;
-      const key = `sprite-obj-${obj.object_id}`;
+      const key = `sprite-obj-${obj.object_id}-${obj.direction}`;
       if (!this.textures.exists(key)) {
         this.load.image(key, obj.spriteUrl);
         loadCount++;
@@ -253,7 +292,7 @@ export class OfficeScene extends Phaser.Scene {
       const px = obj.tileX * TILE_SIZE + TILE_SIZE / 2;
       const py = obj.tileY * TILE_SIZE + TILE_SIZE / 2;
       const textureKey = obj.spriteUrl
-        ? `sprite-obj-${obj.object_id}`
+        ? `sprite-obj-${obj.object_id}-${obj.direction}`
         : 'obj-default';
 
       // Visible sprite
@@ -265,10 +304,22 @@ export class OfficeScene extends Phaser.Scene {
       const baseScale = TILE_SIZE / Math.max(frame.width, frame.height);
       sprite.setScale(baseScale * obj.scale);
 
-      // Invisible collision body
-      const collider = this.objectGroup.create(px, py, 'obj-default') as Phaser.Physics.Arcade.Sprite;
-      collider.setVisible(false);
-      collider.refreshBody();
+      // Shadow — dark ellipse at object's ground footprint
+      const shadow = this.add.image(px, py + TILE_SIZE / 2 - 2, 'obj-shadow');
+      shadow.setDepth(0.1);
+      shadow.setScale(obj.scale * (TILE_SIZE / 28));
+
+      // Door objects with a target: use overlap zone (walkable portal)
+      // Non-door objects: normal collision body
+      if (obj.door_target) {
+        const zone = this.add.zone(px, py, TILE_SIZE, TILE_SIZE);
+        this.physics.add.existing(zone, true);
+        this.doorZones.push({ zone, objectId: obj.id, doorTarget: obj.door_target });
+      } else {
+        const collider = this.objectGroup.create(px, py, 'obj-default') as Phaser.Physics.Arcade.Sprite;
+        collider.setVisible(false);
+        collider.refreshBody();
+      }
 
       // Initialize state in Zustand
       useGameStore.getState().updateObjectState(obj.id, obj.states);
@@ -400,9 +451,82 @@ export class OfficeScene extends Phaser.Scene {
 
     // Depth sort player so it renders in front/behind objects correctly
     this.player.setDepth(this.player.y);
+
+    // Check if player stepped onto a door portal
+    if (!this.transitioning) {
+      this.checkDoorOverlaps();
+    }
+  }
+
+  private checkDoorOverlaps(): void {
+    if (Date.now() < this.doorGraceUntil) return;
+    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+    const store = useGameStore.getState();
+    const pRect = new Phaser.Geom.Rectangle(playerBody.x, playerBody.y, playerBody.width, playerBody.height);
+
+    for (const door of this.doorZones) {
+      const zb = door.zone.body as Phaser.Physics.Arcade.StaticBody;
+      const zRect = new Phaser.Geom.Rectangle(zb.x, zb.y, zb.width, zb.height);
+
+      if (Phaser.Geom.Intersects.RectangleToRectangle(pRect, zRect)) {
+        const objState = store.objectStates[door.objectId];
+        const isLocked = objState?.states.includes('LOCKED');
+
+        if (!isLocked) {
+          this.transitionToRoom(door.doorTarget);
+          return;
+        }
+      }
+    }
+  }
+
+  private transitionToRoom(target: DoorTarget): void {
+    this.transitioning = true;
+
+    // Freeze player movement
+    const body = this.player.body as Phaser.Physics.Arcade.Body;
+    body.setVelocity(0, 0);
+
+    soundService.playSfx('interact');
+
+    useJacobsStore.getState().logEvent({
+      type: 'ROOM_CHANGE',
+      timestamp: Date.now(),
+      player: 'PLAYER 1',
+      details: { targetRoomId: target.room_id },
+    });
+
+    const cam = this.cameras.main;
+    cam.fadeOut(400, 0, 0, 0);
+
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      useGameStore.getState().clearObjectStates();
+      this.scene.restart({
+        roomId: target.room_id,
+        spawnX: target.spawnX,
+        spawnY: target.spawnY,
+      } as SceneData);
+    });
   }
 
   private onStateChange(state: GameState) {
+    // Disable Phaser keyboard when terminal chat is open so keys reach the React input.
+    // clearCaptures() removes keycodes from the KeyboardManager capture set so
+    // preventDefault() is no longer called — letting WASD/E flow into the <input>.
+    if (this.input.keyboard) {
+      if (state.terminalChatOpen && this.input.keyboard.enabled) {
+        this.input.keyboard.clearCaptures();
+        this.input.keyboard.enabled = false;
+      } else if (!state.terminalChatOpen && !this.input.keyboard.enabled) {
+        this.input.keyboard.enabled = true;
+        const K = Phaser.Input.Keyboard.KeyCodes;
+        this.input.keyboard.addCapture([
+          K.W, K.A, K.S, K.D, K.E,
+          K.UP, K.DOWN, K.LEFT, K.RIGHT, K.SPACE,
+        ]);
+      }
+    }
+
     // Update object visuals when states change
     for (const [objectId, objectState] of Object.entries(state.objectStates)) {
       this.applyStateVisuals(objectId, objectState.states);
@@ -550,11 +674,17 @@ export class OfficeScene extends Phaser.Scene {
     this.jacobsBobTween?.destroy();
     this.jacobsBlinkTimer?.destroy();
     this.jacobsGlitchTimer?.destroy();
-    this.interactionManager.destroy();
+    this.interactionManager?.destroy();
     for (const visual of this.objectVisuals.values()) {
       visual.tween?.destroy();
       visual.indicator?.destroy();
     }
     this.objectVisuals.clear();
+
+    // Destroy door zones
+    for (const door of this.doorZones) {
+      door.zone.destroy();
+    }
+    this.doorZones = [];
   }
 }

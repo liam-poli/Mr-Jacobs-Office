@@ -45,6 +45,7 @@ export class BootScene extends Phaser.Scene {
     this.generateIndicatorTextures();
     this.generateJacobsFaces();
     this.generatePromptTexture();
+    this.generateObjectShadow();
     this.createPlayerAnimations('player-0');
     this.scene.start('OfficeScene');
   }
@@ -162,11 +163,12 @@ export class BootScene extends Phaser.Scene {
 
   private generateWallTile() {
     const g = this.add.graphics();
-    g.fillStyle(0xE2D9C8, 1);
+    // Wall palette from mockup: RGB(222, 230, 231)
+    g.fillStyle(0xDEE6E7, 1);
     g.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-    g.lineStyle(1, 0xA89E8B, 0.8);
+    g.lineStyle(1, 0xB8C2C3, 0.8);
     g.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
-    g.lineStyle(1, 0xF0E7D8, 0.6);
+    g.lineStyle(1, 0xF2F6F7, 0.6);
     g.lineBetween(1, 1, TILE_SIZE - 1, 1);
     g.generateTexture('wall-tile', TILE_SIZE, TILE_SIZE);
     g.destroy();
@@ -175,10 +177,10 @@ export class BootScene extends Phaser.Scene {
   private generateWallCapTile() {
     const g = this.add.graphics();
     // Top trim band (transparent elsewhere)
-    g.fillStyle(0x9f9482, 1);
-    g.fillRect(0, 0, TILE_SIZE, 8);
+    g.fillStyle(0xDEE6E7, 1);
+    g.fillRect(0, 0, TILE_SIZE, 4);
     // Highlight line
-    g.lineStyle(1, 0xefe6d6, 0.8);
+    g.lineStyle(1, 0xF7FAFB, 0.8);
     g.lineBetween(0, 1, TILE_SIZE, 1);
     g.generateTexture('wall-cap', TILE_SIZE, TILE_SIZE);
     g.destroy();
@@ -187,9 +189,9 @@ export class BootScene extends Phaser.Scene {
   private generateWallBaseTile() {
     const g = this.add.graphics();
     // Baseboard/shadow band at bottom (transparent elsewhere)
-    g.fillStyle(0x6f6a60, 0.55);
-    g.fillRect(0, TILE_SIZE - 4, TILE_SIZE, 4);
-    g.lineStyle(1, 0x8b8477, 0.6);
+    g.fillStyle(0xDEE6E7, 1);
+    g.fillRect(0, TILE_SIZE - 3, TILE_SIZE, 3);
+    g.lineStyle(1, 0xB8C2C3, 0.6);
     g.lineBetween(0, TILE_SIZE - 5, TILE_SIZE, TILE_SIZE - 5);
     g.generateTexture('wall-base', TILE_SIZE, TILE_SIZE);
     g.destroy();
@@ -491,6 +493,15 @@ export class BootScene extends Phaser.Scene {
     }
     staticG.generateTexture('jacobs-static', S, S);
     staticG.destroy();
+  }
+
+  private generateObjectShadow() {
+    const g = this.add.graphics();
+    const W = 28, H = 10;
+    g.fillStyle(0x000000, 0.3);
+    g.fillEllipse(W / 2, H / 2, W, H);
+    g.generateTexture('obj-shadow', W, H);
+    g.destroy();
   }
 
   private generatePromptTexture() {

@@ -66,6 +66,8 @@ function buildEventSummary(events: EventInput[]): string {
           return `${player} dropped "${sanitize(String(d.itemName || "something"))}"`;
         case "STATE_CHANGE":
           return `"${sanitize(String(d.objectName || "something"))}" changed to state ${d.newState}`;
+        case "TERMINAL_CHAT":
+          return `${player} said on the terminal: "${sanitize(String(d.playerMessage || ""))}"`;
         default:
           return `${player} did something (${e.type})`;
       }

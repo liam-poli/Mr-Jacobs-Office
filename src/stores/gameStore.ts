@@ -5,7 +5,7 @@ export const useGameStore = create<GameState>((set) => ({
   sceneReady: null,
   setSceneReady: (scene) => set({ sceneReady: scene }),
 
-  bucks: 0,
+  bucks: 10,
   addBucks: (amount) => set((s) => ({ bucks: s.bucks + amount })),
 
   playerStates: [],
@@ -16,6 +16,9 @@ export const useGameStore = create<GameState>((set) => ({
   removeItem: (itemId) =>
     set((s) => ({ inventory: s.inventory.filter((i) => i.id !== itemId) })),
 
+  currentRoomId: null,
+  setCurrentRoomId: (id) => set({ currentRoomId: id }),
+
   objectStates: {},
   updateObjectState: (objectId, states) =>
     set((s) => ({
@@ -24,6 +27,7 @@ export const useGameStore = create<GameState>((set) => ({
         [objectId]: { ...{ tags: [] }, ...s.objectStates[objectId], states },
       },
     })),
+  clearObjectStates: () => set({ objectStates: {} }),
 
   interactionTarget: null,
   setInteractionTarget: (target) => set({ interactionTarget: target }),
@@ -50,4 +54,8 @@ export const useGameStore = create<GameState>((set) => ({
       };
     }),
   clearPendingDrop: () => set({ pendingDrop: null }),
+
+  terminalChatOpen: false,
+  openTerminalChat: () => set({ terminalChatOpen: true }),
+  closeTerminalChat: () => set({ terminalChatOpen: false }),
 }));

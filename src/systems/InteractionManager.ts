@@ -156,8 +156,8 @@ export class InteractionManager {
       }
     }
 
-    // Don't update nearest target or handle E key while menu/resolution is active
-    if (store.interactionMenuOpen || store.interactionPending) return;
+    // Don't update nearest target or handle E key while menu/resolution/terminal is active
+    if (store.interactionMenuOpen || store.interactionPending || store.terminalChatOpen) return;
 
     const nearest = this.findNearest();
 
@@ -170,8 +170,12 @@ export class InteractionManager {
 
     if (Phaser.Input.Keyboard.JustDown(this.eKey) && nearest) {
       if (nearest.type === 'object') {
-        // Open the interaction menu instead of acting immediately
-        useGameStore.getState().openInteractionMenu();
+        const def = this.objectDefs.get(nearest.id);
+        if (def && (def.name === "Jacobs' Screen" || def.name === 'Jacobs Screen')) {
+          useGameStore.getState().openTerminalChat();
+        } else {
+          useGameStore.getState().openInteractionMenu();
+        }
       } else {
         this.handleItemPickup(nearest);
       }

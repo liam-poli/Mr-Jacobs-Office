@@ -35,10 +35,18 @@ interface CatalogObject {
   sprite_url: string | null;
 }
 
+interface DoorTargetData {
+  room_id: string;
+  spawnX: number;
+  spawnY: number;
+}
+
 interface ObjPlacement {
   object_id: string;
   tileX: number;
   tileY: number;
+  direction?: string;
+  door_target?: DoorTargetData;
 }
 
 interface ItemSpawnPlacement {
@@ -72,10 +80,12 @@ type EditorMode = 'tiles' | 'objects' | 'items';
 
 function RoomEditor({
   room,
+  allRooms,
   onSave,
   onClose,
 }: {
   room: Room;
+  allRooms: Room[];
   onSave: (tileMap: number[][], objectPlacements: ObjPlacement[], itemSpawns: ItemSpawnPlacement[]) => void;
   onClose: () => void;
 }) {
@@ -158,7 +168,7 @@ function RoomEditor({
       ctx.stroke();
     }
 
-    // Object placements (red circles with label)
+    // Object placements (red circles with label + direction arrow)
     for (const o of objPlacements) {
       const cx = o.tileX * EDITOR_PX + EDITOR_PX / 2;
       const cy = o.tileY * EDITOR_PX + EDITOR_PX / 2;
@@ -176,6 +186,16 @@ function RoomEditor({
         ctx.textBaseline = 'middle';
         ctx.fillText(entry.name[0], cx, cy + 1);
       }
+      // Direction arrow (small yellow triangle)
+      const dir = o.direction ?? 'down';
+      const as = 3;
+      ctx.fillStyle = '#FBBF24';
+      ctx.beginPath();
+      if (dir === 'down')  { ctx.moveTo(cx, cy + r + 2); ctx.lineTo(cx - as, cy + r - 1); ctx.lineTo(cx + as, cy + r - 1); }
+      if (dir === 'up')    { ctx.moveTo(cx, cy - r - 2); ctx.lineTo(cx - as, cy - r + 1); ctx.lineTo(cx + as, cy - r + 1); }
+      if (dir === 'left')  { ctx.moveTo(cx - r - 2, cy); ctx.lineTo(cx - r + 1, cy - as); ctx.lineTo(cx - r + 1, cy + as); }
+      if (dir === 'right') { ctx.moveTo(cx + r + 2, cy); ctx.lineTo(cx + r - 1, cy - as); ctx.lineTo(cx + r - 1, cy + as); }
+      ctx.fill();
     }
 
     // Item spawns (yellow circles with label)
@@ -234,6 +254,7 @@ function RoomEditor({
         object_id: selectedObjectId,
         tileX: col,
         tileY: row,
+        direction: 'down',
       }];
     });
   }
@@ -412,6 +433,124 @@ function RoomEditor({
             />
           </div>
         </div>
+
+        {/* Door Links (shown in objects mode when there are door objects) */}
+        {mode === 'objects' && (() => {
+          const doorPlacements = objPlacements.filter((p) => {
+            const entry = objMap.get(p.object_id);
+            return entry?.name.toLowerCase().includes('door');
+          });
+          if (doorPlacements.length === 0) return null;
+          const otherRooms = allRooms.filter((r) => r.id !== room.id);
+          return (
+            <div className="border-t border-gray-200 px-4 py-3">
+              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-2">Door Links</p>
+              <div className="flex flex-col gap-2">
+                {doorPlacements.map((dp, idx) => {
+                  const entry = objMap.get(dp.object_id);
+                  return (
+                    <div key={idx} className="flex items-center gap-3 text-xs">
+                      <span className="text-gray-600 font-medium w-32 shrink-0">
+                        {entry?.name ?? 'Door'} ({dp.tileX},{dp.tileY})
+                      </span>
+                      <select
+                        className="border border-gray-300 rounded px-2 py-1 text-xs flex-1"
+                        value={dp.door_target?.room_id ?? ''}
+                        onChange={(e) => {
+                          const roomId = e.target.value || undefined;
+                          setObjPlacements((prev) =>
+                            prev.map((p) =>
+                              p === dp
+                                ? { ...p, door_target: roomId ? { room_id: roomId, spawnX: dp.door_target?.spawnX ?? 5, spawnY: dp.door_target?.spawnY ?? 5 } : undefined }
+                                : p
+                            )
+                          );
+                        }}
+                      >
+                        <option value="">No link</option>
+                        {otherRooms.map((r) => (
+                          <option key={r.id} value={r.id}>{r.name}</option>
+                        ))}
+                      </select>
+                      {dp.door_target && (
+                        <>
+                          <label className="text-gray-500">X:</label>
+                          <input
+                            type="number"
+                            className="w-14 border border-gray-300 rounded px-2 py-1 text-xs"
+                            value={dp.door_target.spawnX}
+                            min={0}
+                            onChange={(e) => {
+                              const val = +e.target.value;
+                              setObjPlacements((prev) =>
+                                prev.map((p) =>
+                                  p === dp && p.door_target
+                                    ? { ...p, door_target: { ...p.door_target!, spawnX: val } }
+                                    : p
+                                )
+                              );
+                            }}
+                          />
+                          <label className="text-gray-500">Y:</label>
+                          <input
+                            type="number"
+                            className="w-14 border border-gray-300 rounded px-2 py-1 text-xs"
+                            value={dp.door_target.spawnY}
+                            min={0}
+                            onChange={(e) => {
+                              const val = +e.target.value;
+                              setObjPlacements((prev) =>
+                                prev.map((p) =>
+                                  p === dp && p.door_target
+                                    ? { ...p, door_target: { ...p.door_target!, spawnY: val } }
+                                    : p
+                                )
+                              );
+                            }}
+                          />
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Object Directions (shown in objects mode when there are placements) */}
+        {mode === 'objects' && objPlacements.length > 0 && (
+          <div className="border-t border-gray-200 px-4 py-3">
+            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-2">Object Directions</p>
+            <div className="flex flex-wrap gap-2">
+              {objPlacements.map((op, idx) => {
+                const entry = objMap.get(op.object_id);
+                return (
+                  <div key={idx} className="flex items-center gap-1.5 text-xs bg-gray-50 rounded px-2 py-1">
+                    <span className="text-gray-600 font-medium">
+                      {entry?.name ?? '?'} ({op.tileX},{op.tileY})
+                    </span>
+                    <select
+                      className="border border-gray-300 rounded px-1 py-0.5 text-[10px]"
+                      value={op.direction ?? 'down'}
+                      onChange={(e) => {
+                        const dir = e.target.value;
+                        setObjPlacements((prev) =>
+                          prev.map((p, i) => i === idx ? { ...p, direction: dir } : p)
+                        );
+                      }}
+                    >
+                      <option value="down">Down</option>
+                      <option value="up">Up</option>
+                      <option value="left">Left</option>
+                      <option value="right">Right</option>
+                    </select>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
@@ -644,6 +783,7 @@ export function RoomsTab() {
       {editRoom && (
         <RoomEditor
           room={editRoom}
+          allRooms={rooms}
           onSave={saveRoom}
           onClose={() => setEditRoom(null)}
         />

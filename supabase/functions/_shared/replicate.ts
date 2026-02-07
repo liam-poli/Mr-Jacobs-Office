@@ -1,6 +1,8 @@
 const REPLICATE_MODELS_URL = "https://api.replicate.com/v1/models";
 const REPLICATE_PREDICTIONS_URL = "https://api.replicate.com/v1/predictions";
 
+export type SpriteModel = "flux-2-pro" | "nano-banana-pro";
+
 function getToken(): string {
   const token = Deno.env.get("REPLICATE_API_TOKEN");
   if (!token) throw new Error("REPLICATE_API_TOKEN not set");
@@ -26,38 +28,60 @@ async function waitForPrediction(
   throw new Error("Replicate prediction timed out");
 }
 
+function buildFluxInput(prompt: string, size: number) {
+  return {
+    url: `${REPLICATE_MODELS_URL}/black-forest-labs/flux-2-pro/predictions`,
+    input: {
+      prompt,
+      aspect_ratio: "custom",
+      width: size,
+      height: size,
+      output_format: "png",
+      safety_tolerance: 5,
+    },
+  };
+}
+
+function buildNanoBananaInput(prompt: string) {
+  return {
+    url: `${REPLICATE_MODELS_URL}/google/nano-banana-pro/predictions`,
+    input: {
+      prompt,
+      aspect_ratio: "1:1",
+      resolution: "1024",
+      output_format: "png",
+      safety_filter_level: "block_low_and_above",
+    },
+  };
+}
+
 export async function generateSprite(
   prompt: string,
   size: number = 256,
+  model: SpriteModel = "flux-2-pro",
 ): Promise<string> {
   const token = getToken();
 
-  const res = await fetch(
-    `${REPLICATE_MODELS_URL}/black-forest-labs/flux-2-pro/predictions`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        input: {
-          prompt,
-          aspect_ratio: "custom",
-          width: size,
-          height: size,
-          output_format: "png",
-          safety_tolerance: 5,
-        },
-      }),
+  const { url, input } = model === "nano-banana-pro"
+    ? buildNanoBananaInput(prompt)
+    : buildFluxInput(prompt, size);
+
+  console.log(`Using model: ${model}`);
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({ input }),
+  });
 
   const prediction = await res.json();
   if (prediction.error) throw new Error(prediction.error);
 
   const output = await waitForPrediction(prediction.urls.get, token);
-  // Flux 2 Pro returns a single URL string, not an array
+  // Both models return a single URL string
   return output as string;
 }
 

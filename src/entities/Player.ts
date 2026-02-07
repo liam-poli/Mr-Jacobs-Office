@@ -40,22 +40,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Render label at 2x so it's 1:1 screen pixels after camera zoom (avoids NEAREST blur)
     const LABEL_SCALE = 2;
     const labelKey = `label-${textureKey}`;
-    const tempText = scene.add.text(0, 0, playerName, {
-      fontFamily: '"Courier New", monospace',
-      fontSize: `${10 * LABEL_SCALE}px`,
-      color: '#ffffff',
-      backgroundColor: '#1a1a2ecc',
-      padding: { x: 3 * LABEL_SCALE, y: 1 * LABEL_SCALE },
-    });
-    tempText.setOrigin(0.5, 1);
+    if (!scene.textures.exists(labelKey)) {
+      const tempText = scene.add.text(0, 0, playerName, {
+        fontFamily: '"Courier New", monospace',
+        fontSize: `${10 * LABEL_SCALE}px`,
+        color: '#ffffff',
+        backgroundColor: '#1a1a2ecc',
+        padding: { x: 3 * LABEL_SCALE, y: 1 * LABEL_SCALE },
+      });
+      tempText.setOrigin(0.5, 1);
 
-    const tw = Math.ceil(tempText.width);
-    const th = Math.ceil(tempText.height);
-    const rt = scene.add.renderTexture(0, 0, tw, th);
-    rt.draw(tempText, tw / 2, th);
-    rt.saveTexture(labelKey);
-    rt.destroy();
-    tempText.destroy();
+      const tw = Math.ceil(tempText.width);
+      const th = Math.ceil(tempText.height);
+      const rt = scene.add.renderTexture(0, 0, tw, th);
+      rt.draw(tempText, tw / 2, th);
+      rt.saveTexture(labelKey);
+      rt.destroy();
+      tempText.destroy();
+    }
 
     this.nameLabel = scene.add.image(x, y - 24, labelKey);
     this.nameLabel.setOrigin(0.5, 1);
@@ -82,7 +84,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Freeze movement while interaction menu is open or interaction is resolving
     const gameState = useGameStore.getState();
-    if (gameState.interactionMenuOpen || gameState.interactionPending) {
+    if (gameState.interactionMenuOpen || gameState.interactionPending || gameState.terminalChatOpen) {
       const body = this.body as Phaser.Physics.Arcade.Body;
       body.setVelocity(0, 0);
       if (this.isMoving) {
@@ -120,8 +122,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   destroy(fromScene?: boolean): void {
-    this.scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.postUpdateHandler, this);
-    this.nameLabel.destroy();
+    this.scene?.events.off(Phaser.Scenes.Events.POST_UPDATE, this.postUpdateHandler, this);
+    this.nameLabel?.destroy();
     super.destroy(fromScene);
   }
 }

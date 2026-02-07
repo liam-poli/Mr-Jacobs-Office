@@ -9,6 +9,7 @@ import { InteractionPrompt } from './components/InteractionPrompt';
 import { InteractionMenu } from './components/InteractionMenu';
 import { InteractionToast } from './components/InteractionToast';
 import { JacobsSpeech } from './components/JacobsSpeech';
+import { TerminalChat } from './components/TerminalChat';
 import { useSettingsStore } from './stores/settingsStore';
 import { useGameStore } from './stores/gameStore';
 import { AdminPanel } from './pages/AdminPanel';
@@ -18,16 +19,17 @@ function Game() {
   const toggleMenu = useSettingsStore((s) => s.toggleMenu);
 
   const interactionMenuOpen = useGameStore((s) => s.interactionMenuOpen);
+  const terminalChatOpen = useGameStore((s) => s.terminalChatOpen);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !interactionMenuOpen) {
+      if (e.key === 'Escape' && !interactionMenuOpen && !terminalChatOpen) {
         toggleMenu();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggleMenu, interactionMenuOpen]);
+  }, [toggleMenu, interactionMenuOpen, terminalChatOpen]);
 
   return (
     <div className="relative w-screen h-screen bg-black overflow-hidden">
@@ -39,6 +41,7 @@ function Game() {
       <InteractionMenu />
       <InteractionToast />
       <JacobsSpeech />
+      <TerminalChat />
       <InventoryBar />
       <SettingsMenu />
       <LoadingScreen />

@@ -1,8 +1,9 @@
 import { supabase } from './supabase';
-import type { RoomDef, ItemSpawn, ObjectPlacement, ResolvedItem, ResolvedObject } from '../types/game';
+import type { RoomDef, ItemSpawn, ObjectPlacement, ResolvedItem, ResolvedObject, DoorTarget, Direction, DirectionalSprites } from '../types/game';
 
 /** Default room used when Supabase is unavailable (no items/objects without DB) */
 const DEFAULT_ROOM: RoomDef = {
+  id: 'default',
   name: 'Main Office',
   width: 25,
   height: 18,
@@ -47,11 +48,18 @@ function parseItemSpawns(raw: unknown[]): ItemSpawn[] {
 function parseObjectPlacements(raw: unknown[]): ObjectPlacement[] {
   return raw.map((r) => {
     const o = r as Record<string, unknown>;
-    return {
+    const placement: ObjectPlacement = {
       object_id: o.object_id as string,
       tileX: (o.tileX ?? o.tile_x) as number,
       tileY: (o.tileY ?? o.tile_y) as number,
     };
+    if (o.direction) {
+      placement.direction = o.direction as Direction;
+    }
+    if (o.door_target) {
+      placement.door_target = o.door_target as DoorTarget;
+    }
+    return placement;
   });
 }
 
@@ -99,7 +107,7 @@ async function resolveObjects(placements: ObjectPlacement[]): Promise<ResolvedOb
   const ids = [...new Set(placements.map((p) => p.object_id))];
   const { data, error } = await supabase
     .from('objects')
-    .select('id, name, tags, state, sprite_url, scale')
+    .select('id, name, tags, state, sprite_url, scale, directional_sprites')
     .in('id', ids);
 
   if (error || !data) {
@@ -116,16 +124,23 @@ async function resolveObjects(placements: ObjectPlacement[]): Promise<ResolvedOb
       console.warn(`Object ${placement.object_id} not found in catalog, skipping`);
       continue;
     }
+    const direction: Direction = placement.direction ?? 'down';
+    const dirSprites = (entry.directional_sprites as DirectionalSprites) ?? {};
+    const effectiveSpriteUrl = dirSprites[direction] || (entry.sprite_url as string) || undefined;
+
     resolved.push({
       id: crypto.randomUUID(),
       object_id: placement.object_id,
       name: entry.name as string,
       tags: entry.tags as string[],
       states: [entry.state as string],
-      spriteUrl: (entry.sprite_url as string) || undefined,
+      spriteUrl: effectiveSpriteUrl,
+      directionalSprites: dirSprites,
+      direction,
       scale: (entry.scale as number) ?? 1.0,
       tileX: placement.tileX,
       tileY: placement.tileY,
+      door_target: placement.door_target,
     });
   }
   return resolved;
@@ -165,6 +180,7 @@ export async function fetchRoom(opts?: { id?: string; name?: string }): Promise<
     ]);
 
     return {
+      id: data.id as string,
       name: data.name as string,
       width: data.width as number,
       height: data.height as number,

@@ -2,19 +2,45 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../services/supabase';
 import { SpritePreview } from './SpritePreview';
 
-async function uploadSprite(type: 'object' | 'item', id: string, file: File): Promise<string> {
-  const filePath = `${type}/${id}.png`;
+async function uploadSprite(type: 'object' | 'item', id: string, file: File, direction?: string): Promise<string> {
+  const dirSuffix = direction && direction !== 'down' ? `-${direction}` : '';
+  const filePath = `${type}/${id}${dirSuffix}.png`;
   const { error } = await supabase.storage
     .from('sprites')
     .upload(filePath, file, { contentType: file.type, upsert: true });
   if (error) throw error;
   const { data } = supabase.storage.from('sprites').getPublicUrl(filePath);
-  return `${data.publicUrl}?v=${Date.now()}`;
+  const url = `${data.publicUrl}?v=${Date.now()}`;
+
+  if (type === 'object' && direction) {
+    const { data: current } = await supabase
+      .from('objects')
+      .select('directional_sprites')
+      .eq('id', id)
+      .single();
+    const existing = (current?.directional_sprites as Record<string, string>) ?? {};
+    existing[direction] = url;
+    const payload: Record<string, unknown> = { directional_sprites: existing };
+    if (direction === 'down') payload.sprite_url = url;
+    await supabase.from('objects').update(payload).eq('id', id);
+  } else {
+    const table = type === 'item' ? 'items' : 'objects';
+    await supabase.from(table).update({ sprite_url: url }).eq('id', id);
+  }
+
+  return url;
 }
 
-async function generateSpriteForEntity(entity: GameObject) {
+async function generateSpriteForEntity(entity: GameObject, direction?: string) {
   const { data, error } = await supabase.functions.invoke('generate-sprite', {
-    body: { type: 'object', id: entity.id, name: entity.name, tags: entity.tags, state: entity.state },
+    body: {
+      type: 'object',
+      id: entity.id,
+      name: entity.name,
+      tags: entity.tags,
+      state: entity.state,
+      direction: direction ?? 'down',
+    },
   });
   if (error) throw error;
   return data.sprite_url as string;
@@ -26,6 +52,7 @@ interface GameObject {
   tags: string[];
   state: string;
   sprite_url: string | null;
+  directional_sprites: Record<string, string>;
   scale: number;
   metadata: Record<string, unknown>;
 }
@@ -47,8 +74,10 @@ export function ObjectsTab() {
   const [form, setForm] = useState({ name: '', tags: [] as string[], state: 'UNLOCKED', sprite_url: '', scale: 1.0 });
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [spriteDirection, setSpriteDirection] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadTargetId = useRef<string | null>(null);
+  const uploadTargetDirection = useRef<string>('down');
 
   async function fetchData() {
     const [objectsRes, tagsRes] = await Promise.all([
@@ -105,10 +134,10 @@ export function ObjectsTab() {
     setShowForm(true);
   }
 
-  async function handleGenerate(obj: GameObject) {
+  async function handleGenerate(obj: GameObject, direction: string = 'down') {
     setGeneratingId(obj.id);
     try {
-      await generateSpriteForEntity(obj);
+      await generateSpriteForEntity(obj, direction);
       fetchData();
     } catch (err) {
       console.error('Sprite generation failed:', err);
@@ -120,18 +149,19 @@ export function ObjectsTab() {
 
   function triggerUpload(id: string) {
     uploadTargetId.current = id;
+    uploadTargetDirection.current = spriteDirection[id] ?? 'down';
     fileInputRef.current?.click();
   }
 
   async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     const id = uploadTargetId.current;
+    const direction = uploadTargetDirection.current;
     if (!file || !id) return;
     e.target.value = '';
     setUploadingId(id);
     try {
-      const url = await uploadSprite('object', id, file);
-      await supabase.from('objects').update({ sprite_url: url }).eq('id', id);
+      await uploadSprite('object', id, file, direction);
       fetchData();
     } catch (err) {
       console.error('Sprite upload failed:', err);
@@ -231,10 +261,30 @@ export function ObjectsTab() {
         {objects.map((obj) => (
           <div key={obj.id} className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
             {obj.sprite_url ? (
-              <SpritePreview src={obj.sprite_url} alt={obj.name} />
+              <SpritePreview src={obj.sprite_url} alt={obj.name} directionalSprites={obj.directional_sprites} />
             ) : (
               <div className="mb-2 flex justify-center bg-gray-50 rounded p-2 aspect-square items-center">
                 <span className="text-gray-300 text-xs">No sprite</span>
+              </div>
+            )}
+            {/* Directional sprite previews */}
+            {obj.sprite_url && (
+              <div className="flex gap-1 mb-2 justify-center">
+                {(['up', 'left', 'down', 'right'] as const).map((dir) => {
+                  const dirUrl = obj.directional_sprites?.[dir];
+                  return (
+                    <div key={dir} className="flex flex-col items-center">
+                      <div className="w-10 h-10 bg-gray-50 rounded border border-gray-200 flex items-center justify-center overflow-hidden">
+                        {dirUrl ? (
+                          <img src={dirUrl} alt={`${obj.name} ${dir}`} className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
+                        ) : (
+                          <span className="text-gray-300 text-[8px]">--</span>
+                        )}
+                      </div>
+                      <span className="text-[8px] text-gray-400 mt-0.5">{dir[0].toUpperCase()}</span>
+                    </div>
+                  );
+                })}
               </div>
             )}
             <div className="flex items-start justify-between mb-1">
@@ -263,18 +313,28 @@ export function ObjectsTab() {
               ))}
               {obj.tags.length === 0 && <span className="text-gray-400 text-[10px]">No tags</span>}
             </div>
-            <div className="flex gap-2 text-xs mt-auto">
+            <div className="flex gap-2 text-xs mt-auto items-center">
               <button onClick={() => startEdit(obj)} className="text-blue-600 hover:underline">Edit</button>
               <button onClick={() => handleDelete(obj.id)} className="text-red-500 hover:underline">Delete</button>
+              <select
+                className="ml-auto text-[10px] border border-gray-200 rounded px-1 py-0.5"
+                value={spriteDirection[obj.id] ?? 'down'}
+                onChange={(e) => setSpriteDirection((prev) => ({ ...prev, [obj.id]: e.target.value }))}
+              >
+                <option value="down">Down</option>
+                <option value="up">Up</option>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+              </select>
               <button
                 onClick={() => triggerUpload(obj.id)}
                 disabled={uploadingId === obj.id}
-                className="ml-auto text-teal-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
+                className="text-teal-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
               >
                 {uploadingId === obj.id ? 'Uploading...' : 'Upload'}
               </button>
               <button
-                onClick={() => handleGenerate(obj)}
+                onClick={() => handleGenerate(obj, spriteDirection[obj.id] ?? 'down')}
                 disabled={generatingId === obj.id}
                 className="text-purple-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
               >

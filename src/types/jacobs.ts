@@ -11,7 +11,9 @@ export type JacobsEventType =
   | 'INTERACTION'
   | 'PICKUP'
   | 'DROP'
-  | 'STATE_CHANGE';
+  | 'STATE_CHANGE'
+  | 'ROOM_CHANGE'
+  | 'TERMINAL_CHAT';
 
 export interface JacobsEvent {
   type: JacobsEventType;

@@ -13,8 +13,9 @@ export function InteractionPrompt() {
   const menuOpen = useGameStore((s) => s.interactionMenuOpen);
   const pending = useGameStore((s) => s.interactionPending);
   const result = useGameStore((s) => s.interactionResult);
+  const terminalChatOpen = useGameStore((s) => s.terminalChatOpen);
 
-  if (!sceneReady || !target || menuOpen || pending || result) return null;
+  if (!sceneReady || !target || menuOpen || pending || result || terminalChatOpen) return null;
 
   const actionText =
     target.type === 'item'

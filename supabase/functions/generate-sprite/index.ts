@@ -1,32 +1,39 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
 import { corsHeaders } from "../_shared/cors.ts";
-import { generateSprite, removeBackground } from "../_shared/replicate.ts";
+import { generateSprite, removeBackground, type SpriteModel } from "../_shared/replicate.ts";
+
+const DIRECTION_PROMPTS: Record<string, string> = {
+  down: "front-facing view, the object faces the viewer head-on",
+  up: "rear view from behind, showing the back of the object",
+  left: "side profile view facing left",
+  right: "side profile view facing right",
+};
 
 function buildItemPrompt(name: string, tags: string[]): string {
   const tagList = tags.length > 0 ? tags.join(", ") : "generic";
   return (
     `A single ${name}, small handheld item, pixel art sprite, 16-bit retro game style, ` +
-    `3/4 front-facing view with slight overhead angle like a classic 16-bit RPG inventory icon, crisp 1-pixel edges, no blur or anti-aliasing, ` +
-    `muted desaturated office palette (warm beige, ivory, taupe, charcoal, steel gray), ` +
-    `no greens or teals, avoid saturated colors, minimal highlights, ` +
+    `front-facing view looking straight at the object, like a classic SNES RPG sprite, crisp 1-pixel edges, no blur or anti-aliasing, ` +
+    `natural colors appropriate to the object, warm muted tones, 1980s office aesthetic, ` +
     `clean simple silhouette, centered on a plain white background, ` +
     `no shadows, no text, no extra objects. ` +
     `Properties: ${tagList}.`
   );
 }
 
-function buildObjectPrompt(name: string, tags: string[], state?: string): string {
+function buildObjectPrompt(name: string, tags: string[], state?: string, direction?: string): string {
   const tagList = tags.length > 0 ? tags.join(", ") : "generic";
   const stateHint = state ? ` Currently ${state.toLowerCase()}.` : "";
+  const viewHint = DIRECTION_PROMPTS[direction ?? "down"] ?? DIRECTION_PROMPTS["down"];
   return (
-    `A single ${name}, office furniture or fixture, pixel art sprite, 16-bit retro game style, ` +
-    `3/4 front-facing view with slight overhead angle showing the front face and a bit of the top like a classic 16-bit RPG, ` +
+    `A single ${name}, 2D pixel art sprite for a retro 16-bit top-down video game, ` +
+    `flat orthographic ${viewHint}, perfectly straight-on, zero perspective, zero rotation, no 3D, no isometric, ` +
+    `the object is shown as a 2D sprite sheet asset, ` +
     `crisp 1-pixel edges, no blur or anti-aliasing, ` +
-    `muted desaturated office palette (warm beige, ivory, taupe, charcoal, steel gray), ` +
-    `no greens or teals, avoid saturated colors, minimal highlights, ` +
+    `natural colors appropriate to the object, warm muted tones, 1980s office aesthetic, ` +
     `detailed enough to be recognizable at 32-64px in-game, ` +
     `centered on a plain white background, ` +
-    `no shadows, no text, no extra objects, no people. ` +
+    `no shadows, no text, no extra objects, no people, no floor, no ground. ` +
     `Properties: ${tagList}.${stateHint}`
   );
 }
@@ -37,7 +44,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { type, id, name, tags, state } = await req.json();
+    const { type, id, name, tags, state, model, direction } = await req.json();
+    // Default: flux-2-pro for both types (override with explicit model param)
+    const defaultModel: SpriteModel = "flux-2-pro";
+    const spriteModel: SpriteModel = model === "nano-banana-pro" || model === "flux-2-pro" ? model : defaultModel;
 
     if (!type || !id || !name) {
       return new Response(
@@ -48,13 +58,13 @@ Deno.serve(async (req) => {
 
     // 1. Build prompt + pick size
     const prompt = type === "object"
-      ? buildObjectPrompt(name, tags ?? [], state)
+      ? buildObjectPrompt(name, tags ?? [], state, direction)
       : buildItemPrompt(name, tags ?? []);
     const size = type === "object" ? 512 : 256;
-    console.log(`Generating ${type} sprite (${size}px) with prompt:`, prompt);
+    console.log(`Generating ${type} sprite (${size}px, dir=${direction ?? "down"}) via ${spriteModel} with prompt:`, prompt);
 
-    // 2. Generate sprite via Flux
-    const rawImageUrl = await generateSprite(prompt, size);
+    // 2. Generate sprite via selected model
+    const rawImageUrl = await generateSprite(prompt, size, spriteModel);
     console.log("Raw image generated:", rawImageUrl);
 
     // 3. Remove background via rembg
@@ -67,7 +77,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const filePath = `${type}/${id}.png`;
+    const dirSuffix = direction && direction !== "down" ? `-${direction}` : "";
+    const filePath = `${type}/${id}${dirSuffix}.png`;
     const { error: uploadError } = await supabase.storage
       .from("sprites")
       .upload(filePath, transparentPng, {
@@ -85,13 +96,41 @@ Deno.serve(async (req) => {
     const spriteUrl = `${urlData.publicUrl}?v=${Date.now()}`;
 
     // 6. Update the DB row
-    const table = type === "item" ? "items" : "objects";
-    const { error: updateError } = await supabase
-      .from(table)
-      .update({ sprite_url: spriteUrl })
-      .eq("id", id);
+    if (type === "object" && direction) {
+      // Merge into directional_sprites JSONB
+      const { data: current } = await supabase
+        .from("objects")
+        .select("directional_sprites")
+        .eq("id", id)
+        .single();
 
-    if (updateError) throw updateError;
+      const existing = (current?.directional_sprites as Record<string, string>) ?? {};
+      existing[direction] = spriteUrl;
+
+      const updatePayload: Record<string, unknown> = {
+        directional_sprites: existing,
+      };
+      // Also update sprite_url if this is the default (down) direction
+      if (direction === "down") {
+        updatePayload.sprite_url = spriteUrl;
+      }
+
+      const { error: updateError } = await supabase
+        .from("objects")
+        .update(updatePayload)
+        .eq("id", id);
+
+      if (updateError) throw updateError;
+    } else {
+      // Items or objects without direction: just update sprite_url
+      const table = type === "item" ? "items" : "objects";
+      const { error: updateError } = await supabase
+        .from(table)
+        .update({ sprite_url: spriteUrl })
+        .eq("id", id);
+
+      if (updateError) throw updateError;
+    }
 
     console.log("Sprite saved:", spriteUrl);
 

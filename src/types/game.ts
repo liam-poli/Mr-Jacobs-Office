@@ -1,6 +1,14 @@
 /** Cardinal directions for player facing */
 export type Direction = 'down' | 'up' | 'left' | 'right';
 
+/** Optional per-direction sprite URL overrides from the objects catalog */
+export interface DirectionalSprites {
+  up?: string;
+  down?: string;
+  left?: string;
+  right?: string;
+}
+
 /** Portable resource with Tags. Consumed on use. */
 export interface InventoryItem {
   id: string;
@@ -23,11 +31,20 @@ export interface ItemSpawn {
   tileY: number;
 }
 
+/** Door destination metadata attached to a door object placement */
+export interface DoorTarget {
+  room_id: string;
+  spawnX: number;
+  spawnY: number;
+}
+
 /** Slim placement reference stored in room JSON — just an ID + position */
 export interface ObjectPlacement {
   object_id: string;
   tileX: number;
   tileY: number;
+  direction?: Direction;
+  door_target?: DoorTarget;
 }
 
 /** Item spawn merged with catalog data from the items table */
@@ -49,13 +66,17 @@ export interface ResolvedObject {
   tags: string[];
   states: string[];
   spriteUrl?: string;
+  directionalSprites?: DirectionalSprites;
+  direction: Direction;
   scale: number;
   tileX: number;
   tileY: number;
+  door_target?: DoorTarget;
 }
 
 /** Full room definition — loaded from Supabase or fallback */
 export interface RoomDef {
+  id: string;
   name: string;
   width: number;
   height: number;
@@ -100,9 +121,14 @@ export interface GameState {
   addItem: (item: InventoryItem) => void;
   removeItem: (itemId: string) => void;
 
+  // Room tracking
+  currentRoomId: string | null;
+  setCurrentRoomId: (id: string) => void;
+
   // World objects
   objectStates: Record<string, ObjectState>;
   updateObjectState: (objectId: string, states: string[]) => void;
+  clearObjectStates: () => void;
 
   // Interaction
   interactionTarget: InteractionTarget | null;
@@ -125,4 +151,9 @@ export interface GameState {
   pendingDrop: InventoryItem | null;
   dropItem: (index: number) => void;
   clearPendingDrop: () => void;
+
+  // Terminal chat
+  terminalChatOpen: boolean;
+  openTerminalChat: () => void;
+  closeTerminalChat: () => void;
 }
