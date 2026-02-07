@@ -1,10 +1,26 @@
 // ─── Mood ────────────────────────────────────────────────────────────
 export type JacobsMood =
+  // Severity 1 — Positive
   | 'PLEASED'
+  | 'PROUD'
+  | 'IMPRESSED'
+  | 'GENEROUS'
+  | 'AMUSED'
+  // Severity 2 — Neutral
   | 'NEUTRAL'
+  | 'BORED'
+  // Severity 3 — Uneasy
   | 'SUSPICIOUS'
+  | 'SMUG'
+  // Severity 4 — Hostile
   | 'DISAPPOINTED'
-  | 'UNHINGED';
+  | 'SAD'
+  | 'PARANOID'
+  | 'FURIOUS'
+  // Severity 5 — Chaotic
+  | 'UNHINGED'
+  | 'MANIC'
+  | 'GLITCHING';
 
 // ─── Event Log ───────────────────────────────────────────────────────
 export type JacobsEventType =

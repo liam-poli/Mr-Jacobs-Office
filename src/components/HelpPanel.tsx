@@ -54,7 +54,6 @@ export function HelpPanel() {
           <div className="text-hud-accent text-[14px] tracking-[0.2em] mb-2">CONTROLS</div>
           <Row label="MOVE" value="WASD / Arrows" />
           <Row label="INTERACT" value="E (near objects)" />
-          <Row label="PICK UP" value="Walk near items" />
           <Row label="USE ITEM" value="E on object → select" />
           <Row label="DROP ITEM" value="Click in inventory" />
           <Row label="SETTINGS" value="ESC" />
@@ -78,10 +77,9 @@ export function HelpPanel() {
         {/* Tips */}
         <div>
           <div className="text-hud-accent text-[14px] tracking-[0.2em] mb-2">TIPS</div>
-          <ul className="text-hud-dim text-[13px] leading-relaxed space-y-1">
-            <li>Spend BUCKS at Terminals to talk to the boss</li>
-            <li>Use items on objects to change their state</li>
-            <li>Some doors are locked — find ways to open them</li>
+          <ul className="text-hud-dim text-[13px] leading-relaxed space-y-1 list-disc list-inside">
+            <li>Talk to Mr. Jacobs through the terminals</li>
+            <li>Spend BUCKS at vending machines to get items</li>
             <li>Mr. Jacobs is watching... through cameras</li>
           </ul>
         </div>

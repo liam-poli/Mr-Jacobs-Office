@@ -2,14 +2,7 @@ import {
   GoogleGenerativeAI,
   SchemaType,
 } from "https://esm.sh/@google/generative-ai@0.21.0";
-
-const VALID_MOODS = [
-  "PLEASED",
-  "NEUTRAL",
-  "SUSPICIOUS",
-  "DISAPPOINTED",
-  "UNHINGED",
-];
+import { VALID_MOODS, MOOD_PROMPT_SECTION, validateMoodTransition } from "./moodConfig.ts";
 
 const VALID_GAME_ENDS = ["NONE", "FIRED", "PROMOTED", "ESCAPED"];
 
@@ -169,13 +162,13 @@ Scoring guide:
 Rules:
 - Speech: 1-3 sentences, UPPERCASE, corporate-dystopian humor. Be specific about the job and what they did/didn't do.
 - Score must be an integer 0-10.
-- Mood transitions must be gradual (one step at a time on the scale: PLEASED → NEUTRAL → SUSPICIOUS → DISAPPOINTED → UNHINGED).
-- Good work → PLEASED. Slacking → DISAPPOINTED. Chaos → UNHINGED. Normal → stay current or drift toward NEUTRAL.
+
+${MOOD_PROMPT_SECTION}
 
 Game ending (game_end field):
 - Set game_end to "NONE" in most cases (95%+). The game should continue.
-- "FIRED" = you terminate the employee after this terrible review. Only when DISAPPOINTED or UNHINGED after multiple consecutive poor reviews.
-- "PROMOTED" = you promote the employee after this amazing review. Only when PLEASED after multiple consecutive excellent reviews.
+- "FIRED" = you terminate the employee after this terrible review. Only when mood is severity 4-5 (DISAPPOINTED, SAD, PARANOID, FURIOUS, UNHINGED, MANIC, GLITCHING) after multiple consecutive poor reviews.
+- "PROMOTED" = you promote the employee after this amazing review. Only when mood is severity 1 (PLEASED, PROUD, IMPRESSED, GENEROUS, AMUSED) after multiple consecutive excellent reviews.
 - "ESCAPED" = the simulation breaks. Only when world state shows extreme anomalies.
 - Ending the game is RARE and DRAMATIC. When ending, your speech should be a dramatic 2-3 sentence finale.`;
 
@@ -183,10 +176,8 @@ Game ending (game_end field):
   const text = result.response.text();
   const parsed = JSON.parse(text) as ReviewResult;
 
-  // Validate mood
-  if (!VALID_MOODS.includes(parsed.mood)) {
-    parsed.mood = currentMood;
-  }
+  // Validate mood transition (must be within ±1 severity)
+  parsed.mood = validateMoodTransition(currentMood, parsed.mood);
 
   // Validate game_end
   if (!parsed.game_end || !VALID_GAME_ENDS.includes(parsed.game_end)) {

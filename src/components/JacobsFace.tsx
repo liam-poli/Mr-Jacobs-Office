@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useJacobsStore } from '../stores/jacobsStore';
 import { useGameStore } from '../stores/gameStore';
 import type { JacobsMood } from '../types/jacobs';
+import { getMoodColor, MOOD_SEVERITY } from '../utils/moodUtils';
 
 const panelStyle: React.CSSProperties = {
   backgroundColor: 'var(--color-hud-panel)',
@@ -12,26 +13,31 @@ const panelStyle: React.CSSProperties = {
 
 // Glitch interval per mood (ms) — matches Phaser OfficeScene
 const GLITCH_INTERVAL: Record<JacobsMood, number> = {
-  PLEASED: 12000,
-  NEUTRAL: 8000,
-  SUSPICIOUS: 4000,
-  DISAPPOINTED: 1500,
-  UNHINGED: 500,
+  PLEASED: 15000, PROUD: 14000, AMUSED: 13000, IMPRESSED: 14000, GENEROUS: 15000,
+  NEUTRAL: 8000, BORED: 9000,
+  SUSPICIOUS: 4000, SMUG: 5000,
+  DISAPPOINTED: 1500, SAD: 2000, PARANOID: 1200, FURIOUS: 1000,
+  UNHINGED: 500, MANIC: 400, GLITCHING: 300,
 };
 
 // Static overlay base alpha per mood
 const STATIC_ALPHA: Record<JacobsMood, number> = {
-  PLEASED: 0.02,
-  NEUTRAL: 0.05,
-  SUSPICIOUS: 0.12,
-  DISAPPOINTED: 0.25,
-  UNHINGED: 0.45,
+  PLEASED: 0.01, PROUD: 0.02, AMUSED: 0.02, IMPRESSED: 0.02, GENEROUS: 0.01,
+  NEUTRAL: 0.05, BORED: 0.06,
+  SUSPICIOUS: 0.12, SMUG: 0.10,
+  DISAPPOINTED: 0.25, SAD: 0.22, PARANOID: 0.28, FURIOUS: 0.30,
+  UNHINGED: 0.45, MANIC: 0.40, GLITCHING: 0.50,
 };
 
-// Flicker config per mood — matches Phaser tween repeat counts
+// Flicker config per mood — severity 4-5 moods only
 const FLICKER_CONFIG: Partial<Record<JacobsMood, { speed: number; steps: number; pause: number }>> = {
   DISAPPOINTED: { speed: 150, steps: 3, pause: 5000 },
+  SAD: { speed: 200, steps: 2, pause: 6000 },
+  PARANOID: { speed: 120, steps: 4, pause: 3000 },
+  FURIOUS: { speed: 100, steps: 5, pause: 2500 },
   UNHINGED: { speed: 80, steps: 6, pause: 2000 },
+  MANIC: { speed: 60, steps: 8, pause: 1500 },
+  GLITCHING: { speed: 40, steps: 10, pause: 1000 },
 };
 
 // Generate a small static noise data URL once
@@ -75,7 +81,7 @@ export function JacobsFace() {
 
   // --- Blink loop ---
   const scheduleBlink = useCallback(() => {
-    if (mood === 'UNHINGED') return;
+    if (MOOD_SEVERITY[mood] >= 5) return;
     const delay = 3000 + Math.random() * 4000;
     blinkTimer.current = setTimeout(() => {
       setIsBlinking(true);
@@ -159,10 +165,7 @@ export function JacobsFace() {
 
   if (!sceneReady) return null;
 
-  const moodColor =
-    mood === 'UNHINGED' || mood === 'DISAPPOINTED'
-      ? 'var(--color-hud-danger)'
-      : 'var(--color-hud-accent)';
+  const moodColor = getMoodColor(mood);
 
   const currentFaceUrl = isBlinking && blinkUrl ? blinkUrl : faceUrl;
   const baseStaticAlpha = STATIC_ALPHA[mood];

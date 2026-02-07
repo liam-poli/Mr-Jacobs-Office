@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useJacobsStore } from '../stores/jacobsStore';
 import { useJobStore } from '../stores/jobStore';
 import { playMumble } from '../services/mumbleService';
+import { getMoodColor } from '../utils/moodUtils';
 
 const CHAR_DELAY = 40;
 const DISMISS_DELAY = 5000;
@@ -64,10 +65,7 @@ export function JacobsSpeech() {
 
   if (!speech) return null;
 
-  const moodColor =
-    mood === 'UNHINGED' || mood === 'DISAPPOINTED'
-      ? 'var(--color-hud-danger)'
-      : 'var(--color-hud-accent)';
+  const moodColor = getMoodColor(mood);
 
   return (
     <div

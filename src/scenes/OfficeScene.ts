@@ -9,6 +9,7 @@ import { startJobCycle, stopJobCycle } from '../services/jobService';
 import { MatrixBackground } from '../effects/MatrixBackground';
 import type { RoomDef, GameState, DoorTarget } from '../types/game';
 import type { JacobsMood } from '../types/jacobs';
+import { ALL_MOODS, MOOD_SEVERITY } from '../utils/moodUtils';
 
 const TILE_SIZE = 32;
 
@@ -163,8 +164,7 @@ export class OfficeScene extends Phaser.Scene {
     });
 
     // Extract Jacobs face textures as data URLs for the React speech panel
-    const moods = ['PLEASED', 'NEUTRAL', 'SUSPICIOUS', 'DISAPPOINTED', 'UNHINGED'] as const;
-    for (const m of moods) {
+    for (const m of ALL_MOODS) {
       const key = `jacobs-face-${m}`;
       if (this.textures.exists(key)) {
         const src = this.textures.get(key).getSourceImage() as HTMLCanvasElement;
@@ -346,7 +346,9 @@ export class OfficeScene extends Phaser.Scene {
       // J.A.C.O.B.S. Core: keep the DB sprite as the monitor, overlay the face on top
       if (obj.name === 'J.A.C.O.B.S. Core') {
         const faceY = py - 4;
-        const faceOverlay = this.add.image(px, faceY, 'jacobs-face-NEUTRAL');
+        const currentMood = useJacobsStore.getState().mood;
+        const faceKey = `jacobs-face-${currentMood}`;
+        const faceOverlay = this.add.image(px, faceY, this.textures.exists(faceKey) ? faceKey : 'jacobs-face-NEUTRAL');
         faceOverlay.setScale(0.9);
         faceOverlay.setDepth(py + 0.5);
         this.jacobsScreenSprite = faceOverlay;
@@ -356,6 +358,8 @@ export class OfficeScene extends Phaser.Scene {
         this.jacobsStaticOverlay.setAlpha(0.05);
         this.jacobsBaseY = faceY;
         this.startJacobsAnimations();
+        // Sync face to current mood (static alpha, glitch timer, etc.)
+        this.onJacobsMoodChange(currentMood);
       }
 
       // Apply initial visual state
@@ -600,9 +604,11 @@ export class OfficeScene extends Phaser.Scene {
     if (this.worldStripped) return;
     this.worldStripped = true;
 
-    // Stop game services
+    // Stop game services and unsubscribe from stores to prevent stale callbacks
     stopJacobsLoop();
     stopJobCycle();
+    this.jacobsUnsubscribe?.();
+    this.jacobsUnsubscribe = undefined;
 
     // Kill all tweens and timers
     this.tweens.killAll();
@@ -692,11 +698,11 @@ export class OfficeScene extends Phaser.Scene {
   private restartGlitchTimer(): void {
     this.jacobsGlitchTimer?.destroy();
     const delays: Record<string, number> = {
-      PLEASED: 12000,
-      NEUTRAL: 8000,
-      SUSPICIOUS: 4000,
-      DISAPPOINTED: 1500,
-      UNHINGED: 500,
+      PLEASED: 15000, PROUD: 14000, AMUSED: 13000, IMPRESSED: 14000, GENEROUS: 15000,
+      NEUTRAL: 8000, BORED: 9000,
+      SUSPICIOUS: 4000, SMUG: 5000,
+      DISAPPOINTED: 1500, SAD: 2000, PARANOID: 1200, FURIOUS: 1000,
+      UNHINGED: 500, MANIC: 400, GLITCHING: 300,
     };
     const delay = delays[this.jacobsCurrentMood] ?? 8000;
     this.jacobsGlitchTimer = this.time.addEvent({
@@ -739,7 +745,7 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private onJacobsMoodChange(mood: JacobsMood): void {
-    if (!this.jacobsScreenSprite) return;
+    if (!this.sys || !this.jacobsScreenSprite || !this.jacobsScreenSprite.scene) return;
 
     this.jacobsCurrentMood = mood;
 
@@ -750,11 +756,11 @@ export class OfficeScene extends Phaser.Scene {
 
     // Static intensity scales with mood severity
     const staticAlpha: Record<string, number> = {
-      PLEASED: 0.02,
-      NEUTRAL: 0.05,
-      SUSPICIOUS: 0.12,
-      DISAPPOINTED: 0.25,
-      UNHINGED: 0.45,
+      PLEASED: 0.01, PROUD: 0.02, AMUSED: 0.02, IMPRESSED: 0.02, GENEROUS: 0.01,
+      NEUTRAL: 0.05, BORED: 0.06,
+      SUSPICIOUS: 0.12, SMUG: 0.10,
+      DISAPPOINTED: 0.25, SAD: 0.22, PARANOID: 0.28, FURIOUS: 0.30,
+      UNHINGED: 0.45, MANIC: 0.40, GLITCHING: 0.50,
     };
     if (this.jacobsStaticOverlay) {
       this.jacobsStaticOverlay.setAlpha(staticAlpha[mood] ?? 0.05);
@@ -763,14 +769,17 @@ export class OfficeScene extends Phaser.Scene {
     // Restart glitch timer with new mood-appropriate frequency
     this.restartGlitchTimer();
 
-    // Screen flicker for worse moods
-    if (mood === 'DISAPPOINTED' || mood === 'UNHINGED') {
+    // Screen flicker for severity 4+ moods
+    const sev = MOOD_SEVERITY[mood] ?? 2;
+    if (sev >= 4) {
+      const dur = sev >= 5 ? 80 : 150;
+      const rep = sev >= 5 ? 5 : 2;
       this.tweens.add({
         targets: this.jacobsScreenSprite,
         alpha: { from: 1, to: 0.6 },
-        duration: mood === 'UNHINGED' ? 80 : 150,
+        duration: dur,
         yoyo: true,
-        repeat: mood === 'UNHINGED' ? 5 : 2,
+        repeat: rep,
         ease: 'Sine.easeInOut',
       });
     }

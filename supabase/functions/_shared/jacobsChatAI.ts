@@ -2,14 +2,7 @@ import {
   GoogleGenerativeAI,
   SchemaType,
 } from "https://esm.sh/@google/generative-ai@0.21.0";
-
-const VALID_MOODS = [
-  "PLEASED",
-  "NEUTRAL",
-  "SUSPICIOUS",
-  "DISAPPOINTED",
-  "UNHINGED",
-];
+import { VALID_MOODS, MOOD_PROMPT_SECTION, validateMoodTransition } from "./moodConfig.ts";
 
 const VALID_GAME_ENDS = ["NONE", "FIRED", "PROMOTED", "ESCAPED"];
 
@@ -150,13 +143,13 @@ Rules:
 - Reply directly to what the employee said. Be in-character.
 - You can see what the employee has been doing in the office. Reference their recent activity when relevant.
 - Keep replies to 1-3 sentences. Uppercase. Corporate-dystopian humor.
-- Mood transitions must be gradual (one step at a time: PLEASED → NEUTRAL → SUSPICIOUS → DISAPPOINTED → UNHINGED).
-- Compliments/obedience → toward PLEASED. Normal chat → stay current. Questions about the office → SUSPICIOUS. Rudeness/complaints → DISAPPOINTED. Repeated hostility → UNHINGED.
+
+${MOOD_PROMPT_SECTION}
 
 Game ending (game_end field):
 - Set game_end to "NONE" in most cases (95%+). The conversation continues normally.
-- "PROMOTED" = the employee has charmed or manipulated you into promoting them out of the office. Only after extended flattery/negotiation AND while PLEASED.
-- "FIRED" = the employee has been so hostile that you fire them on the spot. Only while UNHINGED after repeated hostility.
+- "PROMOTED" = the employee has charmed or manipulated you into promoting them out of the office. Only after extended flattery/negotiation AND while mood is severity 1 (PLEASED, PROUD, IMPRESSED, GENEROUS, AMUSED).
+- "FIRED" = the employee has been so hostile that you fire them on the spot. Only while mood is severity 5 (UNHINGED, MANIC, GLITCHING) after repeated hostility.
 - "ESCAPED" = the employee has somehow hacked or broken through the terminal. Extremely rare.
 - Ending the game is RARE and DRAMATIC. When ending, your reply should be a dramatic 2-3 sentence finale.`;
 
@@ -164,10 +157,8 @@ Game ending (game_end field):
   const text = result.response.text();
   const parsed = JSON.parse(text) as JacobsChatResponse;
 
-  // Validate mood
-  if (!VALID_MOODS.includes(parsed.mood)) {
-    parsed.mood = currentMood;
-  }
+  // Validate mood transition (must be within ±1 severity)
+  parsed.mood = validateMoodTransition(currentMood, parsed.mood);
 
   // Validate game_end
   if (!parsed.game_end || !VALID_GAME_ENDS.includes(parsed.game_end)) {

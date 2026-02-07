@@ -4,6 +4,7 @@ import { useJacobsStore } from '../stores/jacobsStore';
 import { sendTerminalMessage, type ChatMessage } from '../services/terminalChatService';
 import { playMumble } from '../services/mumbleService';
 import { playTerminalOpen, playTerminalClose, playTerminalSend, playTerminalReceive } from '../services/terminalSounds';
+import { getMoodColor } from '../utils/moodUtils';
 
 const CHAR_DELAY = 30;
 
@@ -145,10 +146,7 @@ export function TerminalChat() {
 
   if (!isOpen || !sceneReady) return null;
 
-  const moodColor =
-    mood === 'UNHINGED' || mood === 'DISAPPOINTED'
-      ? 'var(--color-hud-danger)'
-      : 'var(--color-hud-accent)';
+  const moodColor = getMoodColor(mood);
 
   return (
     <div

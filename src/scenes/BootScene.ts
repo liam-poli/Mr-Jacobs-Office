@@ -482,6 +482,428 @@ export class BootScene extends Phaser.Scene {
       }
       unhinged.generateTexture(`jacobs-face-UNHINGED${sfx}`, S, S);
       unhinged.destroy();
+
+      // ─── PROUD ──────────────────────────────────────
+      const proud = this.add.graphics();
+      fillDisc(proud, CX, CY, 12, 0xffdd44);
+      fillDisc(proud, CX, CY, 11, 0xffe855);
+      // Flat brows (confident)
+      proud.fillStyle(0x222222, 1);
+      proud.fillRect(CX - 7, CY - 7, 5, 1);
+      proud.fillRect(CX + 2, CY - 7, 5, 1);
+      if (blink) {
+        drawClosedEyes(proud, CX - 4, CX + 4, CY - 3);
+      } else {
+        // Closed happy eyes (upside-down arcs / curved lines)
+        proud.fillStyle(0x222222, 1);
+        proud.fillRect(CX - 6, CY - 4, 4, 1);
+        proud.fillRect(CX - 5, CY - 3, 2, 1);
+        proud.fillRect(CX + 2, CY - 4, 4, 1);
+        proud.fillRect(CX + 3, CY - 3, 2, 1);
+      }
+      // Confident smile
+      proud.lineStyle(2, 0x222222, 1);
+      proud.beginPath();
+      proud.arc(CX, CY + 2, 5, 0.3, Math.PI - 0.3, false);
+      proud.strokePath();
+      // Sparkle pixel top-right
+      proud.fillStyle(0xffffff, 0.9);
+      proud.fillRect(CX + 9, CY - 10, 2, 2);
+      proud.fillRect(CX + 10, CY - 11, 1, 1);
+      proud.fillRect(CX + 8, CY - 9, 1, 1);
+      addScanlines(proud);
+      proud.generateTexture(`jacobs-face-PROUD${sfx}`, S, S);
+      proud.destroy();
+
+      // ─── AMUSED ─────────────────────────────────────
+      const amused = this.add.graphics();
+      fillDisc(amused, CX, CY, 12, 0xffdd44);
+      fillDisc(amused, CX, CY, 11, 0xffe855);
+      // Flat brows
+      amused.fillStyle(0x222222, 1);
+      amused.fillRect(CX - 7, CY - 6, 4, 1);
+      amused.fillRect(CX + 3, CY - 6, 4, 1);
+      if (blink) {
+        drawClosedEyes(amused, CX - 4, CX + 4, CY - 3);
+      } else {
+        // Squinting laughing eyes
+        amused.fillStyle(0x222222, 1);
+        amused.fillRect(CX - 6, CY - 3, 5, 1);
+        amused.fillRect(CX - 5, CY - 4, 3, 1);
+        amused.fillRect(CX + 1, CY - 3, 5, 1);
+        amused.fillRect(CX + 2, CY - 4, 3, 1);
+      }
+      // Open mouth grin (filled arc)
+      amused.fillStyle(0x222222, 1);
+      amused.fillRect(CX - 5, CY + 2, 10, 1);
+      amused.fillRect(CX - 4, CY + 3, 8, 2);
+      amused.fillRect(CX - 3, CY + 5, 6, 1);
+      // Rosy cheeks
+      fillDisc(amused, CX - 8, CY + 1, 2, 0xff8866, 0.25);
+      fillDisc(amused, CX + 8, CY + 1, 2, 0xff8866, 0.25);
+      addScanlines(amused);
+      amused.generateTexture(`jacobs-face-AMUSED${sfx}`, S, S);
+      amused.destroy();
+
+      // ─── IMPRESSED ──────────────────────────────────
+      const impressed = this.add.graphics();
+      fillDisc(impressed, CX, CY, 12, 0xffdd44);
+      fillDisc(impressed, CX, CY, 11, 0xffe855);
+      // Raised brows (high arches)
+      impressed.fillStyle(0x222222, 1);
+      impressed.fillRect(CX - 6, CY - 8, 4, 1);
+      impressed.fillRect(CX - 7, CY - 7, 1, 1);
+      impressed.fillRect(CX + 2, CY - 8, 4, 1);
+      impressed.fillRect(CX + 6, CY - 7, 1, 1);
+      if (blink) {
+        drawClosedEyes(impressed, CX - 4, CX + 4, CY - 3);
+      } else {
+        // Wide open eyes (larger radius)
+        fillDisc(impressed, CX - 4, CY - 3, 3, 0x222222);
+        fillDisc(impressed, CX + 4, CY - 3, 3, 0x222222);
+        impressed.fillStyle(0xffffff, 0.9);
+        impressed.fillRect(CX - 5, CY - 4, 1, 1);
+        impressed.fillRect(CX + 3, CY - 4, 1, 1);
+      }
+      // Small "O" mouth
+      impressed.lineStyle(2, 0x222222, 1);
+      impressed.strokeCircle(CX, CY + 4, 3);
+      addScanlines(impressed);
+      impressed.generateTexture(`jacobs-face-IMPRESSED${sfx}`, S, S);
+      impressed.destroy();
+
+      // ─── GENEROUS ───────────────────────────────────
+      const generous = this.add.graphics();
+      fillDisc(generous, CX, CY, 12, 0xffdd44);
+      fillDisc(generous, CX, CY, 11, 0xffe855);
+      // Gentle brows
+      generous.fillStyle(0x222222, 1);
+      generous.fillRect(CX - 7, CY - 7, 4, 1);
+      generous.fillRect(CX + 3, CY - 7, 4, 1);
+      if (blink) {
+        drawClosedEyes(generous, CX - 4, CX + 4, CY - 3);
+      } else {
+        // Heart-shaped eyes (small heart pixels)
+        generous.fillStyle(0xff4466, 1);
+        generous.fillRect(CX - 6, CY - 4, 2, 1);
+        generous.fillRect(CX - 3, CY - 4, 2, 1);
+        generous.fillRect(CX - 6, CY - 3, 5, 1);
+        generous.fillRect(CX - 5, CY - 2, 3, 1);
+        generous.fillRect(CX - 4, CY - 1, 1, 1);
+        generous.fillRect(CX + 2, CY - 4, 2, 1);
+        generous.fillRect(CX + 5, CY - 4, 2, 1);
+        generous.fillRect(CX + 2, CY - 3, 5, 1);
+        generous.fillRect(CX + 3, CY - 2, 3, 1);
+        generous.fillRect(CX + 4, CY - 1, 1, 1);
+      }
+      // Warm smile
+      generous.lineStyle(2, 0x222222, 1);
+      generous.beginPath();
+      generous.arc(CX, CY + 2, 5, 0.2, Math.PI - 0.2, false);
+      generous.strokePath();
+      // Subtle pink glow
+      fillDisc(generous, CX, CY, 12, 0xff8888, 0.08);
+      addScanlines(generous);
+      generous.generateTexture(`jacobs-face-GENEROUS${sfx}`, S, S);
+      generous.destroy();
+
+      // ─── BORED ──────────────────────────────────────
+      const bored = this.add.graphics();
+      fillDisc(bored, CX, CY, 12, 0xffdd44);
+      fillDisc(bored, CX, CY, 11, 0xffe855);
+      // Flat low brows
+      bored.fillStyle(0x222222, 1);
+      bored.fillRect(CX - 7, CY - 5, 4, 1);
+      bored.fillRect(CX + 3, CY - 5, 4, 1);
+      if (blink) {
+        drawClosedEyes(bored, CX - 4, CX + 4, CY - 2);
+      } else {
+        // Heavy-lidded droopy eyes (half-closed)
+        bored.fillStyle(0x222222, 1);
+        bored.fillRect(CX - 6, CY - 3, 5, 2);
+        bored.fillRect(CX + 1, CY - 3, 5, 2);
+        // Eyelids covering top half
+        bored.fillStyle(0xffe855, 1);
+        bored.fillRect(CX - 6, CY - 3, 5, 1);
+        bored.fillRect(CX + 1, CY - 3, 5, 1);
+        // Tiny pupil visible
+        bored.fillStyle(0x222222, 1);
+        bored.fillRect(CX - 4, CY - 2, 2, 1);
+        bored.fillRect(CX + 2, CY - 2, 2, 1);
+      }
+      // Flat slightly droopy mouth
+      bored.fillStyle(0x222222, 1);
+      bored.fillRect(CX - 4, CY + 4, 8, 1);
+      bored.fillRect(CX - 5, CY + 5, 2, 1);
+      addScanlines(bored);
+      bored.generateTexture(`jacobs-face-BORED${sfx}`, S, S);
+      bored.destroy();
+
+      // ─── SMUG ───────────────────────────────────────
+      const smug = this.add.graphics();
+      fillDisc(smug, CX, CY, 12, 0xffdd44);
+      fillDisc(smug, CX, CY, 11, 0xffe855);
+      // One raised brow, one flat
+      smug.fillStyle(0x222222, 1);
+      smug.fillRect(CX - 7, CY - 6, 4, 1);
+      smug.fillRect(CX + 2, CY - 8, 4, 1);
+      smug.fillRect(CX + 6, CY - 7, 1, 1);
+      if (blink) {
+        drawClosedEyes(smug, CX - 4, CX + 4, CY - 3);
+      } else {
+        // Half-closed confident eyes
+        smug.fillStyle(0x222222, 1);
+        smug.fillRect(CX - 6, CY - 3, 5, 2);
+        smug.fillRect(CX + 1, CY - 3, 5, 2);
+        smug.fillStyle(0xffe855, 1);
+        smug.fillRect(CX - 6, CY - 3, 5, 1);
+        smug.fillRect(CX + 1, CY - 3, 5, 1);
+        smug.fillStyle(0xffffff, 0.5);
+        smug.fillRect(CX - 5, CY - 2, 1, 1);
+        smug.fillRect(CX + 2, CY - 2, 1, 1);
+      }
+      // One-sided smirk (right side up, left flat)
+      smug.lineStyle(2, 0x222222, 1);
+      smug.beginPath();
+      smug.moveTo(CX - 5, CY + 4);
+      smug.lineTo(CX, CY + 4);
+      smug.lineTo(CX + 4, CY + 2);
+      smug.strokePath();
+      addScanlines(smug);
+      smug.generateTexture(`jacobs-face-SMUG${sfx}`, S, S);
+      smug.destroy();
+
+      // ─── SAD ────────────────────────────────────────
+      const sad = this.add.graphics();
+      fillDisc(sad, CX, CY, 12, 0xffdd44);
+      fillDisc(sad, CX, CY, 11, 0xffe855);
+      // Sad tilted brows (inner up)
+      sad.fillStyle(0x222222, 1);
+      sad.fillRect(CX - 5, CY - 8, 2, 1);
+      sad.fillRect(CX - 7, CY - 7, 2, 1);
+      sad.fillRect(CX + 3, CY - 8, 2, 1);
+      sad.fillRect(CX + 5, CY - 7, 2, 1);
+      if (blink) {
+        drawClosedEyes(sad, CX - 4, CX + 4, CY - 2);
+      } else {
+        drawEyes(sad, CX - 4, CX + 4, CY - 2, 2);
+      }
+      // Deep frown
+      sad.lineStyle(2, 0x222222, 1);
+      sad.beginPath();
+      sad.arc(CX, CY + 10, 5, Math.PI + 0.4, -0.4, false);
+      sad.strokePath();
+      // Tear drops (blue pixels)
+      sad.fillStyle(0x4488ff, 0.8);
+      sad.fillRect(CX - 7, CY, 1, 2);
+      sad.fillRect(CX - 7, CY + 3, 1, 1);
+      sad.fillRect(CX + 6, CY, 1, 2);
+      sad.fillRect(CX + 6, CY + 3, 1, 1);
+      // Light glitch
+      sad.fillStyle(0x4488ff, 0.3);
+      sad.fillRect(0, 26, 8, 1);
+      addScanlines(sad);
+      sad.generateTexture(`jacobs-face-SAD${sfx}`, S, S);
+      sad.destroy();
+
+      // ─── PARANOID ───────────────────────────────────
+      const paranoid = this.add.graphics();
+      fillDisc(paranoid, CX, CY, 12, 0xffdd44);
+      fillDisc(paranoid, CX, CY, 11, 0xffe855);
+      // Uneven twitchy brows
+      paranoid.fillStyle(0x222222, 1);
+      paranoid.fillRect(CX - 7, CY - 8, 5, 1);
+      paranoid.fillRect(CX + 3, CY - 6, 4, 1);
+      if (blink) {
+        drawClosedEyes(paranoid, CX - 4, CX + 4, CY - 3);
+      } else {
+        // Mismatched eyes — left big, right small
+        fillDisc(paranoid, CX - 4, CY - 3, 3, 0x222222);
+        fillDisc(paranoid, CX + 4, CY - 2, 1, 0x222222);
+        paranoid.fillStyle(0xffffff, 0.8);
+        paranoid.fillRect(CX - 5, CY - 4, 1, 1);
+        paranoid.fillRect(CX + 3, CY - 3, 1, 1);
+      }
+      // Tight wobbly mouth
+      paranoid.lineStyle(2, 0x222222, 1);
+      paranoid.beginPath();
+      paranoid.moveTo(CX - 4, CY + 4);
+      paranoid.lineTo(CX - 2, CY + 3);
+      paranoid.lineTo(CX, CY + 5);
+      paranoid.lineTo(CX + 2, CY + 3);
+      paranoid.lineTo(CX + 4, CY + 4);
+      paranoid.strokePath();
+      // Sweat drop
+      paranoid.fillStyle(0x88ccff, 0.7);
+      paranoid.fillRect(CX + 9, CY - 4, 1, 2);
+      paranoid.fillRect(CX + 9, CY - 1, 1, 1);
+      // Medium glitch corruption
+      paranoid.fillStyle(0xff0044, 0.4);
+      paranoid.fillRect(0, 20, 10, 1);
+      paranoid.fillStyle(0x00ffaa, 0.35);
+      paranoid.fillRect(20, 8, 8, 1);
+      paranoid.fillStyle(0xff00ff, 0.25);
+      paranoid.fillRect(6, 28, 6, 1);
+      addScanlines(paranoid);
+      paranoid.generateTexture(`jacobs-face-PARANOID${sfx}`, S, S);
+      paranoid.destroy();
+
+      // ─── FURIOUS ────────────────────────────────────
+      const furious = this.add.graphics();
+      // Red-tinted base
+      fillDisc(furious, CX, CY, 12, 0xff6633, 0.3);
+      fillDisc(furious, CX, CY, 12, 0xffdd44);
+      fillDisc(furious, CX, CY, 11, 0xffe855);
+      fillDisc(furious, CX, CY, 11, 0xff4422, 0.2);
+      // Angry V-brows
+      furious.fillStyle(0x222222, 1);
+      furious.fillRect(CX - 7, CY - 6, 1, 1);
+      furious.fillRect(CX - 6, CY - 7, 2, 1);
+      furious.fillRect(CX - 4, CY - 8, 2, 1);
+      furious.fillRect(CX + 2, CY - 8, 2, 1);
+      furious.fillRect(CX + 4, CY - 7, 2, 1);
+      furious.fillRect(CX + 6, CY - 6, 1, 1);
+      if (blink) {
+        drawClosedEyes(furious, CX - 4, CX + 4, CY - 3);
+      } else {
+        // Angry narrowed eyes
+        furious.fillStyle(0x222222, 1);
+        furious.fillRect(CX - 6, CY - 3, 5, 2);
+        furious.fillRect(CX + 1, CY - 3, 5, 2);
+        furious.fillStyle(0xff0000, 0.7);
+        furious.fillRect(CX - 5, CY - 3, 1, 1);
+        furious.fillRect(CX + 2, CY - 3, 1, 1);
+      }
+      // Open shouting mouth
+      furious.fillStyle(0x222222, 1);
+      furious.fillRect(CX - 5, CY + 2, 10, 1);
+      furious.fillRect(CX - 4, CY + 3, 8, 3);
+      furious.fillRect(CX - 3, CY + 6, 6, 1);
+      // Teeth
+      furious.fillStyle(0xffffff, 0.8);
+      furious.fillRect(CX - 3, CY + 3, 6, 1);
+      // Medium glitch
+      furious.fillStyle(0xff0044, 0.5);
+      furious.fillRect(0, 24, 12, 1);
+      furious.fillStyle(0xff4400, 0.4);
+      furious.fillRect(18, 4, 10, 1);
+      addScanlines(furious);
+      furious.generateTexture(`jacobs-face-FURIOUS${sfx}`, S, S);
+      furious.destroy();
+
+      // ─── MANIC ──────────────────────────────────────
+      const manic = this.add.graphics();
+      // Double outline vibration effect
+      fillDisc(manic, CX - 1, CY, 12, 0xffee00, 0.3);
+      fillDisc(manic, CX + 1, CY, 12, 0xffee00, 0.3);
+      fillDisc(manic, CX, CY, 12, 0xffdd44);
+      fillDisc(manic, CX, CY, 11, 0xffe855);
+      // High arched brows
+      manic.fillStyle(0x222222, 1);
+      manic.fillRect(CX - 6, CY - 9, 4, 1);
+      manic.fillRect(CX + 2, CY - 9, 4, 1);
+      if (blink) {
+        manic.fillStyle(0x222222, 1);
+        manic.fillRect(CX - 6, CY - 3, 5, 1);
+        manic.fillRect(CX + 2, CY - 3, 5, 1);
+      } else {
+        // Spiral/pinwheel eyes — concentric rings
+        fillDisc(manic, CX - 4, CY - 3, 3, 0x222222);
+        fillDisc(manic, CX - 4, CY - 3, 2, 0xffe855);
+        fillDisc(manic, CX - 4, CY - 3, 1, 0x222222);
+        fillDisc(manic, CX + 4, CY - 3, 3, 0x222222);
+        fillDisc(manic, CX + 4, CY - 3, 2, 0xffe855);
+        fillDisc(manic, CX + 4, CY - 3, 1, 0x222222);
+      }
+      // Impossibly wide grin
+      manic.lineStyle(2, 0x222222, 1);
+      manic.beginPath();
+      manic.arc(CX, CY + 1, 8, 0.1, Math.PI - 0.1, false);
+      manic.strokePath();
+      // Heavy glitch + color bars
+      manic.fillStyle(0xff0044, 0.7);
+      manic.fillRect(0, 22, S, 2);
+      manic.fillStyle(0x00ff88, 0.5);
+      manic.fillRect(0, 6, S, 1);
+      manic.fillRect(0, 28, S, 1);
+      manic.fillStyle(0xff00ff, 0.4);
+      manic.fillRect(2, 14, 8, 1);
+      manic.fillRect(20, 2, 8, 1);
+      manic.fillStyle(0x00ffff, 0.3);
+      manic.fillRect(10, 18, 12, 1);
+      manic.fillStyle(0x000000, 0.12);
+      for (let y = 0; y < S; y += 2) {
+        manic.fillRect(0, y, S, 1);
+      }
+      manic.generateTexture(`jacobs-face-MANIC${sfx}`, S, S);
+      manic.destroy();
+
+      // ─── GLITCHING ──────────────────────────────────
+      const glitch = this.add.graphics();
+      // Fragmented face — horizontal bands with offsets
+      // Band 1 (top third)
+      glitch.save();
+      fillDisc(glitch, CX + 2, CY, 12, 0xffdd44);
+      fillDisc(glitch, CX + 2, CY, 11, 0xffe855);
+      // Mask: only show top band
+      glitch.fillStyle(0x0c0f16, 1);
+      glitch.fillRect(0, 11, S, 21);
+      // Band 2 (middle) — shifted left
+      fillDisc(glitch, CX - 2, CY, 12, 0xffdd44);
+      fillDisc(glitch, CX - 2, CY, 11, 0xffe855);
+      // Mask: only show middle band
+      glitch.fillStyle(0x0c0f16, 1);
+      glitch.fillRect(0, 0, S, 11);
+      glitch.fillRect(0, 22, S, 10);
+      // Band 3 (bottom) — shifted right
+      fillDisc(glitch, CX + 1, CY, 12, 0xffdd44);
+      fillDisc(glitch, CX + 1, CY, 11, 0xffe855);
+      glitch.fillStyle(0x0c0f16, 1);
+      glitch.fillRect(0, 0, S, 22);
+      // Rebuild full face with fragments
+      glitch.restore();
+      // Redraw as simple fragmented approach:
+      // Top shard
+      fillDisc(glitch, CX + 2, CY, 12, 0xffdd44, 0.6);
+      // Middle shard
+      fillDisc(glitch, CX - 1, CY + 1, 11, 0xffe855, 0.7);
+      // Bottom shard
+      fillDisc(glitch, CX, CY - 1, 12, 0xffcc33, 0.5);
+      // Fragmented eyes (displaced)
+      if (!blink) {
+        fillDisc(glitch, CX - 3, CY - 3, 2, 0x222222);
+        fillDisc(glitch, CX + 5, CY - 2, 2, 0x222222);
+        glitch.fillStyle(0xff0000, 0.6);
+        glitch.fillRect(CX - 4, CY - 4, 1, 1);
+      } else {
+        glitch.fillStyle(0x222222, 1);
+        glitch.fillRect(CX - 5, CY - 3, 4, 1);
+        glitch.fillRect(CX + 3, CY - 2, 4, 1);
+      }
+      // Corrupted mouth fragments
+      glitch.fillStyle(0x222222, 0.8);
+      glitch.fillRect(CX - 4, CY + 3, 3, 2);
+      glitch.fillRect(CX + 1, CY + 4, 4, 1);
+      // Extreme glitch corruption
+      glitch.fillStyle(0xff00ff, 0.7);
+      glitch.fillRect(0, 10, S, 2);
+      glitch.fillRect(0, 21, S, 2);
+      glitch.fillStyle(0x00ffff, 0.6);
+      glitch.fillRect(0, 5, 14, 1);
+      glitch.fillRect(16, 26, 16, 1);
+      glitch.fillStyle(0xff0044, 0.8);
+      glitch.fillRect(0, 15, S, 1);
+      glitch.fillRect(0, 28, S, 2);
+      glitch.fillStyle(0x00ff44, 0.5);
+      glitch.fillRect(8, 0, 1, S);
+      glitch.fillRect(24, 0, 1, S);
+      // Heavy scanlines
+      glitch.fillStyle(0x000000, 0.2);
+      for (let y = 0; y < S; y += 2) {
+        glitch.fillRect(0, y, S, 1);
+      }
+      glitch.generateTexture(`jacobs-face-GLITCHING${sfx}`, S, S);
+      glitch.destroy();
     }
 
     // ─── STATIC OVERLAY ──────────────────────────────

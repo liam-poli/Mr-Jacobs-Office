@@ -1,18 +1,21 @@
 Finsihing it off
 
 
-Figure out all the object state 
-Setup the items
+* Setup the map 0 break room, hall way, server room, office, 
+* Add the remaining objects and items 
+* make text more simple for interactions
+* Setup the intial world with items 
+* Connect object actions to specal uses
+    - Terminal 
+    - Vending machine
+    - Doors 
+* Add flare 
+    - Paintings 
+    - Secuuity cameras
+    - More soudns 
+* Connect up the jacbos control 
 
-connect up crazy jacob contorls 
 
-* Have jacob connect into all state, including the player and invesntory 
-
-* setup the world and populate 
-
-* videos 
-* Ending panel , escape or simulation over , add a laught 
-* Add security cameras
 
 
 
