@@ -15,6 +15,7 @@ const FALLBACK_RESULT: InteractionResult = {
   result_state: null,
   output_item: null,
   output_item_id: null,
+  output_item_sprite_url: null,
   output_item_tags: null,
   description: "That doesn't seem to work.",
   cached: false,
@@ -42,7 +43,21 @@ export async function resolveInteraction(
       return FALLBACK_RESULT;
     }
 
-    return data as InteractionResult;
+    const result = data as InteractionResult;
+
+    // Trigger sprite generation client-side if the output item has no sprite
+    if (result.output_item_id && !result.output_item_sprite_url) {
+      supabase.functions.invoke('generate-sprite', {
+        body: {
+          type: 'item',
+          id: result.output_item_id,
+          name: result.output_item,
+          tags: result.output_item_tags ?? [],
+        },
+      }).catch((err) => console.warn('Sprite generation trigger failed:', err));
+    }
+
+    return result;
   } catch (err) {
     console.warn('interact call failed:', err);
     return FALLBACK_RESULT;

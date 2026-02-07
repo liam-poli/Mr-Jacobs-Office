@@ -112,8 +112,10 @@ export class InteractionManager {
   private spawnDroppedItem(item: InventoryItem): void {
     const px = this.player.x;
     const py = this.player.y + 16;
-    const textureKey = item.spriteUrl
-      ? `sprite-item-${item.item_id}`
+    const desiredKey = `sprite-item-${item.item_id}`;
+    // Only use the sprite texture if it's actually loaded in Phaser
+    const textureKey = item.spriteUrl && this.scene.textures.exists(desiredKey)
+      ? desiredKey
       : 'item-default';
 
     // Floor glow behind the dropped item
@@ -145,6 +147,21 @@ export class InteractionManager {
     const sprite = this.scene.add.image(px, py, textureKey);
     sprite.setDepth(py);
     sprite.setData('highlight', [glow, arrow]);
+
+    // Dynamically load the sprite texture if it exists but isn't in Phaser yet
+    if (item.spriteUrl && !this.scene.textures.exists(desiredKey)) {
+      this.scene.load.image(desiredKey, item.spriteUrl);
+      this.scene.load.once('complete', () => {
+        if (sprite.active) {
+          sprite.setTexture(desiredKey);
+          const f = sprite.frame;
+          if (f.width > 32 || f.height > 32) {
+            sprite.setScale(32 / Math.max(f.width, f.height));
+          }
+        }
+      });
+      this.scene.load.start();
+    }
 
     // Scale large textures (e.g. server sprites) to match 32px item size
     const frame = sprite.frame;
@@ -364,6 +381,7 @@ export class InteractionManager {
           item_id: result.output_item_id ?? 'output',
           name: result.output_item,
           tags: result.output_item_tags ?? [],
+          spriteUrl: result.output_item_sprite_url ?? undefined,
         };
 
         if (store.inventory.length < 5) {

@@ -10,21 +10,21 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-/** Look up or create an item in the items catalog. Returns the item UUID. */
+/** Look up or create an item in the items catalog. Returns id + sprite_url. */
 async function ensureOutputItem(
   supabase: ReturnType<typeof createClient>,
   name: string,
   tags: string[],
-): Promise<string | null> {
+): Promise<{ id: string; sprite_url: string | null } | null> {
   try {
     const { data: existing } = await supabase
       .from("items")
-      .select("id")
+      .select("id, sprite_url")
       .eq("name", name)
       .limit(1)
       .single();
 
-    if (existing) return existing.id;
+    if (existing) return { id: existing.id, sprite_url: existing.sprite_url };
 
     const { data: created } = await supabase
       .from("items")
@@ -32,7 +32,9 @@ async function ensureOutputItem(
       .select("id")
       .single();
 
-    return created?.id ?? null;
+    if (!created) return null;
+
+    return { id: created.id, sprite_url: null };
   } catch {
     console.warn("ensureOutputItem failed for:", name);
     return null;
@@ -92,17 +94,30 @@ Deno.serve(async (req) => {
       if (cached) {
         console.log("Cache hit:", cached.id);
 
-        // Resolve output_item_id if we have an output item but no ID yet (legacy rows)
+        // Resolve output item id + sprite_url
         let outputItemId = cached.output_item_id ?? null;
-        if (cached.output_item && !outputItemId) {
-          outputItemId = await ensureOutputItem(
-            supabase, cached.output_item, cached.output_item_tags ?? [],
-          );
-          // Backfill the cached row
-          if (outputItemId) {
-            await supabase.from("interactions")
-              .update({ output_item_id: outputItemId })
-              .eq("id", cached.id);
+        let outputItemSpriteUrl: string | null = null;
+        if (cached.output_item) {
+          if (!outputItemId) {
+            const result = await ensureOutputItem(
+              supabase, cached.output_item, cached.output_item_tags ?? [],
+            );
+            if (result) {
+              outputItemId = result.id;
+              outputItemSpriteUrl = result.sprite_url;
+              // Backfill the cached row
+              await supabase.from("interactions")
+                .update({ output_item_id: result.id })
+                .eq("id", cached.id);
+            }
+          } else {
+            // Look up current sprite_url (may have been generated since caching)
+            const { data: itemRow } = await supabase
+              .from("items")
+              .select("sprite_url")
+              .eq("id", outputItemId)
+              .single();
+            outputItemSpriteUrl = itemRow?.sprite_url ?? null;
           }
         }
 
@@ -110,6 +125,7 @@ Deno.serve(async (req) => {
           result_state: cached.result_state,
           output_item: cached.output_item,
           output_item_id: outputItemId,
+          output_item_sprite_url: outputItemSpriteUrl,
           output_item_tags: cached.output_item_tags,
           description: cached.description,
           cached: true,
@@ -148,10 +164,15 @@ Deno.serve(async (req) => {
 
     // 4. Persist output item in the items catalog if one was produced
     let outputItemId: string | null = null;
+    let outputItemSpriteUrl: string | null = null;
     if (aiResult.output_item) {
-      outputItemId = await ensureOutputItem(
+      const outputResult = await ensureOutputItem(
         supabase, aiResult.output_item, aiResult.output_item_tags ?? [],
       );
+      if (outputResult) {
+        outputItemId = outputResult.id;
+        outputItemSpriteUrl = outputResult.sprite_url;
+      }
     }
 
     // 5. Cache the AI result with item_id + object_id
@@ -178,6 +199,7 @@ Deno.serve(async (req) => {
       result_state: aiResult.result_state,
       output_item: aiResult.output_item,
       output_item_id: outputItemId,
+      output_item_sprite_url: outputItemSpriteUrl,
       output_item_tags: aiResult.output_item_tags,
       description: aiResult.description,
       cached: false,

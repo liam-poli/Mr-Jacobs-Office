@@ -31,6 +31,21 @@ export const useGameStore = create<GameState>((set) => ({
     })),
   clearObjectStates: () => set({ objectStates: {} }),
 
+  roomStateCache: {},
+  saveRoomStates: (roomId) =>
+    set((s) => ({
+      roomStateCache: {
+        ...s.roomStateCache,
+        [roomId]: structuredClone(s.objectStates),
+      },
+    })),
+  restoreRoomStates: (roomId) =>
+    set((s) => {
+      const cached = s.roomStateCache[roomId];
+      if (!cached) return s;
+      return { objectStates: { ...s.objectStates, ...cached } };
+    }),
+
   interactionTarget: null,
   setInteractionTarget: (target) => set({ interactionTarget: target }),
 
@@ -64,6 +79,13 @@ export const useGameStore = create<GameState>((set) => ({
       next.add(key);
       return { collectedSpawns: next };
     }),
+
+  updateItemSprite: (itemId, spriteUrl) =>
+    set((s) => ({
+      inventory: s.inventory.map((item) =>
+        item.item_id === itemId ? { ...item, spriteUrl } : item,
+      ),
+    })),
 
   terminalChatOpen: false,
   openTerminalChat: () => set({ terminalChatOpen: true }),

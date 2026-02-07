@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '../stores/gameStore';
+import { supabase } from '../services/supabase';
 import { soundService } from '../services/soundService';
 
 const SLOT_COUNT = 5;
@@ -49,6 +50,29 @@ export function InventoryBar() {
   const dropItem = useGameStore((s) => s.dropItem);
 
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  // Poll for sprites that are still generating (new items without sprite_url)
+  useEffect(() => {
+    const pending = inventory.filter((item) => !item.spriteUrl && item.item_id !== 'output');
+    if (pending.length === 0) return;
+
+    const interval = setInterval(async () => {
+      const ids = pending.map((i) => i.item_id);
+      const { data } = await supabase
+        .from('items')
+        .select('id, sprite_url')
+        .in('id', ids)
+        .not('sprite_url', 'is', null);
+
+      if (data && data.length > 0) {
+        for (const row of data) {
+          useGameStore.getState().updateItemSprite(row.id, row.sprite_url);
+        }
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [inventory]);
 
   if (!sceneReady) return null;
 

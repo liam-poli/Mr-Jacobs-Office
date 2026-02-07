@@ -84,6 +84,7 @@ export class OfficeScene extends Phaser.Scene {
     this.matrixBg = null;
     this.objectVisuals = new Map();
     this.player = null!;
+    this.worldStripped = false;
   }
 
   async create() {
@@ -117,6 +118,9 @@ export class OfficeScene extends Phaser.Scene {
     // Spawn objects and items
     this.spawnObjects(roomDef);
     this.spawnItems(roomDef);
+
+    // Restore cached object states from previous visits (overrides DB defaults)
+    useGameStore.getState().restoreRoomStates(roomDef.id);
 
     // Player also collides with objects
     this.physics.add.collider(this.player, this.objectGroup);
@@ -548,7 +552,11 @@ export class OfficeScene extends Phaser.Scene {
     cam.fadeOut(400, 0, 0, 0);
 
     cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-      useGameStore.getState().clearObjectStates();
+      const store = useGameStore.getState();
+      if (store.currentRoomId) {
+        store.saveRoomStates(store.currentRoomId);
+      }
+      store.clearObjectStates();
       this.scene.restart({
         roomId: target.room_id,
         spawnX: target.spawnX,

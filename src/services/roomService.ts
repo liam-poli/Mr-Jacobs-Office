@@ -107,7 +107,7 @@ async function resolveItems(spawns: ItemSpawn[]): Promise<ResolvedItem[]> {
       continue;
     }
     resolved.push({
-      id: crypto.randomUUID(),
+      id: `${spawn.item_id}_${spawn.tileX}_${spawn.tileY}`,
       item_id: spawn.item_id,
       name: entry.name as string,
       tags: entry.tags as string[],
@@ -150,7 +150,7 @@ async function resolveObjects(placements: ObjectPlacement[]): Promise<ResolvedOb
     const effectiveSpriteUrl = dirSprites[direction] || (entry.sprite_url as string) || undefined;
 
     resolved.push({
-      id: crypto.randomUUID(),
+      id: placement.object_id,
       object_id: placement.object_id,
       name: entry.name as string,
       tags: entry.tags as string[],

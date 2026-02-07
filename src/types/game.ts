@@ -101,6 +101,7 @@ export interface InteractionResult {
   result_state: string | null;
   output_item: string | null;
   output_item_id: string | null;
+  output_item_sprite_url: string | null;
   output_item_tags: string[] | null;
   description: string;
   cached: boolean;
@@ -134,6 +135,11 @@ export interface GameState {
   updateObjectState: (objectId: string, states: string[]) => void;
   clearObjectStates: () => void;
 
+  // Room state cache (persists object states across room transitions)
+  roomStateCache: Record<string, Record<string, ObjectState>>;
+  saveRoomStates: (roomId: string) => void;
+  restoreRoomStates: (roomId: string) => void;
+
   // Interaction
   interactionTarget: InteractionTarget | null;
   setInteractionTarget: (target: InteractionTarget | null) => void;
@@ -164,6 +170,9 @@ export interface GameState {
   terminalChatOpen: boolean;
   openTerminalChat: () => void;
   closeTerminalChat: () => void;
+
+  // Inventory sprite updates (for async-generated sprites)
+  updateItemSprite: (itemId: string, spriteUrl: string) => void;
 
   // Session end
   sessionStatus: SessionStatus;

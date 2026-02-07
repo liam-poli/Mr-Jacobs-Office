@@ -138,7 +138,7 @@ function assignNewJob(): void {
   useJacobsStore.getState().setSpeech(job.description, 'NEW ASSIGNMENT');
 }
 
-const SESSION_END_TIME = 540.5; // DEBUG: 9:00:30 AM = 30s real time (normally 550.5 for 10m30s)
+const SESSION_END_TIME = 550.5; // 9:10:30 AM = 10m30s real time (buffer for final review)
 
 function tickPhaseTimer(): void {
   const store = useJobStore.getState();
