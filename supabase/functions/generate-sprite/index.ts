@@ -6,8 +6,9 @@ function buildItemPrompt(name: string, tags: string[]): string {
   const tagList = tags.length > 0 ? tags.join(", ") : "generic";
   return (
     `A single ${name}, small handheld item, pixel art sprite, 16-bit retro game style, ` +
-    `top-down perspective, muted desaturated corporate palette ` +
-    `(institutional mint-green, beige, grey, fluorescent white tones), ` +
+    `3/4 front-facing view with slight overhead angle like a classic 16-bit RPG inventory icon, crisp 1-pixel edges, no blur or anti-aliasing, ` +
+    `muted desaturated office palette (warm beige, ivory, taupe, charcoal, steel gray), ` +
+    `no greens or teals, avoid saturated colors, minimal highlights, ` +
     `clean simple silhouette, centered on a plain white background, ` +
     `no shadows, no text, no extra objects. ` +
     `Properties: ${tagList}.`
@@ -19,8 +20,10 @@ function buildObjectPrompt(name: string, tags: string[], state?: string): string
   const stateHint = state ? ` Currently ${state.toLowerCase()}.` : "";
   return (
     `A single ${name}, office furniture or fixture, pixel art sprite, 16-bit retro game style, ` +
-    `top-down view as seen from above in a 2D game, muted desaturated corporate palette ` +
-    `(institutional mint-green, beige, grey, fluorescent white tones), ` +
+    `3/4 front-facing view with slight overhead angle showing the front face and a bit of the top like a classic 16-bit RPG, ` +
+    `crisp 1-pixel edges, no blur or anti-aliasing, ` +
+    `muted desaturated office palette (warm beige, ivory, taupe, charcoal, steel gray), ` +
+    `no greens or teals, avoid saturated colors, minimal highlights, ` +
     `detailed enough to be recognizable at 32-64px in-game, ` +
     `centered on a plain white background, ` +
     `no shadows, no text, no extra objects, no people. ` +

@@ -96,12 +96,24 @@ export function InteractionMenu() {
       style={{ fontFamily: 'var(--font-hud)' }}
     >
       <div
-        className="border rounded-md overflow-hidden"
+        className="w-[320px] border-2 rounded-sm overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]"
         style={{
           backgroundColor: 'var(--color-hud-bg)',
           borderColor: 'var(--color-hud-border)',
         }}
       >
+        {/* Header */}
+        <div 
+          className="px-4 py-1.5 text-[10px] uppercase tracking-wider border-b-2 font-bold"
+          style={{ 
+            backgroundColor: 'var(--color-hud-border)',
+            color: 'var(--color-hud-bg)',
+            borderColor: 'var(--color-hud-border)'
+          }}
+        >
+          Select Action
+        </div>
+
         {options.map((option, i) => {
           const isSelected = i === selectedIndex;
           const isCancel = option.type === 'cancel';
@@ -112,15 +124,17 @@ export function InteractionMenu() {
           return (
             <button
               key={isCancel ? 'cancel' : option.type === 'interact' ? 'interact' : option.itemId}
-              className="w-full flex items-center gap-3 px-4 py-2 text-left text-[13px] transition-colors cursor-pointer"
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[13px] transition-all cursor-pointer group"
               style={{
-                color: isCancel
-                  ? 'var(--color-hud-danger)'
-                  : option.type === 'interact'
-                    ? 'var(--color-hud-accent)'
-                    : 'var(--color-hud-text)',
-                borderTop: i > 0 ? '1px solid var(--color-hud-border)' : undefined,
-                backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.1)' : undefined,
+                color: isSelected 
+                  ? 'var(--color-hud-bg)' 
+                  : isCancel
+                    ? 'var(--color-hud-danger)'
+                    : option.type === 'interact'
+                      ? 'var(--color-hud-accent)'
+                      : 'var(--color-hud-text)',
+                backgroundColor: isSelected ? 'var(--color-hud-accent)' : 'transparent',
+                borderTop: i > 0 && !isSelected ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
               }}
               onMouseEnter={() => {
                 if (selectedIndex !== i) {
@@ -131,39 +145,36 @@ export function InteractionMenu() {
               onClick={() => selectOption(option)}
             >
               {/* Icon */}
-              {isCancel ? (
-                <span className="w-5 h-5 flex items-center justify-center text-[16px]">
-                  &times;
-                </span>
-              ) : option.type === 'interact' ? (
-                <span className="w-5 h-5 flex items-center justify-center text-[16px]">
-                  &gt;
-                </span>
-              ) : item?.spriteUrl ? (
-                <img
-                  src={item.spriteUrl}
-                  alt={item.name}
-                  className="w-5 h-5 object-contain"
-                  style={{ imageRendering: 'pixelated' }}
-                />
-              ) : (
-                <span
-                  className="w-5 h-5 inline-block"
-                  style={{
-                    backgroundColor: FALLBACK_ITEM_COLOR,
-                    border: '1px solid rgba(255,255,255,0.3)',
-                  }}
-                />
-              )}
+              <div className={`w-6 h-6 flex items-center justify-center border ${isSelected ? 'border-current' : 'border-white/20'} rounded-sm bg-black/20`}>
+                {isCancel ? (
+                  <span className="text-[16px] font-bold">&times;</span>
+                ) : option.type === 'interact' ? (
+                  <span className="text-[14px] font-bold">!</span>
+                ) : item?.spriteUrl ? (
+                  <img
+                    src={item.spriteUrl}
+                    alt={item.name}
+                    className="w-5 h-5 object-contain"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                ) : (
+                  <div
+                    className="w-3 h-3"
+                    style={{ backgroundColor: FALLBACK_ITEM_COLOR }}
+                  />
+                )}
+              </div>
 
               {/* Label */}
-              <span>
+              <span className="font-medium tracking-tight">
                 {isCancel
-                  ? 'Cancel'
+                  ? 'ABORT'
                   : option.type === 'interact'
-                    ? `Interact with ${target.name}`
-                    : `Use ${item?.name}`}
+                    ? `INTERACT: ${target.name}`
+                    : `USE: ${item?.name}`}
               </span>
+
+              <span className="ml-auto" />
             </button>
           );
         })}

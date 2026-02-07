@@ -1,5 +1,12 @@
 import { useGameStore } from '../stores/gameStore';
 
+const panelStyle: React.CSSProperties = {
+  backgroundColor: 'var(--color-hud-panel)',
+  border: '2px solid var(--color-hud-panel-border)',
+  boxShadow: '0 0 0 1px var(--color-hud-panel-shadow), inset 0 0 0 1px var(--color-hud-panel-inner)',
+  borderRadius: 6,
+};
+
 export function InteractionPrompt() {
   const target = useGameStore((s) => s.interactionTarget);
   const sceneReady = useGameStore((s) => s.sceneReady);
@@ -16,15 +23,15 @@ export function InteractionPrompt() {
 
   return (
     <div
-      className="absolute bottom-36 left-1/2 -translate-x-1/2 z-10 px-5 py-3 border rounded-md text-[14px]"
+      className="absolute bottom-36 left-1/2 -translate-x-1/2 z-10 px-5 py-3 text-[13px] tracking-wider"
       style={{
         fontFamily: 'var(--font-hud)',
-        backgroundColor: 'var(--color-hud-bg)',
-        borderColor: 'var(--color-hud-border)',
+        ...panelStyle,
         color: 'var(--color-hud-accent)',
       }}
     >
-      {actionText}
+      <span className="mr-2">[E]</span>
+      {actionText.replace('[E] ', '').toUpperCase()}
     </div>
   );
 }

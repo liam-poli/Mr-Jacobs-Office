@@ -1,6 +1,13 @@
 import { useSettingsStore } from '../stores/settingsStore';
 import { soundService } from '../services/soundService';
 
+const panelStyle: React.CSSProperties = {
+  backgroundColor: 'var(--color-hud-panel)',
+  border: '2px solid var(--color-hud-panel-border)',
+  boxShadow: '0 0 0 1px var(--color-hud-panel-shadow), inset 0 0 0 1px var(--color-hud-panel-inner)',
+  borderRadius: 6,
+};
+
 function ToggleRow({
   label,
   enabled,
@@ -24,8 +31,11 @@ function ToggleRow({
             ? 'var(--color-hud-accent)'
             : 'var(--color-hud-dim)',
           backgroundColor: enabled
-            ? 'rgba(94, 230, 176, 0.1)'
+            ? 'rgba(159, 218, 115, 0.12)'
             : 'transparent',
+          boxShadow: enabled
+            ? 'inset 0 0 0 1px rgba(0, 0, 0, 0.2)'
+            : 'none',
         }}
       >
         {enabled ? 'ON' : 'OFF'}
@@ -55,15 +65,14 @@ export function SettingsMenu() {
   return (
     <div
       className="absolute inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+      style={{ backgroundColor: 'rgba(4, 8, 12, 0.7)' }}
       onClick={() => { soundService.playSfx('ui-click'); setMenuOpen(false); }}
     >
       <div
-        className="relative w-80 border rounded-md p-8"
+        className="relative w-80 p-8"
         style={{
           fontFamily: 'var(--font-hud)',
-          backgroundColor: 'var(--color-hud-bg)',
-          borderColor: 'var(--color-hud-border)',
+          ...panelStyle,
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -76,7 +85,7 @@ export function SettingsMenu() {
         </button>
 
         {/* Header */}
-        <div className="mb-5 pb-3" style={{ borderBottom: '1px solid var(--color-hud-border)' }}>
+        <div className="mb-5 pb-3" style={{ borderBottom: '1px solid var(--color-hud-panel-border)' }}>
           <h2 className="text-hud-accent text-[20px] tracking-[0.3em]">
             SETTINGS
           </h2>
@@ -87,15 +96,16 @@ export function SettingsMenu() {
         <ToggleRow label="MUSIC" enabled={musicEnabled} onToggle={toggleMusic} />
 
         {/* Divider */}
-        <div className="my-4" style={{ borderTop: '1px solid var(--color-hud-border)' }} />
+        <div className="my-4" style={{ borderTop: '1px solid var(--color-hud-panel-border)' }} />
 
         {/* Fullscreen */}
         <button
           onClick={() => { soundService.playSfx('ui-click'); handleFullscreen(); }}
           className="w-full py-3 border rounded text-[14px] text-hud-accent hover:text-hud-accent hover:border-hud-accent transition-colors cursor-pointer"
           style={{
-            borderColor: 'var(--color-hud-border)',
-            backgroundColor: 'transparent',
+            borderColor: 'var(--color-hud-panel-border)',
+            backgroundColor: 'rgba(12, 17, 25, 0.4)',
+            boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.35)',
           }}
         >
           FULLSCREEN

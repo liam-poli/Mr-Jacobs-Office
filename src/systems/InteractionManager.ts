@@ -71,18 +71,32 @@ export class InteractionManager {
     const tempText = this.scene.add.text(0, 0, name, {
       fontFamily: '"Courier New", monospace',
       fontSize: `${7 * LABEL_SCALE}px`,
-      color: '#5ee6b0',
-      backgroundColor: '#1a1a2ecc',
-      padding: { x: 2 * LABEL_SCALE, y: 1 * LABEL_SCALE },
+      color: '#9fda73',
     });
     tempText.setOrigin(0.5, 1);
 
-    const tw = Math.ceil(tempText.width);
-    const th = Math.ceil(tempText.height);
-    const rt = this.scene.add.renderTexture(0, 0, tw, th);
-    rt.draw(tempText, tw / 2, th);
+    const textW = Math.ceil(tempText.width);
+    const textH = Math.ceil(tempText.height);
+    const padX = 3 * LABEL_SCALE;
+    const padY = 1 * LABEL_SCALE;
+    const boxW = textW + padX * 2;
+    const boxH = textH + padY * 2;
+    const radius = 2 * LABEL_SCALE;
+
+    const g = this.scene.add.graphics();
+    g.fillStyle(0x151a24, 1);
+    g.fillRoundedRect(0, 0, boxW, boxH, radius);
+    g.lineStyle(2 * LABEL_SCALE, 0x2b4a46, 1);
+    g.strokeRoundedRect(0, 0, boxW, boxH, radius);
+    g.lineStyle(1 * LABEL_SCALE, 0x22313a, 0.7);
+    g.strokeRoundedRect(1 * LABEL_SCALE, 1 * LABEL_SCALE, boxW - 2 * LABEL_SCALE, boxH - 2 * LABEL_SCALE, radius);
+
+    const rt = this.scene.add.renderTexture(0, 0, boxW, boxH);
+    rt.draw(g, 0, 0);
+    rt.draw(tempText, boxW / 2, boxH - padY);
     rt.saveTexture(textureKey);
     rt.destroy();
+    g.destroy();
     tempText.destroy();
 
     const label = this.scene.add.image(0, 0, textureKey);
@@ -208,7 +222,7 @@ export class InteractionManager {
         ? this.itemSprites.get(target.id)!
         : this.objectSprites.get(target.id)!;
 
-    const offsetY = target.type === 'item' ? 12 : 20;
+    const offsetY = sprite.displayHeight / 2 + 8;
     label.setPosition(sprite.x, sprite.y - offsetY);
     label.setVisible(true);
     this.activeLabel = label;

@@ -1,11 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --color-hud-bg: rgba(0, 0, 0, 0.82);
-  --color-hud-border: #3a7c6a;
-  --color-hud-text: #c8e6d0;
-  --color-hud-accent: #5ee6b0;
-  --color-hud-dim: #537791;
+  --color-hud-bg: #0c0f16;
+  --color-hud-border: #2b4a46;
+  --color-hud-text: #c5dfc0;
+  --color-hud-accent: #9fda73;
+  --color-hud-dim: #5c7084;
   --color-hud-danger: #e94560;
   --font-hud: "Silkscreen", "Courier New", monospace;
+  --color-hud-panel: #151a24;
+  --color-hud-panel-border: #2b4a46;
+  --color-hud-panel-shadow: #0c1119;
+  --color-hud-panel-inner: #22313a;
 }
+

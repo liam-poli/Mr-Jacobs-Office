@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
 import playerSheet from '../assets/sprites/mr-jacobs-player-1.png';
+import floorTileImg from '../assets/tiles/floor_tile.png';
+import carpetTileImg from '../assets/tiles/carpet_tile.png';
+import deskTopImg from '../assets/tiles/desk_top.png';
 
 const TILE_SIZE = 32;
 const SPRITE_SIZE = 48;
@@ -27,14 +30,18 @@ export class BootScene extends Phaser.Scene {
       frameWidth: SPRITE_SIZE,
       frameHeight: SPRITE_SIZE,
     });
+    this.load.image('floor-tile', floorTileImg);
+    this.load.image('carpet-tile', carpetTileImg);
+    this.load.image('desk-tile', deskTopImg);
   }
 
   create() {
-    this.generateFloorTile();
+    // floor-tile loaded from image in preload()
     this.generateWallTile();
-    this.generateCarpetTile();
+    this.generateWallCapTile();
+    this.generateWallBaseTile();
     this.generateFallbackTextures();
-    this.generateDeskTile();
+    // desk-tile loaded from image in preload()
     this.generateIndicatorTextures();
     this.generateJacobsFaces();
     this.generatePromptTexture();
@@ -82,18 +89,18 @@ export class BootScene extends Phaser.Scene {
   }
 
   private generateFallbackTextures() {
-    // Generic item fallback (16x16 glitchy question mark)
+    // Generic item fallback (16x16 neutral question mark)
     const itemG = this.add.graphics();
-    // Dark CRT background
-    itemG.fillStyle(0x1a1a2e, 1);
+    // Dark neutral background
+    itemG.fillStyle(0x20232b, 1);
     itemG.fillRect(0, 0, 16, 16);
-    // Glitch offset (red channel shifted left)
-    itemG.fillStyle(0xff0044, 0.3);
+    // Subtle glitch offset
+    itemG.fillStyle(0x884444, 0.25);
     itemG.fillRect(4, 3, 1, 1); itemG.fillRect(5, 2, 3, 1);
     itemG.fillRect(8, 3, 1, 2); itemG.fillRect(7, 5, 2, 1);
     itemG.fillRect(6, 6, 1, 2); itemG.fillRect(6, 10, 1, 2);
-    // Question mark in cyan
-    itemG.fillStyle(0x5ee6b0, 1);
+    // Question mark in warm gray
+    itemG.fillStyle(0xe6e2d8, 1);
     itemG.fillRect(5, 2, 4, 1);   // top bar
     itemG.fillRect(4, 3, 2, 1);   // top-left curve
     itemG.fillRect(9, 3, 2, 1);   // top-right curve
@@ -102,11 +109,11 @@ export class BootScene extends Phaser.Scene {
     itemG.fillRect(7, 6, 2, 2);   // stem
     itemG.fillRect(7, 10, 2, 2);  // dot
     // Scanline artifacts
-    itemG.fillStyle(0x5ee6b0, 0.15);
+    itemG.fillStyle(0xe6e2d8, 0.12);
     itemG.fillRect(0, 5, 16, 1);
     itemG.fillRect(0, 11, 16, 1);
     // Border
-    itemG.lineStyle(1, 0x5ee6b0, 0.2);
+    itemG.lineStyle(1, 0xe6e2d8, 0.2);
     itemG.strokeRect(0, 0, 16, 16);
     itemG.generateTexture('item-default', 16, 16);
     itemG.destroy();
@@ -152,76 +159,40 @@ export class BootScene extends Phaser.Scene {
     objG.destroy();
   }
 
-  private generateFloorTile() {
-    const g = this.add.graphics();
-    // Base: cool blue-gray institutional panel
-    g.fillStyle(0xbecdd4, 1);
-    g.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-    // Inner highlight (top + left edges)
-    g.lineStyle(1, 0xd6e2e8, 0.6);
-    g.lineBetween(1, 1, TILE_SIZE - 1, 1);
-    g.lineBetween(1, 1, 1, TILE_SIZE - 1);
-    // Inner shadow (bottom + right edges)
-    g.lineStyle(1, 0x9aacb4, 0.5);
-    g.lineBetween(1, TILE_SIZE - 1, TILE_SIZE - 1, TILE_SIZE - 1);
-    g.lineBetween(TILE_SIZE - 1, 1, TILE_SIZE - 1, TILE_SIZE - 1);
-    // Grid gap border
-    g.lineStyle(1, 0x8a9ca6, 0.7);
-    g.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
-    g.generateTexture('floor-tile', TILE_SIZE, TILE_SIZE);
-    g.destroy();
-  }
 
   private generateWallTile() {
     const g = this.add.graphics();
-    g.fillStyle(0xD4CAB8, 1);
+    g.fillStyle(0xE2D9C8, 1);
     g.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-    g.lineStyle(1, 0x9E9680, 0.8);
+    g.lineStyle(1, 0xA89E8B, 0.8);
     g.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
-    g.lineStyle(1, 0xE8DDD0, 0.6);
+    g.lineStyle(1, 0xF0E7D8, 0.6);
     g.lineBetween(1, 1, TILE_SIZE - 1, 1);
     g.generateTexture('wall-tile', TILE_SIZE, TILE_SIZE);
     g.destroy();
   }
 
-  private generateCarpetTile() {
+  private generateWallCapTile() {
     const g = this.add.graphics();
-    g.fillStyle(0x5c6b7a, 1);
-    g.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-    // Subtle striped texture
-    g.fillStyle(0x526170, 0.3);
-    for (let i = 0; i < TILE_SIZE; i += 4) {
-      g.fillRect(i, 0, 2, TILE_SIZE);
-    }
-    g.lineStyle(1, 0x4a5a68, 0.5);
-    g.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
-    g.generateTexture('carpet-tile', TILE_SIZE, TILE_SIZE);
+    // Top trim band (transparent elsewhere)
+    g.fillStyle(0x9f9482, 1);
+    g.fillRect(0, 0, TILE_SIZE, 8);
+    // Highlight line
+    g.lineStyle(1, 0xefe6d6, 0.8);
+    g.lineBetween(0, 1, TILE_SIZE, 1);
+    g.generateTexture('wall-cap', TILE_SIZE, TILE_SIZE);
     g.destroy();
   }
 
-  private generateDeskTile() {
-    const desk = this.add.graphics();
-    desk.fillStyle(0x6b5040, 1);
-    desk.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-    desk.fillStyle(0x7d6050, 1);
-    desk.fillRect(2, 2, TILE_SIZE - 4, TILE_SIZE - 4);
-    desk.lineStyle(1, 0x4a3828, 0.8);
-    desk.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
-    desk.generateTexture('desk-tile', TILE_SIZE, TILE_SIZE);
-    desk.destroy();
-
-    // Plant object — green circle with pot
-    const plant = this.add.graphics();
-    plant.fillStyle(0x2d5a27, 1);
-    plant.fillCircle(16, 16, 10);
-    plant.fillStyle(0x3a7a30, 1);
-    plant.fillCircle(14, 14, 7);
-    plant.fillStyle(0x4a9a40, 0.6);
-    plant.fillCircle(12, 12, 4);
-    plant.fillStyle(0x8b5e3c, 1);
-    plant.fillRect(10, 22, 12, 8);
-    plant.generateTexture('obj-plant', TILE_SIZE, TILE_SIZE);
-    plant.destroy();
+  private generateWallBaseTile() {
+    const g = this.add.graphics();
+    // Baseboard/shadow band at bottom (transparent elsewhere)
+    g.fillStyle(0x6f6a60, 0.55);
+    g.fillRect(0, TILE_SIZE - 4, TILE_SIZE, 4);
+    g.lineStyle(1, 0x8b8477, 0.6);
+    g.lineBetween(0, TILE_SIZE - 5, TILE_SIZE, TILE_SIZE - 5);
+    g.generateTexture('wall-base', TILE_SIZE, TILE_SIZE);
+    g.destroy();
   }
 
   private generateIndicatorTextures() {
@@ -333,117 +304,182 @@ export class BootScene extends Phaser.Scene {
   }
 
   private generateJacobsFaces() {
-    const S = TILE_SIZE;
-    const CX = S / 2;
-    const CY = S / 2;
+    const S = TILE_SIZE; // 32x32
+    const CX = S / 2;   // 16
+    const CY = S / 2;   // 16
 
-    // Helper: draw CRT screen background (dark border + dark interior)
-    const drawScreen = (g: Phaser.GameObjects.Graphics) => {
-      g.fillStyle(0x222222, 1);
-      g.fillRect(0, 0, S, S);
-      g.fillStyle(0x1a1a2e, 1);
-      g.fillRect(2, 2, S - 4, S - 4);
+    // Pixel-art filled disc — crisp rectangle spans, no anti-aliasing
+    const fillDisc = (g: Phaser.GameObjects.Graphics, cx: number, cy: number, r: number, color: number, alpha = 1) => {
+      g.fillStyle(color, alpha);
+      for (let y = -r; y <= r; y++) {
+        const hw = Math.floor(Math.sqrt(r * r - y * y));
+        g.fillRect(cx - hw, cy + y, hw * 2 + 1, 1);
+      }
     };
 
-    // ─── PLEASED ─────────────────────────────────────
-    const pleased = this.add.graphics();
-    drawScreen(pleased);
-    pleased.fillStyle(0xffdd44, 1);
-    pleased.fillCircle(CX, CY, 10);
-    pleased.fillStyle(0x222222, 1);
-    pleased.fillCircle(CX - 4, CY - 2, 2);
-    pleased.fillCircle(CX + 4, CY - 2, 2);
-    pleased.lineStyle(2, 0x222222, 1);
-    pleased.beginPath();
-    pleased.arc(CX, CY + 1, 5, 0.3, Math.PI - 0.3, false);
-    pleased.strokePath();
-    pleased.generateTexture('jacobs-face-PLEASED', S, S);
-    pleased.destroy();
+    // CRT scanlines baked into every face
+    const addScanlines = (g: Phaser.GameObjects.Graphics) => {
+      g.fillStyle(0x000000, 0.08);
+      for (let y = 0; y < S; y += 2) {
+        g.fillRect(0, y, S, 1);
+      }
+    };
 
-    // ─── NEUTRAL ─────────────────────────────────────
-    const neutral = this.add.graphics();
-    drawScreen(neutral);
-    neutral.fillStyle(0xffdd44, 1);
-    neutral.fillCircle(CX, CY, 10);
-    neutral.fillStyle(0x222222, 1);
-    neutral.fillCircle(CX - 4, CY - 2, 2);
-    neutral.fillCircle(CX + 4, CY - 2, 2);
-    neutral.lineStyle(2, 0x222222, 1);
-    neutral.lineBetween(CX - 4, CY + 4, CX + 4, CY + 4);
-    neutral.generateTexture('jacobs-face-NEUTRAL', S, S);
-    neutral.destroy();
+    // Open eyes with white shine highlight
+    const drawEyes = (g: Phaser.GameObjects.Graphics, lx: number, rx: number, ey: number, r: number) => {
+      fillDisc(g, lx, ey, r, 0x222222);
+      fillDisc(g, rx, ey, r, 0x222222);
+      g.fillStyle(0xffffff, 0.8);
+      g.fillRect(lx - 1, ey - 1, 1, 1);
+      g.fillRect(rx - 1, ey - 1, 1, 1);
+    };
 
-    // ─── SUSPICIOUS ──────────────────────────────────
-    const suspicious = this.add.graphics();
-    drawScreen(suspicious);
-    suspicious.fillStyle(0xffdd44, 1);
-    suspicious.fillCircle(CX, CY, 10);
-    suspicious.fillStyle(0x222222, 1);
-    // Narrowed eyes (thin rectangles)
-    suspicious.fillRect(CX - 6, CY - 3, 5, 2);
-    suspicious.fillRect(CX + 1, CY - 3, 5, 2);
-    // Slight frown
-    suspicious.lineStyle(2, 0x222222, 1);
-    suspicious.beginPath();
-    suspicious.arc(CX, CY + 8, 5, Math.PI + 0.4, -0.4, false);
-    suspicious.strokePath();
-    suspicious.generateTexture('jacobs-face-SUSPICIOUS', S, S);
-    suspicious.destroy();
+    // Closed eyes — thin horizontal lines for blink frames
+    const drawClosedEyes = (g: Phaser.GameObjects.Graphics, lx: number, rx: number, ey: number) => {
+      g.fillStyle(0x222222, 1);
+      g.fillRect(lx - 2, ey, 4, 1);
+      g.fillRect(rx - 2, ey, 4, 1);
+    };
 
-    // ─── DISAPPOINTED ────────────────────────────────
-    const disappointed = this.add.graphics();
-    drawScreen(disappointed);
-    disappointed.fillStyle(0xffdd44, 1);
-    disappointed.fillCircle(CX, CY, 10);
-    disappointed.fillStyle(0x222222, 1);
-    disappointed.fillCircle(CX - 4, CY - 2, 2);
-    disappointed.fillCircle(CX + 4, CY - 2, 2);
-    // Frown
-    disappointed.lineStyle(2, 0x222222, 1);
-    disappointed.beginPath();
-    disappointed.arc(CX, CY + 9, 5, Math.PI + 0.3, -0.3, false);
-    disappointed.strokePath();
-    // Glitch artifacts
-    disappointed.fillStyle(0xff0044, 0.6);
-    disappointed.fillRect(3, 24, 4, 2);
-    disappointed.fillStyle(0x00ffaa, 0.5);
-    disappointed.fillRect(22, 6, 5, 2);
-    disappointed.fillStyle(0xff0044, 0.4);
-    disappointed.fillRect(8, 28, 6, 1);
-    disappointed.generateTexture('jacobs-face-DISAPPOINTED', S, S);
-    disappointed.destroy();
+    // Generate each face twice: normal + blink variant
+    for (const blink of [false, true]) {
+      const sfx = blink ? '-blink' : '';
 
-    // ─── UNHINGED ────────────────────────────────────
-    const unhinged = this.add.graphics();
-    drawScreen(unhinged);
-    // Distorted face (offset, double-exposed)
-    unhinged.fillStyle(0xffaa00, 0.5);
-    unhinged.fillCircle(CX - 1, CY + 1, 10);
-    unhinged.fillStyle(0xffdd44, 1);
-    unhinged.fillCircle(CX + 1, CY - 1, 10);
-    // Misaligned eyes (different sizes)
-    unhinged.fillStyle(0x222222, 1);
-    unhinged.fillCircle(CX - 5, CY - 3, 3);
-    unhinged.fillCircle(CX + 4, CY - 1, 1);
-    // Jagged mouth
-    unhinged.lineStyle(2, 0x222222, 1);
-    unhinged.beginPath();
-    unhinged.moveTo(CX - 6, CY + 3);
-    unhinged.lineTo(CX - 3, CY + 6);
-    unhinged.lineTo(CX, CY + 2);
-    unhinged.lineTo(CX + 3, CY + 6);
-    unhinged.lineTo(CX + 6, CY + 3);
-    unhinged.strokePath();
-    // Heavy corruption lines
-    unhinged.fillStyle(0xff0044, 0.8);
-    unhinged.fillRect(0, 22, S, 2);
-    unhinged.fillStyle(0x00ff88, 0.6);
-    unhinged.fillRect(0, 6, S, 1);
-    unhinged.fillStyle(0xff00ff, 0.5);
-    unhinged.fillRect(4, 28, 10, 2);
-    unhinged.fillRect(18, 2, 8, 2);
-    unhinged.generateTexture('jacobs-face-UNHINGED', S, S);
-    unhinged.destroy();
+      // ─── PLEASED ─────────────────────────────────────
+      const pleased = this.add.graphics();
+      fillDisc(pleased, CX, CY, 12, 0xffdd44);
+      fillDisc(pleased, CX, CY, 11, 0xffe855);
+      pleased.fillStyle(0x222222, 1);
+      pleased.fillRect(CX - 7, CY - 7, 4, 1);
+      pleased.fillRect(CX + 3, CY - 7, 4, 1);
+      if (blink) drawClosedEyes(pleased, CX - 4, CX + 4, CY - 3);
+      else drawEyes(pleased, CX - 4, CX + 4, CY - 3, 2);
+      pleased.lineStyle(2, 0x222222, 1);
+      pleased.beginPath();
+      pleased.arc(CX, CY + 1, 6, 0.2, Math.PI - 0.2, false);
+      pleased.strokePath();
+      fillDisc(pleased, CX - 8, CY + 2, 2, 0xff8866, 0.3);
+      fillDisc(pleased, CX + 8, CY + 2, 2, 0xff8866, 0.3);
+      addScanlines(pleased);
+      pleased.generateTexture(`jacobs-face-PLEASED${sfx}`, S, S);
+      pleased.destroy();
+
+      // ─── NEUTRAL ─────────────────────────────────────
+      const neutral = this.add.graphics();
+      fillDisc(neutral, CX, CY, 12, 0xffdd44);
+      fillDisc(neutral, CX, CY, 11, 0xffe855);
+      neutral.fillStyle(0x222222, 1);
+      neutral.fillRect(CX - 7, CY - 6, 4, 1);
+      neutral.fillRect(CX + 3, CY - 6, 4, 1);
+      if (blink) drawClosedEyes(neutral, CX - 4, CX + 4, CY - 3);
+      else drawEyes(neutral, CX - 4, CX + 4, CY - 3, 2);
+      neutral.fillStyle(0x222222, 1);
+      neutral.fillRect(CX - 4, CY + 4, 8, 2);
+      addScanlines(neutral);
+      neutral.generateTexture(`jacobs-face-NEUTRAL${sfx}`, S, S);
+      neutral.destroy();
+
+      // ─── SUSPICIOUS ──────────────────────────────────
+      const suspicious = this.add.graphics();
+      fillDisc(suspicious, CX, CY, 12, 0xffdd44);
+      fillDisc(suspicious, CX, CY, 11, 0xffe855);
+      suspicious.fillStyle(0x222222, 1);
+      suspicious.fillRect(CX - 7, CY - 5, 1, 1);
+      suspicious.fillRect(CX - 6, CY - 6, 1, 1);
+      suspicious.fillRect(CX - 5, CY - 7, 2, 1);
+      suspicious.fillRect(CX + 3, CY - 7, 2, 1);
+      suspicious.fillRect(CX + 5, CY - 6, 1, 1);
+      suspicious.fillRect(CX + 6, CY - 5, 1, 1);
+      if (blink) {
+        drawClosedEyes(suspicious, CX - 4, CX + 3, CY - 3);
+      } else {
+        suspicious.fillStyle(0x222222, 1);
+        suspicious.fillRect(CX - 6, CY - 3, 5, 2);
+        suspicious.fillRect(CX + 1, CY - 3, 5, 2);
+        suspicious.fillStyle(0xffffff, 0.6);
+        suspicious.fillRect(CX - 5, CY - 3, 1, 1);
+        suspicious.fillRect(CX + 2, CY - 3, 1, 1);
+      }
+      suspicious.lineStyle(2, 0x222222, 1);
+      suspicious.beginPath();
+      suspicious.moveTo(CX - 5, CY + 4);
+      suspicious.lineTo(CX - 2, CY + 5);
+      suspicious.lineTo(CX + 2, CY + 3);
+      suspicious.lineTo(CX + 5, CY + 5);
+      suspicious.strokePath();
+      addScanlines(suspicious);
+      suspicious.generateTexture(`jacobs-face-SUSPICIOUS${sfx}`, S, S);
+      suspicious.destroy();
+
+      // ─── DISAPPOINTED ────────────────────────────────
+      const disappointed = this.add.graphics();
+      fillDisc(disappointed, CX, CY, 12, 0xffdd44);
+      fillDisc(disappointed, CX, CY, 11, 0xffe855);
+      disappointed.fillStyle(0x222222, 1);
+      disappointed.fillRect(CX - 7, CY - 5, 1, 1);
+      disappointed.fillRect(CX - 6, CY - 6, 2, 1);
+      disappointed.fillRect(CX - 4, CY - 7, 2, 1);
+      disappointed.fillRect(CX + 2, CY - 7, 2, 1);
+      disappointed.fillRect(CX + 4, CY - 6, 2, 1);
+      disappointed.fillRect(CX + 6, CY - 5, 1, 1);
+      if (blink) drawClosedEyes(disappointed, CX - 4, CX + 4, CY - 2);
+      else drawEyes(disappointed, CX - 4, CX + 4, CY - 2, 2);
+      disappointed.lineStyle(2, 0x222222, 1);
+      disappointed.beginPath();
+      disappointed.arc(CX, CY + 10, 5, Math.PI + 0.3, -0.3, false);
+      disappointed.strokePath();
+      disappointed.fillStyle(0xff0044, 0.6);
+      disappointed.fillRect(2, 24, 5, 2);
+      disappointed.fillStyle(0x00ffaa, 0.5);
+      disappointed.fillRect(22, 5, 6, 2);
+      disappointed.fillStyle(0xff00ff, 0.3);
+      disappointed.fillRect(8, 28, 8, 1);
+      addScanlines(disappointed);
+      disappointed.generateTexture(`jacobs-face-DISAPPOINTED${sfx}`, S, S);
+      disappointed.destroy();
+
+      // ─── UNHINGED ────────────────────────────────────
+      const unhinged = this.add.graphics();
+      fillDisc(unhinged, CX - 1, CY + 1, 12, 0xff4400, 0.4);
+      fillDisc(unhinged, CX + 1, CY - 1, 12, 0xffdd44);
+      fillDisc(unhinged, CX + 1, CY - 1, 11, 0xffe855);
+      unhinged.fillStyle(0x222222, 1);
+      unhinged.fillRect(CX - 7, CY - 8, 4, 1);
+      unhinged.fillRect(CX + 3, CY - 4, 4, 1);
+      if (blink) {
+        unhinged.fillStyle(0x222222, 1);
+        unhinged.fillRect(CX - 7, CY - 3, 5, 1);
+        unhinged.fillRect(CX + 3, CY - 2, 3, 1);
+      } else {
+        fillDisc(unhinged, CX - 5, CY - 3, 3, 0x222222);
+        fillDisc(unhinged, CX + 4, CY - 2, 1, 0x222222);
+        unhinged.fillStyle(0xff0000, 0.8);
+        unhinged.fillRect(CX - 6, CY - 4, 1, 1);
+      }
+      unhinged.lineStyle(2, 0x222222, 1);
+      unhinged.beginPath();
+      unhinged.moveTo(CX - 7, CY + 3);
+      unhinged.lineTo(CX - 4, CY + 6);
+      unhinged.lineTo(CX - 1, CY + 2);
+      unhinged.lineTo(CX + 2, CY + 7);
+      unhinged.lineTo(CX + 5, CY + 3);
+      unhinged.lineTo(CX + 7, CY + 5);
+      unhinged.strokePath();
+      unhinged.fillStyle(0xff0044, 0.8);
+      unhinged.fillRect(0, 22, S, 2);
+      unhinged.fillStyle(0x00ff88, 0.6);
+      unhinged.fillRect(0, 6, S, 1);
+      unhinged.fillRect(0, 14, 8, 1);
+      unhinged.fillStyle(0xff00ff, 0.5);
+      unhinged.fillRect(4, 28, 12, 2);
+      unhinged.fillRect(18, 1, 10, 2);
+      unhinged.fillStyle(0x000000, 0.15);
+      for (let y = 0; y < S; y += 2) {
+        unhinged.fillRect(0, y, S, 1);
+      }
+      unhinged.generateTexture(`jacobs-face-UNHINGED${sfx}`, S, S);
+      unhinged.destroy();
+    }
 
     // ─── STATIC OVERLAY ──────────────────────────────
     const staticG = this.add.graphics();

@@ -1,8 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
 import { useJacobsStore } from '../stores/jacobsStore';
+import { playMumble } from '../services/mumbleService';
 
 const CHAR_DELAY = 40;
 const DISMISS_DELAY = 5000;
+
+const panelStyle: React.CSSProperties = {
+  backgroundColor: 'var(--color-hud-panel)',
+  border: '2px solid var(--color-hud-panel-border)',
+  boxShadow: '0 0 0 1px var(--color-hud-panel-shadow), inset 0 0 0 1px var(--color-hud-panel-inner)',
+  borderRadius: 6,
+};
 
 export function JacobsSpeech() {
   const speech = useJacobsStore((s) => s.currentSpeech);
@@ -26,6 +34,9 @@ export function JacobsSpeech() {
     const interval = setInterval(() => {
       i++;
       setDisplayText(fullText.slice(0, i));
+      // N64-style mumble — skip spaces & punctuation
+      const ch = fullText[i - 1];
+      if (ch && ch !== ' ' && ch !== '.' && ch !== ',') playMumble();
       if (i >= fullText.length) clearInterval(interval);
     }, CHAR_DELAY);
     return () => clearInterval(interval);
@@ -58,10 +69,9 @@ export function JacobsSpeech() {
       style={{ fontFamily: 'var(--font-hud)' }}
     >
       <div
-        className="border rounded-md px-5 py-3 text-[13px] flex items-start gap-3"
+        className="px-5 py-3 text-[13px] flex items-start gap-3"
         style={{
-          backgroundColor: 'var(--color-hud-bg)',
-          borderColor: moodColor,
+          ...panelStyle,
           color: 'var(--color-hud-text)',
         }}
       >

@@ -4,6 +4,13 @@ import { useGameStore } from '../stores/gameStore';
 const CHAR_DELAY = 30;
 const DISMISS_DELAY = 4000;
 
+const panelStyle: React.CSSProperties = {
+  backgroundColor: 'var(--color-hud-panel)',
+  border: '2px solid var(--color-hud-panel-border)',
+  boxShadow: '0 0 0 1px var(--color-hud-panel-shadow), inset 0 0 0 1px var(--color-hud-panel-inner)',
+  borderRadius: 6,
+};
+
 function LoadingDots() {
   const [dots, setDots] = useState('');
 
@@ -76,10 +83,9 @@ export function InteractionToast() {
       style={{ fontFamily: 'var(--font-hud)' }}
     >
       <div
-        className="border rounded-md px-5 py-3 text-[13px]"
+        className="px-5 py-3 text-[13px]"
         style={{
-          backgroundColor: 'var(--color-hud-bg)',
-          borderColor: 'var(--color-hud-border)',
+          ...panelStyle,
           color: 'var(--color-hud-text)',
         }}
       >

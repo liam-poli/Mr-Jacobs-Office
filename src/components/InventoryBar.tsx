@@ -3,6 +3,14 @@ import { useGameStore } from '../stores/gameStore';
 import { soundService } from '../services/soundService';
 
 const SLOT_COUNT = 5;
+const SLOT_COLUMNS = 5;
+
+const panelStyle: React.CSSProperties = {
+  backgroundColor: 'var(--color-hud-panel)',
+  border: '2px solid var(--color-hud-panel-border)',
+  boxShadow: '0 0 0 1px var(--color-hud-panel-shadow), inset 0 0 0 1px var(--color-hud-panel-inner)',
+  borderRadius: 6,
+};
 
 // Glitchy "?" fallback rendered as a tiny inline SVG matching the Phaser item-default texture
 const FALLBACK_QUESTION_SVG = `data:image/svg+xml,${encodeURIComponent(
@@ -49,29 +57,27 @@ export function InventoryBar() {
       className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10"
       style={{ fontFamily: 'var(--font-hud)' }}
     >
-      {/* Panel — rounded, matching HUD style */}
-      <div
-        className="border rounded-md px-5 pt-3 pb-4"
-        style={{
-          backgroundColor: 'var(--color-hud-bg)',
-          borderColor: 'var(--color-hud-border)',
-        }}
-      >
+      <div className="px-5 pt-4 pb-4" style={panelStyle}>
         {/* Slots */}
-        <div className="flex gap-2">
+        <div
+          className="grid gap-2"
+          style={{ gridTemplateColumns: `repeat(${SLOT_COLUMNS}, minmax(0, 1fr))` }}
+        >
           {Array.from({ length: SLOT_COUNT }).map((_, i) => {
             const item = inventory[i];
             return (
               <div
                 key={i}
-                className={`relative w-16 h-16 flex flex-col items-center justify-center border rounded transition-colors ${
+                className={`relative w-12 h-12 flex flex-col items-center justify-center border transition-colors ${
                   item && !menuOpen ? 'cursor-pointer' : ''
                 }`}
                 style={{
                   borderColor: item
                     ? 'var(--color-hud-accent)'
                     : 'var(--color-hud-border)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  backgroundColor: 'rgba(4, 8, 12, 0.6)',
+                  boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.4)',
+                  borderRadius: 4,
                 }}
                 onMouseEnter={() => { if (item) { setHoveredIndex(i); soundService.playSfx('ui-hover'); } }}
                 onMouseLeave={() => setHoveredIndex(null)}
@@ -83,10 +89,9 @@ export function InventoryBar() {
               >
                 {hoveredIndex === i && item && (
                   <div
-                    className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-[12px] px-3 py-1 border rounded-md z-20"
+                    className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-[12px] px-3 py-1 z-20"
                     style={{
-                      backgroundColor: 'var(--color-hud-bg)',
-                      borderColor: 'var(--color-hud-border)',
+                      ...panelStyle,
                       color: 'var(--color-hud-accent)',
                     }}
                   >
@@ -97,7 +102,7 @@ export function InventoryBar() {
                   <img
                     src={item.spriteUrl || FALLBACK_QUESTION_SVG}
                     alt={item.name}
-                    className="w-12 h-12 object-contain"
+                    className="w-9 h-9 object-contain"
                     style={{ imageRendering: 'pixelated' }}
                   />
                 )}

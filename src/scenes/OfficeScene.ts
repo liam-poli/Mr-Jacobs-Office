@@ -50,6 +50,11 @@ export class OfficeScene extends Phaser.Scene {
   private jacobsScreenSprite: Phaser.GameObjects.Image | null = null;
   private jacobsStaticOverlay: Phaser.GameObjects.Image | null = null;
   private jacobsUnsubscribe?: () => void;
+  private jacobsBaseY = 0;
+  private jacobsCurrentMood: JacobsMood = 'NEUTRAL';
+  private jacobsBobTween?: Phaser.Tweens.Tween;
+  private jacobsBlinkTimer?: Phaser.Time.TimerEvent;
+  private jacobsGlitchTimer?: Phaser.Time.TimerEvent;
 
   constructor() {
     super('OfficeScene');
@@ -85,13 +90,22 @@ export class OfficeScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, worldW, worldH);
 
     // Camera: instant follow + round pixels for crisp pixel art (no sub-pixel jitter)
-    // Follow offset pushes the player up on screen; extra camera bounds below the room
-    // give scroll room so the bottom wall stays visible above the inventory bar overlay.
-    this.cameras.main.startFollow(this.player, true, 1, 1);
-    this.cameras.main.setFollowOffset(0, 30);
-    this.cameras.main.setZoom(2);
-    this.cameras.main.setBounds(0, 0, worldW, worldH + 48);
-    this.cameras.main.setRoundPixels(true);
+    const cam = this.cameras.main;
+    cam.startFollow(this.player, true, 1, 1);
+    cam.setFollowOffset(0, 30);
+    cam.setZoom(2);
+    cam.setRoundPixels(true);
+
+    // Center small rooms: if the room is smaller than the viewport (at zoom),
+    // expand the bounds so the room content sits in the middle of the screen.
+    const viewW = cam.width / cam.zoom;
+    const viewH = cam.height / cam.zoom;
+    const roomH = worldH + 48; // extra padding for inventory overlay
+    const boundsW = Math.max(worldW, viewW);
+    const boundsH = Math.max(roomH, viewH);
+    const boundsX = (worldW - boundsW) / 2;
+    const boundsY = (roomH - boundsH) / 2;
+    cam.setBounds(boundsX, boundsY, boundsW, boundsH);
 
     // Subscribe to Zustand store
     this.unsubscribe = useGameStore.subscribe((state) => {
@@ -148,21 +162,56 @@ export class OfficeScene extends Phaser.Scene {
         const tile = roomDef.tileMap[row][col];
 
         if (tile === 0) {
-          this.add.image(x, y, 'floor-tile');
+          const fl = this.add.image(x, y, 'floor-tile');
+          fl.setDisplaySize(TILE_SIZE, TILE_SIZE);
         } else if (tile === 2) {
-          this.add.image(x, y, 'carpet-tile');
+          const carpet = this.add.image(x, y, 'carpet-tile');
+          carpet.setDisplaySize(TILE_SIZE, TILE_SIZE);
         } else if (tile === 3) {
-          // Desk: floor underneath + desk sprite with depth sorting + collision
-          this.add.image(x, y, 'floor-tile');
-          this.add.image(x, y, 'desk-tile').setDepth(y);
+          // Desk: floor underneath + desk top with depth sorting + collision
+          const fl = this.add.image(x, y, 'floor-tile');
+          fl.setDisplaySize(TILE_SIZE, TILE_SIZE);
+          const dk = this.add.image(x, y, 'desk-tile');
+          dk.setDisplaySize(TILE_SIZE, TILE_SIZE);
+          dk.setDepth(y);
           const wall = this.wallGroup.create(x, y, 'desk-tile') as Phaser.Physics.Arcade.Sprite;
           wall.setVisible(false);
+          wall.setDisplaySize(TILE_SIZE, TILE_SIZE);
           wall.refreshBody();
         } else {
           this.add.image(x, y, 'wall-tile');
+          // Top-side cap for wall tiles (adds height illusion)
+          const hasWallAbove = row > 0 && roomDef.tileMap[row - 1][col] === 1;
+          if (!hasWallAbove && this.textures.exists('wall-cap')) {
+            const cap = this.add.image(x, y, 'wall-cap');
+            cap.setDisplaySize(TILE_SIZE, TILE_SIZE);
+          }
+          // Baseboard/shadow at floor edge for wall tiles
+          const tileBelow = row + 1 < roomDef.tileMap.length ? roomDef.tileMap[row + 1][col] : -1;
+          const isWallBelow = tileBelow === 1;
+          if (!isWallBelow && this.textures.exists('wall-base')) {
+            const base = this.add.image(x, y, 'wall-base');
+            base.setDisplaySize(TILE_SIZE, TILE_SIZE);
+          }
           const wall = this.wallGroup.create(x, y, 'wall-tile') as Phaser.Physics.Arcade.Sprite;
           wall.setVisible(false);
           wall.refreshBody();
+        }
+      }
+    }
+
+    // Second pass: add desk faces where desk tiles border non-desk tiles below
+    const map = roomDef.tileMap;
+    for (let row = 0; row < map.length; row++) {
+      for (let col = 0; col < map[row].length; col++) {
+        if (map[row][col] !== 3) continue;
+        const tileBelow = row + 1 < map.length ? map[row + 1][col] : -1;
+        if (tileBelow !== 3 && tileBelow !== -1 && this.textures.exists('desk-face')) {
+          const x = col * TILE_SIZE + TILE_SIZE / 2;
+          const faceY = (row + 1) * TILE_SIZE + TILE_SIZE / 2;
+          const df = this.add.image(x, faceY, 'desk-face');
+          df.setDisplaySize(TILE_SIZE, TILE_SIZE);
+          df.setDepth(faceY);
         }
       }
     }
@@ -227,14 +276,19 @@ export class OfficeScene extends Phaser.Scene {
       // Register in Jacobs' name map for effect resolution
       useJacobsStore.getState().registerObject(obj.id, obj.name);
 
-      // Override Jacobs Screen with procedural face texture
+      // Jacobs Screen: keep the DB sprite as the monitor, overlay the face on top
       if (obj.name.toLowerCase().includes('jacobs') && obj.name.toLowerCase().includes('screen')) {
-        sprite.setTexture('jacobs-face-NEUTRAL');
-        sprite.setScale(1);
-        this.jacobsScreenSprite = sprite;
-        this.jacobsStaticOverlay = this.add.image(px, py, 'jacobs-static');
+        const faceY = py - 4;
+        const faceOverlay = this.add.image(px, faceY, 'jacobs-face-NEUTRAL');
+        faceOverlay.setScale(0.9);
+        faceOverlay.setDepth(py + 0.5);
+        this.jacobsScreenSprite = faceOverlay;
+        this.jacobsStaticOverlay = this.add.image(px, faceY, 'jacobs-static');
+        this.jacobsStaticOverlay.setScale(0.9);
         this.jacobsStaticOverlay.setDepth(py + 1);
         this.jacobsStaticOverlay.setAlpha(0.05);
+        this.jacobsBaseY = faceY;
+        this.startJacobsAnimations();
       }
 
       // Apply initial visual state
@@ -317,8 +371,8 @@ export class OfficeScene extends Phaser.Scene {
     for (const state of states) {
       if (STATE_INDICATORS[state] && this.textures.exists(STATE_INDICATORS[state])) {
         const ind = this.add.image(
-          visual.sprite.x + 12,
-          visual.sprite.y - 12,
+          visual.sprite.x + visual.sprite.displayWidth / 2,
+          visual.sprite.y - visual.sprite.displayHeight / 2,
           STATE_INDICATORS[state],
         );
         ind.setDepth(visual.sprite.depth + 1);
@@ -355,8 +409,105 @@ export class OfficeScene extends Phaser.Scene {
     }
   }
 
+  private startJacobsAnimations(): void {
+    if (!this.jacobsScreenSprite) return;
+
+    // 1. Idle bob — gentle y-oscillation on face + static overlay
+    this.jacobsBobTween = this.tweens.add({
+      targets: [this.jacobsScreenSprite, this.jacobsStaticOverlay].filter(Boolean),
+      y: { from: this.jacobsBaseY - 0.8, to: this.jacobsBaseY + 0.8 },
+      duration: 3000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
+    // 2. Eye blink — periodic texture swap
+    this.scheduleNextBlink();
+
+    // 3. Glitch effects — mood-scaled periodic distortion
+    this.restartGlitchTimer();
+  }
+
+  private scheduleNextBlink(): void {
+    const delay = Phaser.Math.Between(3000, 7000);
+    this.jacobsBlinkTimer = this.time.addEvent({
+      delay,
+      callback: () => {
+        if (!this.jacobsScreenSprite) return;
+        // Skip blinks during UNHINGED — too glitchy
+        if (this.jacobsCurrentMood === 'UNHINGED') {
+          this.scheduleNextBlink();
+          return;
+        }
+        const blinkKey = `jacobs-face-${this.jacobsCurrentMood}-blink`;
+        const openKey = `jacobs-face-${this.jacobsCurrentMood}`;
+        if (this.textures.exists(blinkKey)) {
+          this.jacobsScreenSprite.setTexture(blinkKey);
+          this.time.delayedCall(120, () => {
+            if (this.jacobsScreenSprite) {
+              this.jacobsScreenSprite.setTexture(openKey);
+            }
+          });
+        }
+        this.scheduleNextBlink();
+      },
+    });
+  }
+
+  private restartGlitchTimer(): void {
+    this.jacobsGlitchTimer?.destroy();
+    const delays: Record<string, number> = {
+      PLEASED: 12000,
+      NEUTRAL: 8000,
+      SUSPICIOUS: 4000,
+      DISAPPOINTED: 1500,
+      UNHINGED: 500,
+    };
+    const delay = delays[this.jacobsCurrentMood] ?? 8000;
+    this.jacobsGlitchTimer = this.time.addEvent({
+      delay,
+      loop: true,
+      callback: () => this.fireGlitch(),
+    });
+  }
+
+  private fireGlitch(): void {
+    if (!this.jacobsScreenSprite) return;
+    const type = Phaser.Math.Between(0, 2);
+    const face = this.jacobsScreenSprite;
+    const baseX = face.x;
+
+    if (type === 0) {
+      // X-jitter: shift face left/right briefly
+      const offset = Phaser.Math.Between(-2, 2) || 1;
+      face.x += offset;
+      this.jacobsStaticOverlay && (this.jacobsStaticOverlay.x += offset);
+      this.time.delayedCall(80, () => {
+        face.x = baseX;
+        if (this.jacobsStaticOverlay) this.jacobsStaticOverlay.x = baseX;
+      });
+    } else if (type === 1) {
+      // Tint flash: brief red or green tint
+      const tint = Math.random() > 0.5 ? 0xff4444 : 0x44ff88;
+      face.setTint(tint);
+      this.time.delayedCall(60, () => face.clearTint());
+    } else {
+      // Static burst: spike static overlay alpha
+      if (this.jacobsStaticOverlay) {
+        const prevAlpha = this.jacobsStaticOverlay.alpha;
+        this.jacobsStaticOverlay.setAlpha(0.5);
+        this.time.delayedCall(100, () => {
+          if (this.jacobsStaticOverlay) this.jacobsStaticOverlay.setAlpha(prevAlpha);
+        });
+      }
+    }
+  }
+
   private onJacobsMoodChange(mood: JacobsMood): void {
     if (!this.jacobsScreenSprite) return;
+
+    this.jacobsCurrentMood = mood;
 
     const textureKey = `jacobs-face-${mood}`;
     if (this.textures.exists(textureKey)) {
@@ -374,6 +525,9 @@ export class OfficeScene extends Phaser.Scene {
     if (this.jacobsStaticOverlay) {
       this.jacobsStaticOverlay.setAlpha(staticAlpha[mood] ?? 0.05);
     }
+
+    // Restart glitch timer with new mood-appropriate frequency
+    this.restartGlitchTimer();
 
     // Screen flicker for worse moods
     if (mood === 'DISAPPOINTED' || mood === 'UNHINGED') {
@@ -393,6 +547,9 @@ export class OfficeScene extends Phaser.Scene {
     stopJacobsLoop();
     this.unsubscribe?.();
     this.jacobsUnsubscribe?.();
+    this.jacobsBobTween?.destroy();
+    this.jacobsBlinkTimer?.destroy();
+    this.jacobsGlitchTimer?.destroy();
     this.interactionManager.destroy();
     for (const visual of this.objectVisuals.values()) {
       visual.tween?.destroy();
