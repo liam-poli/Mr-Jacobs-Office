@@ -9,3 +9,7 @@ Finsihing it off
 * videos 
 * Ending panel , escape or simulation over , add a laught 
 * Add security cameras
+
+
+
+* When we are processing review, freese the screen and show a popup

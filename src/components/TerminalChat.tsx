@@ -2,12 +2,10 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { useJacobsStore } from '../stores/jacobsStore';
 import { sendTerminalMessage, type ChatMessage } from '../services/terminalChatService';
-import { soundService } from '../services/soundService';
 import { playMumble } from '../services/mumbleService';
 import { playTerminalOpen, playTerminalClose, playTerminalSend, playTerminalReceive } from '../services/terminalSounds';
 
 const CHAR_DELAY = 30;
-const CHAT_COST = 1;
 
 const panelStyle: React.CSSProperties = {
   backgroundColor: 'var(--color-hud-panel)',
@@ -68,8 +66,6 @@ export function TerminalChat() {
   const isOpen = useGameStore((s) => s.terminalChatOpen);
   const closeChat = useGameStore((s) => s.closeTerminalChat);
   const sceneReady = useGameStore((s) => s.sceneReady);
-  const bucks = useGameStore((s) => s.bucks);
-  const addBucks = useGameStore((s) => s.addBucks);
   const mood = useJacobsStore((s) => s.mood);
   const faceUrl = useJacobsStore((s) => s.faceDataUrls[s.mood]);
 
@@ -109,15 +105,6 @@ export function TerminalChat() {
     const trimmed = inputText.trim();
     if (!trimmed || isLoading) return;
 
-    // Check bucks
-    if (bucks < CHAT_COST) {
-      setError('INSUFFICIENT BUCKS');
-      soundService.playSfx('error');
-      return;
-    }
-
-    // Deduct bucks
-    addBucks(-CHAT_COST);
     playTerminalSend();
 
     // Add player message
@@ -139,7 +126,7 @@ export function TerminalChat() {
     setMessages(finalMessages);
     setTypingIndex(finalMessages.length - 1);
     setIsLoading(false);
-  }, [inputText, isLoading, bucks, addBucks, messages]);
+  }, [inputText, isLoading, messages]);
 
   // Capture Escape to close terminal (Phaser movement already gated by terminalChatOpen)
   useEffect(() => {
@@ -236,7 +223,6 @@ export function TerminalChat() {
             <div style={{ color: 'var(--color-hud-dim)' }}>
               <span style={{ color: moodColor }}>SYSTEM&gt; </span>
               TERMINAL CONNECTED. TYPE A MESSAGE TO MR. JACOBS.
-              {CHAT_COST > 0 && ` EACH MESSAGE COSTS ${CHAT_COST} BUCK${CHAT_COST !== 1 ? 'S' : ''}.`}
             </div>
           )}
 
@@ -303,9 +289,6 @@ export function TerminalChat() {
               caretColor: 'var(--color-hud-accent)',
             }}
           />
-          <span className="text-[9px]" style={{ color: 'var(--color-hud-dim)' }}>
-            {bucks}$
-          </span>
         </div>
 
         {/* Error bar */}

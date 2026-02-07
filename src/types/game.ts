@@ -1,3 +1,7 @@
+/** Session lifecycle */
+export type SessionStatus = 'PLAYING' | 'WON' | 'LOST';
+export type SessionEndType = 'PROMOTED' | 'ESCAPED' | 'FIRED' | 'TIME_UP';
+
 /** Cardinal directions for player facing */
 export type Direction = 'down' | 'up' | 'left' | 'right';
 
@@ -160,4 +164,10 @@ export interface GameState {
   terminalChatOpen: boolean;
   openTerminalChat: () => void;
   closeTerminalChat: () => void;
+
+  // Session end
+  sessionStatus: SessionStatus;
+  sessionEndType: SessionEndType | null;
+  sessionEndSpeech: string | null;
+  endSession: (type: SessionEndType, speech: string) => void;
 }

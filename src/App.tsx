@@ -6,6 +6,7 @@ import { InventoryBar } from './components/InventoryBar';
 import { SettingsMenu } from './components/SettingsMenu';
 import { HelpPanel } from './components/HelpPanel';
 import { LoadingScreen } from './components/LoadingScreen';
+import { EndScreen } from './components/EndScreen';
 import { InteractionPrompt } from './components/InteractionPrompt';
 import { InteractionMenu } from './components/InteractionMenu';
 import { InteractionToast } from './components/InteractionToast';
@@ -48,6 +49,7 @@ function Game() {
       <InventoryBar />
       <HelpPanel />
       <SettingsMenu />
+      <EndScreen />
       <LoadingScreen />
     </div>
   );

@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import type { GameState } from '../types/game';
+import type { GameState, SessionEndType } from '../types/game';
+import { stopJacobsLoop } from '../services/jacobsService';
+import { stopJobCycle } from '../services/jobService';
 
 export const useGameStore = create<GameState>((set) => ({
   sceneReady: null,
@@ -66,4 +68,18 @@ export const useGameStore = create<GameState>((set) => ({
   terminalChatOpen: false,
   openTerminalChat: () => set({ terminalChatOpen: true }),
   closeTerminalChat: () => set({ terminalChatOpen: false }),
+
+  sessionStatus: 'PLAYING',
+  sessionEndType: null,
+  sessionEndSpeech: null,
+  endSession: (type: SessionEndType, speech: string) => {
+    const won = type === 'PROMOTED' || type === 'ESCAPED';
+    set({
+      sessionStatus: won ? 'WON' : 'LOST',
+      sessionEndType: type,
+      sessionEndSpeech: speech,
+    });
+    stopJacobsLoop();
+    stopJobCycle();
+  },
 }));

@@ -3,6 +3,7 @@ import { useJacobsStore } from '../stores/jacobsStore';
 import { useGameStore } from '../stores/gameStore';
 import { useJobStore } from '../stores/jobStore';
 import type { JacobsReaction, JacobsEvent, JacobsMood } from '../types/jacobs';
+import type { SessionEndType } from '../types/game';
 
 const EVENT_THRESHOLD = 5;
 const TIME_THRESHOLD = 30_000;
@@ -24,8 +25,14 @@ async function callJacobsReact(
   currentJob: { title: string; description: string } | null,
 ): Promise<JacobsReaction> {
   try {
+    const jobState = useJobStore.getState();
+    const sessionStats = {
+      game_time_minutes: jobState.gameTimeMinutes,
+      bucks: useGameStore.getState().bucks,
+      phases_completed: jobState.phaseNumber,
+    };
     const { data, error } = await supabase.functions.invoke('jacobs-react', {
-      body: { events, current_mood: mood, world_state: objectStates, current_job: currentJob },
+      body: { events, current_mood: mood, world_state: objectStates, current_job: currentJob, session_stats: sessionStats },
     });
     if (error || !data) {
       console.warn('jacobs-react error:', error);
@@ -83,11 +90,19 @@ async function processEvents(): Promise<void> {
   }
 
   applyEffects(reaction);
+
+  // Check for AI-driven game end
+  const gameEnd = (reaction as JacobsReaction & { game_end?: string }).game_end;
+  if (gameEnd && gameEnd !== 'NONE') {
+    useGameStore.getState().endSession(gameEnd as SessionEndType, reaction.speech);
+  }
+
   jacobsStore.setProcessing(false);
 }
 
 function checkThreshold(): void {
-  // Skip processing during job review
+  // Skip if session ended or during job review
+  if (useGameStore.getState().sessionStatus !== 'PLAYING') return;
   if (useJobStore.getState().reviewInProgress) return;
 
   const { eventLog } = useJacobsStore.getState();

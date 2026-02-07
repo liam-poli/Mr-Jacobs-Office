@@ -45,9 +45,10 @@ Deno.serve(async (req) => {
 
   try {
     const { type, id, name, tags, state, model, direction } = await req.json();
-    // Default: flux-2-pro for both types (override with explicit model param)
-    const defaultModel: SpriteModel = "flux-2-pro";
-    const spriteModel: SpriteModel = model === "nano-banana-pro" || model === "flux-2-pro" ? model : defaultModel;
+    // Items default to Klein (fast/cheap), objects default to Pro (higher quality)
+    const defaultModel: SpriteModel = type === "item" ? "flux-2-klein" : "flux-2-pro";
+    const validModels: SpriteModel[] = ["flux-2-pro", "flux-2-klein", "nano-banana-pro"];
+    const spriteModel: SpriteModel = validModels.includes(model) ? model : defaultModel;
 
     if (!type || !id || !name) {
       return new Response(

@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { events, job, current_mood, world_state } = await req.json();
+    const { events, job, current_mood, world_state, session_stats } = await req.json();
 
     if (!job || !current_mood) {
       return new Response(
@@ -56,6 +56,7 @@ Deno.serve(async (req) => {
       job,
       current_mood,
       world_state ?? {},
+      session_stats ?? null,
     );
 
     console.log("Jacobs review:", review);

@@ -1,7 +1,9 @@
 import { supabase } from './supabase';
 import { useJacobsStore } from '../stores/jacobsStore';
 import { useJobStore } from '../stores/jobStore';
+import { useGameStore } from '../stores/gameStore';
 import type { JacobsMood } from '../types/jacobs';
+import type { SessionEndType } from '../types/game';
 
 export interface ChatMessage {
   role: 'player' | 'jacobs';
@@ -34,6 +36,11 @@ export async function sendTerminalMessage(
       ? { title: jobState.currentJob.title, description: jobState.currentJob.description }
       : null;
 
+    const sessionStats = {
+      game_time_minutes: jobState.gameTimeMinutes,
+      bucks: useGameStore.getState().bucks,
+      phases_completed: jobState.phaseNumber,
+    };
     const { data, error } = await supabase.functions.invoke('jacobs-chat', {
       body: {
         message,
@@ -41,6 +48,7 @@ export async function sendTerminalMessage(
         current_mood: currentMood,
         recent_events: recentEvents,
         current_job: currentJob,
+        session_stats: sessionStats,
       },
     });
 
@@ -67,6 +75,12 @@ export async function sendTerminalMessage(
     };
     useJacobsStore.getState().logEvent(chatEvent);
     useJobStore.getState().logPhaseEvent(chatEvent);
+
+    // Check for AI-driven game end
+    const gameEnd = (data as { game_end?: string }).game_end;
+    if (gameEnd && gameEnd !== 'NONE') {
+      useGameStore.getState().endSession(gameEnd as SessionEndType, response.reply);
+    }
 
     return response;
   } catch (err) {

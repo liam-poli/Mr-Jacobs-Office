@@ -338,8 +338,8 @@ export class OfficeScene extends Phaser.Scene {
       // Register in Jacobs' name map for effect resolution
       useJacobsStore.getState().registerObject(obj.id, obj.name);
 
-      // Jacobs Screen: keep the DB sprite as the monitor, overlay the face on top
-      if (obj.name.toLowerCase().includes('jacobs') && obj.name.toLowerCase().includes('screen')) {
+      // J.A.C.O.B.S. Core: keep the DB sprite as the monitor, overlay the face on top
+      if (obj.name === 'J.A.C.O.B.S. Core') {
         const faceY = py - 4;
         const faceOverlay = this.add.image(px, faceY, 'jacobs-face-NEUTRAL');
         faceOverlay.setScale(0.9);

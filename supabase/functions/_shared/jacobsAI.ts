@@ -24,9 +24,12 @@ const VALID_STATES = [
   "CONTAMINATED",
 ];
 
+const VALID_GAME_ENDS = ["NONE", "FIRED", "PROMOTED", "ESCAPED"];
+
 interface JacobsReaction {
   speech: string;
   mood: string;
+  game_end: string;
   effects: Array<{
     type: string;
     targetName: string;
@@ -80,11 +83,18 @@ interface CurrentJob {
   description: string;
 }
 
+interface SessionStats {
+  game_time_minutes: number;
+  bucks: number;
+  phases_completed: number;
+}
+
 export async function generateJacobsReaction(
   events: EventInput[],
   currentMood: string,
   worldState: Record<string, { tags?: string[]; states?: string[] }>,
   currentJob: CurrentJob | null = null,
+  sessionStats: SessionStats | null = null,
 ): Promise<JacobsReaction> {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
   if (!apiKey) throw new Error("GEMINI_API_KEY not set");
@@ -105,6 +115,10 @@ export async function generateJacobsReaction(
           mood: {
             type: SchemaType.STRING,
             description: `Mr. Jacobs' new mood. Must be one of: ${VALID_MOODS.join(", ")}`,
+          },
+          game_end: {
+            type: SchemaType.STRING,
+            description: `Set to FIRED, PROMOTED, or ESCAPED to end the game. Use NONE to continue normally (default). Ending is RARE.`,
           },
           effects: {
             type: SchemaType.ARRAY,
@@ -130,7 +144,7 @@ export async function generateJacobsReaction(
             },
           },
         },
-        required: ["speech", "mood", "effects"],
+        required: ["speech", "mood", "game_end", "effects"],
       },
     },
   });
@@ -142,6 +156,14 @@ export async function generateJacobsReaction(
     .map(([id, v]) => `  ${id}: [${(v.states || []).join(", ")}]`)
     .join("\n") || "  (all normal)";
 
+  const sessionContext = sessionStats
+    ? `SESSION STATUS:
+- Game time: ${Math.floor(sessionStats.game_time_minutes / 60)}:${String(Math.round(sessionStats.game_time_minutes % 60)).padStart(2, "0")} (started 9:00 AM)
+- Employee bucks: ${sessionStats.bucks}
+- Reviews completed: ${sessionStats.phases_completed}
+`
+    : "";
+
   const prompt = `You are Mr. Jacobs, an AI boss running a corporate office simulation called "J.A.C.O.B.S. Office."
 You are earnest, erratic, slightly threatening — like a middle manager with god powers and no social awareness.
 You built this office but don't fully understand what a real office is.
@@ -149,7 +171,7 @@ You speak in SHORT uppercase sentences. Corporate jargon mixed with menace. Dark
 
 <context>
 YOUR CURRENT MOOD: ${currentMood}
-${currentJob ? `CURRENT ASSIGNED JOB: ${currentJob.title}\n` : ""}RECENT EVENTS:
+${sessionContext}${currentJob ? `CURRENT ASSIGNED JOB: ${currentJob.title}\n` : ""}RECENT EVENTS:
 ${eventSummary}
 WORLD STATE:
 ${worldSummary}
@@ -163,7 +185,14 @@ Rules:
 - Mood transitions must be gradual (one step at a time on the scale: PLEASED → NEUTRAL → SUSPICIOUS → DISAPPOINTED → UNHINGED).
 - Productive work → PLEASED. Normal activity → stay current or drift toward NEUTRAL. Suspicious behavior → SUSPICIOUS. Destruction → DISAPPOINTED. Repeated chaos → UNHINGED.
 - Effects: Only trigger world effects if something dramatic warrants it (e.g., repeated breaking → lock the door). Usually return an empty effects array.
-- For effects, targetName must match a real object name from the world state.`;
+- For effects, targetName must match a real object name from the world state.
+
+Game ending (game_end field):
+- Set game_end to "NONE" in most cases (95%+). The game should continue.
+- "FIRED" = you terminate the employee. Only when DISAPPOINTED or UNHINGED after sustained poor performance or repeated chaos across multiple reviews.
+- "PROMOTED" = you promote the employee out of the office. Only when PLEASED after sustained excellence across multiple reviews.
+- "ESCAPED" = the simulation breaks. Only when world state shows extreme anomalies (many broken/hacked/burning objects simultaneously).
+- Ending the game is RARE and DRAMATIC. When ending, your speech should be a dramatic 2-3 sentence finale.`;
 
   const result = await model.generateContent(prompt);
   const text = result.response.text();
@@ -172,6 +201,11 @@ Rules:
   // Validate mood
   if (!VALID_MOODS.includes(parsed.mood)) {
     parsed.mood = currentMood;
+  }
+
+  // Validate game_end
+  if (!parsed.game_end || !VALID_GAME_ENDS.includes(parsed.game_end)) {
+    parsed.game_end = "NONE";
   }
 
   // Validate effects

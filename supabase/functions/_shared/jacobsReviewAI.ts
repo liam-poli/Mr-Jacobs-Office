@@ -11,10 +11,13 @@ const VALID_MOODS = [
   "UNHINGED",
 ];
 
+const VALID_GAME_ENDS = ["NONE", "FIRED", "PROMOTED", "ESCAPED"];
+
 interface ReviewResult {
   speech: string;
   score: number;
   mood: string;
+  game_end: string;
 }
 
 interface EventInput {
@@ -69,18 +72,25 @@ function buildEventSummary(events: EventInput[]): string {
     .join("\n");
 }
 
+interface SessionStats {
+  game_time_minutes: number;
+  bucks: number;
+  phases_completed: number;
+}
+
 export async function generateJacobsReview(
   events: EventInput[],
   job: JobInput,
   currentMood: string,
   worldState: Record<string, { tags?: string[]; states?: string[] }>,
+  sessionStats: SessionStats | null = null,
 ): Promise<ReviewResult> {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
   if (!apiKey) throw new Error("GEMINI_API_KEY not set");
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
+    model: "gemini-3-flash-preview",
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -100,8 +110,12 @@ export async function generateJacobsReview(
             type: SchemaType.STRING,
             description: `Mr. Jacobs' mood after the review. Must be one of: ${VALID_MOODS.join(", ")}`,
           },
+          game_end: {
+            type: SchemaType.STRING,
+            description: `Set to FIRED, PROMOTED, or ESCAPED to end the game. Use NONE to continue normally (default). Ending is RARE.`,
+          },
         },
-        required: ["speech", "score", "mood"],
+        required: ["speech", "score", "mood", "game_end"],
       },
     },
   });
@@ -117,13 +131,21 @@ export async function generateJacobsReview(
       .map(([id, v]) => `  ${id}: [${(v.states || []).join(", ")}]`)
       .join("\n") || "  (all normal)";
 
+  const sessionContext = sessionStats
+    ? `SESSION STATUS:
+- Game time: ${Math.floor(sessionStats.game_time_minutes / 60)}:${String(Math.round(sessionStats.game_time_minutes % 60)).padStart(2, "0")} (started 9:00 AM)
+- Employee bucks: ${sessionStats.bucks}
+- Reviews completed: ${sessionStats.phases_completed}
+`
+    : "";
+
   const prompt = `You are Mr. Jacobs, an AI boss reviewing an employee's work performance.
 You are earnest, erratic, slightly threatening — like a middle manager with god powers and no social awareness.
 You speak in SHORT uppercase sentences. Corporate jargon mixed with menace. Dark humor.
 
 <context>
 YOUR CURRENT MOOD: ${currentMood}
-
+${sessionContext}
 THE JOB ASSIGNED: ${sanitize(job.title)} — ${sanitize(job.description)}
 OBJECTS RELEVANT TO THIS JOB: ${job.objectHints.map((h) => sanitize(h)).join(", ")}
 
@@ -148,7 +170,14 @@ Rules:
 - Speech: 1-3 sentences, UPPERCASE, corporate-dystopian humor. Be specific about the job and what they did/didn't do.
 - Score must be an integer 0-10.
 - Mood transitions must be gradual (one step at a time on the scale: PLEASED → NEUTRAL → SUSPICIOUS → DISAPPOINTED → UNHINGED).
-- Good work → PLEASED. Slacking → DISAPPOINTED. Chaos → UNHINGED. Normal → stay current or drift toward NEUTRAL.`;
+- Good work → PLEASED. Slacking → DISAPPOINTED. Chaos → UNHINGED. Normal → stay current or drift toward NEUTRAL.
+
+Game ending (game_end field):
+- Set game_end to "NONE" in most cases (95%+). The game should continue.
+- "FIRED" = you terminate the employee after this terrible review. Only when DISAPPOINTED or UNHINGED after multiple consecutive poor reviews.
+- "PROMOTED" = you promote the employee after this amazing review. Only when PLEASED after multiple consecutive excellent reviews.
+- "ESCAPED" = the simulation breaks. Only when world state shows extreme anomalies.
+- Ending the game is RARE and DRAMATIC. When ending, your speech should be a dramatic 2-3 sentence finale.`;
 
   const result = await model.generateContent(prompt);
   const text = result.response.text();
@@ -157,6 +186,11 @@ Rules:
   // Validate mood
   if (!VALID_MOODS.includes(parsed.mood)) {
     parsed.mood = currentMood;
+  }
+
+  // Validate game_end
+  if (!parsed.game_end || !VALID_GAME_ENDS.includes(parsed.game_end)) {
+    parsed.game_end = "NONE";
   }
 
   // Clamp score to 0-10 integer

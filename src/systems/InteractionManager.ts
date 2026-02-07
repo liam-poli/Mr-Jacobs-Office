@@ -202,12 +202,7 @@ export class InteractionManager {
 
     if (Phaser.Input.Keyboard.JustDown(this.eKey) && nearest) {
       if (nearest.type === 'object') {
-        const def = this.objectDefs.get(nearest.id);
-        if (def && def.name === 'Computer Terminal') {
-          useGameStore.getState().openTerminalChat();
-        } else {
-          useGameStore.getState().openInteractionMenu();
-        }
+        useGameStore.getState().openInteractionMenu();
       } else {
         this.handleItemPickup(nearest);
       }

@@ -4,81 +4,159 @@ import { useJacobsStore } from '../stores/jacobsStore';
 import { useGameStore } from '../stores/gameStore';
 import type { Job, ReviewResult } from '../types/job';
 import type { JacobsEvent, JacobsMood } from '../types/jacobs';
+import type { SessionEndType } from '../types/game';
 
 // ─── Constants ──────────────────────────────────────────────────────
 
 const FIRST_PHASE_DELAY = 5_000; // ms before first job assignment
 const REVIEW_SPEECH_DURATION = 8_000; // ms to show review speech before next phase
 
-// ─── Job Pool ───────────────────────────────────────────────────────
+// ─── Job Templates ──────────────────────────────────────────────────
 
-const JOB_POOL: Job[] = [
-  {
-    id: 'sort-files',
-    title: 'SORT FILES',
-    description:
-      'I NEED THOSE FILES SORTED. USE THE FILING CABINET. EFFICIENCY IS MANDATORY.',
-    objectHints: ['Filing Cabinet'],
-  },
-  {
-    id: 'fix-coffee',
-    title: 'FIX COFFEE MACHINE',
-    description:
-      'THE COFFEE MACHINE IS DOWN AGAIN. FIX IT OR FACE CONSEQUENCES.',
-    objectHints: ['Coffee Machine'],
-  },
-  {
-    id: 'water-plant',
-    title: 'WATER THE PLANT',
-    description:
-      'THE OFFICE PLANT IS A VALUED EMPLOYEE. KEEP IT ALIVE. THAT IS YOUR JOB.',
-    objectHints: ['Plant'],
-  },
-  {
-    id: 'clean-desk',
-    title: 'CLEAN YOUR DESK',
-    description:
-      'YOUR WORKSPACE IS A DISGRACE. INTERACT WITH THE DESK. MAKE IT PRESENTABLE.',
-    objectHints: ['Desk'],
-  },
-  {
-    id: 'check-terminal',
-    title: 'SYSTEM CHECK',
-    description:
-      'RUN A DIAGNOSTIC ON THE TERMINAL. THE NETWORK HAS BEEN ACTING UP.',
-    objectHints: ['Terminal', "Jacobs' Screen"],
-  },
+interface CatalogObject {
+  id: string;
+  name: string;
+  tags: string[];
+}
+
+const TITLE_TEMPLATES: Record<string, string[]> = {
+  ELECTRONIC: [
+    'REBOOT {name}',
+    'RUN DIAGNOSTICS ON {name}',
+    'RECALIBRATE {name}',
+    'CHECK {name}',
+    'DEBUG {name}',
+  ],
+  ORGANIC: [
+    'WATER {name}',
+    'TEND TO {name}',
+    'CHECK ON {name}',
+    'CARE FOR {name}',
+  ],
+  METALLIC: [
+    'CLEAN {name}',
+    'REORGANIZE {name}',
+    'FIX {name}',
+    'MAINTAIN {name}',
+    'POLISH {name}',
+  ],
+  GENERIC: [
+    'INSPECT {name}',
+    'DEAL WITH {name}',
+    'SORT OUT {name}',
+    'ATTEND TO {name}',
+    'SERVICE {name}',
+  ],
+};
+
+const DESC_TEMPLATES = [
+  'THE {name} REQUIRES YOUR IMMEDIATE ATTENTION. DO IT. NOW.',
+  '{name} ISN\'T GOING TO FIX ITSELF. GET TO WORK.',
+  'I\'VE NOTICED THE {name} NEEDS WORK. HANDLE IT. IMMEDIATELY.',
+  'THE {name} IS IN AN UNACCEPTABLE STATE. RECTIFY THIS.',
+  'YOUR TASK: THE {name}. FAILURE IS NOT AN OPTION.',
+  'REPORTS INDICATE THE {name} NEEDS SERVICING. THAT MEANS YOU.',
+  'THE {name} HAS BEEN FLAGGED. ADDRESS IT BEFORE I LOSE PATIENCE.',
 ];
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function getTitlePool(tags: string[]): string[] {
+  const upper = tags.map((t) => t.toUpperCase());
+  if (upper.includes('ELECTRONIC')) return TITLE_TEMPLATES.ELECTRONIC;
+  if (upper.includes('ORGANIC')) return TITLE_TEMPLATES.ORGANIC;
+  if (upper.includes('METALLIC') || upper.includes('HEAVY')) return TITLE_TEMPLATES.METALLIC;
+  return TITLE_TEMPLATES.GENERIC;
+}
+
+function generateJob(obj: CatalogObject): Job {
+  const titleTemplate = pick(getTitlePool(obj.tags));
+  const descTemplate = pick(DESC_TEMPLATES);
+  const name = obj.name.toUpperCase();
+
+  return {
+    id: obj.id,
+    title: titleTemplate.replace('{name}', name),
+    description: descTemplate.replace('{name}', name),
+    objectHints: [obj.name],
+  };
+}
 
 // ─── Module State ───────────────────────────────────────────────────
 
 let tickIntervalId: ReturnType<typeof setInterval> | null = null;
 let startTimeoutId: ReturnType<typeof setTimeout> | null = null;
-let lastJobId: string | null = null;
+let recentObjectIds: string[] = []; // track last 2 to avoid repeats
+let objectCatalog: CatalogObject[] = [];
+
+// ─── Object Catalog ─────────────────────────────────────────────────
+
+async function ensureObjectCatalog(): Promise<void> {
+  if (objectCatalog.length > 0) return;
+
+  const { data, error } = await supabase
+    .from('objects')
+    .select('id, name, tags');
+
+  if (error || !data) {
+    console.warn('Failed to fetch object catalog for jobs:', error);
+    return;
+  }
+
+  // Filter out doors — they're structural, not task-worthy
+  objectCatalog = (data as CatalogObject[]).filter(
+    (obj) => !obj.name.toLowerCase().includes('door'),
+  );
+}
 
 // ─── Job Selection ──────────────────────────────────────────────────
 
 function pickRandomJob(): Job {
-  const candidates = JOB_POOL.filter((j) => j.id !== lastJobId);
-  const pool = candidates.length > 0 ? candidates : JOB_POOL;
-  return pool[Math.floor(Math.random() * pool.length)];
+  // Filter out recently used objects
+  const candidates = objectCatalog.filter((o) => !recentObjectIds.includes(o.id));
+  const pool = candidates.length > 0 ? candidates : objectCatalog;
+  const obj = pick(pool);
+
+  // Track recent (keep last 2)
+  recentObjectIds.push(obj.id);
+  if (recentObjectIds.length > 2) recentObjectIds.shift();
+
+  return generateJob(obj);
 }
 
 // ─── Phase Lifecycle ────────────────────────────────────────────────
 
 function assignNewJob(): void {
+  if (objectCatalog.length === 0) {
+    console.warn('No objects in catalog — cannot assign job');
+    return;
+  }
   const job = pickRandomJob();
-  lastJobId = job.id;
-
   useJobStore.getState().startPhase(job);
   useJacobsStore.getState().setSpeech(job.description, 'NEW ASSIGNMENT');
 }
+
+const SESSION_END_TIME = 550; // 9:10 AM in minutes since midnight (10 game-minutes)
 
 function tickPhaseTimer(): void {
   const store = useJobStore.getState();
   if (store.phaseStatus !== 'WORKING') return;
 
+  // Check if session already ended
+  if (useGameStore.getState().sessionStatus !== 'PLAYING') return;
+
   store.tickTimer();
+
+  // Check for session time limit
+  if (store.gameTimeMinutes >= SESSION_END_TIME) {
+    useGameStore.getState().endSession(
+      'TIME_UP',
+      'THE OFFICE IS NOW CLOSED. YOUR SHIFT IS OVER. PERFORMANCE: INADEQUATE. REPORT BACK TOMORROW.',
+    );
+    return;
+  }
 
   // Check after tick
   if (store.phaseTimeRemaining <= 1) {
@@ -101,8 +179,14 @@ async function callJacobsReview(
   objectStates: Record<string, { tags: string[]; states: string[] }>,
 ): Promise<ReviewResult> {
   try {
+    const jobState = useJobStore.getState();
+    const sessionStats = {
+      game_time_minutes: jobState.gameTimeMinutes,
+      bucks: useGameStore.getState().bucks,
+      phases_completed: jobState.phaseNumber,
+    };
     const { data, error } = await supabase.functions.invoke('jacobs-review', {
-      body: { events, job, current_mood: mood, world_state: objectStates },
+      body: { events, job, current_mood: mood, world_state: objectStates, session_stats: sessionStats },
     });
     if (error || !data) {
       console.warn('jacobs-review error:', error);
@@ -140,6 +224,13 @@ async function triggerReview(): Promise<void> {
   useJacobsStore.getState().setSpeech(result.speech, 'PERFORMANCE REVIEW');
   useGameStore.getState().addBucks(result.score);
 
+  // Check for AI-driven game end
+  const gameEnd = (result as ReviewResult & { game_end?: string }).game_end;
+  if (gameEnd && gameEnd !== 'NONE') {
+    useGameStore.getState().endSession(gameEnd as SessionEndType, result.speech);
+    return;
+  }
+
   // Wait for the review speech to display, then start next phase
   setTimeout(() => {
     useJobStore.getState().setReviewInProgress(false);
@@ -159,8 +250,9 @@ export function startJobCycle(): void {
     return;
   }
 
-  // Clean start: wait a few seconds then assign first job
-  startTimeoutId = setTimeout(() => {
+  // Clean start: fetch object catalog, then assign first job
+  startTimeoutId = setTimeout(async () => {
+    await ensureObjectCatalog();
     assignNewJob();
     startTimeoutId = null;
   }, FIRST_PHASE_DELAY);

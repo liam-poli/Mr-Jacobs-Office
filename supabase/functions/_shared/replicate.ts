@@ -1,7 +1,7 @@
 const REPLICATE_MODELS_URL = "https://api.replicate.com/v1/models";
 const REPLICATE_PREDICTIONS_URL = "https://api.replicate.com/v1/predictions";
 
-export type SpriteModel = "flux-2-pro" | "nano-banana-pro";
+export type SpriteModel = "flux-2-pro" | "flux-2-klein" | "nano-banana-pro";
 
 function getToken(): string {
   const token = Deno.env.get("REPLICATE_API_TOKEN");
@@ -42,6 +42,19 @@ function buildFluxInput(prompt: string, size: number) {
   };
 }
 
+function buildFluxKleinInput(prompt: string) {
+  return {
+    url: `${REPLICATE_MODELS_URL}/black-forest-labs/flux-2-klein-4b/predictions`,
+    input: {
+      prompt,
+      aspect_ratio: "1:1",
+      output_megapixels: "0.25",
+      output_format: "png",
+      go_fast: true,
+    },
+  };
+}
+
 function buildNanoBananaInput(prompt: string) {
   return {
     url: `${REPLICATE_MODELS_URL}/google/nano-banana-pro/predictions`,
@@ -62,9 +75,11 @@ export async function generateSprite(
 ): Promise<string> {
   const token = getToken();
 
-  const { url, input } = model === "nano-banana-pro"
-    ? buildNanoBananaInput(prompt)
-    : buildFluxInput(prompt, size);
+  const { url, input } = model === "flux-2-klein"
+    ? buildFluxKleinInput(prompt)
+    : model === "nano-banana-pro"
+      ? buildNanoBananaInput(prompt)
+      : buildFluxInput(prompt, size);
 
   console.log(`Using model: ${model}`);
 
@@ -81,7 +96,8 @@ export async function generateSprite(
   if (prediction.error) throw new Error(prediction.error);
 
   const output = await waitForPrediction(prediction.urls.get, token);
-  // Both models return a single URL string
+  // Klein returns string[], others return a single string
+  if (Array.isArray(output)) return output[0] as string;
   return output as string;
 }
 

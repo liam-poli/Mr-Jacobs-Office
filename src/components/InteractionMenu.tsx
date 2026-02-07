@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { soundService } from '../services/soundService';
+import { playTerminalOpen } from '../services/terminalSounds';
 
 const FALLBACK_ITEM_COLOR = '#888888';
 
-/** Each option: null itemId = bare-hand, string = use item, 'cancel' = close */
-type MenuOption = { type: 'interact'; itemId: null } | { type: 'item'; itemId: string } | { type: 'cancel' };
+/** Each option: null itemId = bare-hand, string = use item, 'talk' = terminal chat, 'cancel' = close */
+type MenuOption = { type: 'talk' } | { type: 'interact'; itemId: null } | { type: 'item'; itemId: string } | { type: 'cancel' };
 
 export function InteractionMenu() {
   const menuOpen = useGameStore((s) => s.interactionMenuOpen);
@@ -15,11 +16,17 @@ export function InteractionMenu() {
   const setPendingInteraction = useGameStore((s) => s.setPendingInteraction);
   const pending = useGameStore((s) => s.interactionPending);
 
+  const openTerminalChat = useGameStore((s) => s.openTerminalChat);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  // Build options list: bare-hand + items + cancel
+  const isTerminal = target?.name === 'Computer Terminal';
+
+  // Build options list: talk (terminal only) + bare-hand + items + cancel
   const options: MenuOption[] = [];
   if (menuOpen && target?.type === 'object') {
+    if (isTerminal) {
+      options.push({ type: 'talk' });
+    }
     options.push({ type: 'interact', itemId: null });
     for (const item of inventory) {
       options.push({ type: 'item', itemId: item.id });
@@ -37,11 +44,15 @@ export function InteractionMenu() {
     soundService.playSfx('ui-click');
     if (option.type === 'cancel') {
       closeMenu();
+    } else if (option.type === 'talk') {
+      closeMenu();
+      playTerminalOpen();
+      openTerminalChat();
     } else {
       setPendingInteraction({ targetId: target.id, itemId: option.itemId });
       closeMenu();
     }
-  }, [target, closeMenu, setPendingInteraction]);
+  }, [target, closeMenu, setPendingInteraction, openTerminalChat]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -121,16 +132,18 @@ export function InteractionMenu() {
             ? inventory.find((inv) => inv.id === option.itemId)
             : null;
 
+          const isTalk = option.type === 'talk';
+
           return (
             <button
-              key={isCancel ? 'cancel' : option.type === 'interact' ? 'interact' : option.itemId}
+              key={isCancel ? 'cancel' : isTalk ? 'talk' : option.type === 'interact' ? 'interact' : option.itemId}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[13px] transition-all cursor-pointer group"
               style={{
-                color: isSelected 
-                  ? 'var(--color-hud-bg)' 
+                color: isSelected
+                  ? 'var(--color-hud-bg)'
                   : isCancel
                     ? 'var(--color-hud-danger)'
-                    : option.type === 'interact'
+                    : (isTalk || option.type === 'interact')
                       ? 'var(--color-hud-accent)'
                       : 'var(--color-hud-text)',
                 backgroundColor: isSelected ? 'var(--color-hud-accent)' : 'transparent',
@@ -148,6 +161,8 @@ export function InteractionMenu() {
               <div className={`w-6 h-6 flex items-center justify-center border ${isSelected ? 'border-current' : 'border-white/20'} rounded-sm bg-black/20`}>
                 {isCancel ? (
                   <span className="text-[16px] font-bold">&times;</span>
+                ) : isTalk ? (
+                  <span className="text-[14px] font-bold">&gt;</span>
                 ) : option.type === 'interact' ? (
                   <span className="text-[14px] font-bold">!</span>
                 ) : item?.spriteUrl ? (
@@ -169,9 +184,11 @@ export function InteractionMenu() {
               <span className="font-medium tracking-tight">
                 {isCancel
                   ? 'ABORT'
-                  : option.type === 'interact'
-                    ? `INTERACT: ${target.name}`
-                    : `USE: ${item?.name}`}
+                  : isTalk
+                    ? 'TALK TO JACOBS'
+                    : option.type === 'interact'
+                      ? `INTERACT: ${target.name}`
+                      : `USE: ${item?.name}`}
               </span>
 
               <span className="ml-auto" />

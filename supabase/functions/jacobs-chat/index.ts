@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { message, history, current_mood, recent_events, current_job } = await req.json();
+    const { message, history, current_mood, recent_events, current_job, session_stats } = await req.json();
 
     if (!message || !current_mood) {
       return new Response(
@@ -57,6 +57,7 @@ Deno.serve(async (req) => {
       current_mood,
       recent_events ?? [],
       current_job ?? null,
+      session_stats ?? null,
     );
 
     console.log("Jacobs chat response:", response);
