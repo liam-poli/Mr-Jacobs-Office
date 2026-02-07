@@ -2,11 +2,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { soundService } from '../services/soundService';
 import { playTerminalOpen } from '../services/terminalSounds';
+import { vendRandomItem } from '../services/vendingService';
 
 const FALLBACK_ITEM_COLOR = '#888888';
 
 /** Each option: null itemId = bare-hand, string = use item, 'talk' = terminal chat, 'cancel' = close */
-type MenuOption = { type: 'talk' } | { type: 'interact'; itemId: null } | { type: 'item'; itemId: string } | { type: 'cancel' };
+type MenuOption = { type: 'talk' } | { type: 'vend' } | { type: 'interact'; itemId: null } | { type: 'item'; itemId: string } | { type: 'cancel' };
 
 export function InteractionMenu() {
   const menuOpen = useGameStore((s) => s.interactionMenuOpen);
@@ -14,18 +15,24 @@ export function InteractionMenu() {
   const inventory = useGameStore((s) => s.inventory);
   const closeMenu = useGameStore((s) => s.closeInteractionMenu);
   const setPendingInteraction = useGameStore((s) => s.setPendingInteraction);
+  const setInteractionPending = useGameStore((s) => s.setInteractionPending);
+  const setInteractionResult = useGameStore((s) => s.setInteractionResult);
   const pending = useGameStore((s) => s.interactionPending);
 
   const openTerminalChat = useGameStore((s) => s.openTerminalChat);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const isTerminal = target?.name === 'Computer Terminal';
+  const isVendingMachine = target?.name === 'Vending Machine';
 
-  // Build options list: talk (terminal only) + bare-hand + items + cancel
+  // Build options list: special (terminal/vending) + bare-hand + items + cancel
   const options: MenuOption[] = [];
   if (menuOpen && target?.type === 'object') {
     if (isTerminal) {
       options.push({ type: 'talk' });
+    }
+    if (isVendingMachine) {
+      options.push({ type: 'vend' });
     }
     options.push({ type: 'interact', itemId: null });
     for (const item of inventory) {
@@ -48,6 +55,14 @@ export function InteractionMenu() {
       closeMenu();
       playTerminalOpen();
       openTerminalChat();
+    } else if (option.type === 'vend') {
+      closeMenu();
+      setInteractionPending(true);
+      soundService.playSfx('interact');
+      vendRandomItem().then((result) => {
+        setInteractionPending(false);
+        setInteractionResult({ description: result.description });
+      });
     } else {
       setPendingInteraction({ targetId: target.id, itemId: option.itemId });
       closeMenu();
@@ -133,17 +148,18 @@ export function InteractionMenu() {
             : null;
 
           const isTalk = option.type === 'talk';
+          const isVend = option.type === 'vend';
 
           return (
             <button
-              key={isCancel ? 'cancel' : isTalk ? 'talk' : option.type === 'interact' ? 'interact' : option.itemId}
+              key={isCancel ? 'cancel' : isTalk ? 'talk' : isVend ? 'vend' : option.type === 'interact' ? 'interact' : option.itemId}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[13px] transition-all cursor-pointer group"
               style={{
                 color: isSelected
                   ? 'var(--color-hud-bg)'
                   : isCancel
                     ? 'var(--color-hud-danger)'
-                    : (isTalk || option.type === 'interact')
+                    : (isTalk || isVend || option.type === 'interact')
                       ? 'var(--color-hud-accent)'
                       : 'var(--color-hud-text)',
                 backgroundColor: isSelected ? 'var(--color-hud-accent)' : 'transparent',
@@ -163,6 +179,8 @@ export function InteractionMenu() {
                   <span className="text-[16px] font-bold">&times;</span>
                 ) : isTalk ? (
                   <span className="text-[14px] font-bold">&gt;</span>
+                ) : isVend ? (
+                  <span className="text-[14px] font-bold">$</span>
                 ) : option.type === 'interact' ? (
                   <span className="text-[14px] font-bold">!</span>
                 ) : item?.spriteUrl ? (
@@ -186,9 +204,11 @@ export function InteractionMenu() {
                   ? 'ABORT'
                   : isTalk
                     ? 'TALK TO JACOBS'
-                    : option.type === 'interact'
-                      ? `INTERACT: ${target.name}`
-                      : `USE: ${item?.name}`}
+                    : isVend
+                      ? 'BUY ITEM (5 BUCKS)'
+                      : option.type === 'interact'
+                        ? `INTERACT: ${target.name}`
+                        : `USE: ${item?.name}`}
               </span>
 
               <span className="ml-auto" />
