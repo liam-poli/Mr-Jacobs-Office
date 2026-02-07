@@ -4,11 +4,13 @@ import { PhaserGame } from './components/PhaserGame';
 import { HUD } from './components/HUD';
 import { InventoryBar } from './components/InventoryBar';
 import { SettingsMenu } from './components/SettingsMenu';
+import { HelpPanel } from './components/HelpPanel';
 import { LoadingScreen } from './components/LoadingScreen';
 import { InteractionPrompt } from './components/InteractionPrompt';
 import { InteractionMenu } from './components/InteractionMenu';
 import { InteractionToast } from './components/InteractionToast';
 import { JacobsSpeech } from './components/JacobsSpeech';
+import { JacobsFace } from './components/JacobsFace';
 import { TerminalChat } from './components/TerminalChat';
 import { useSettingsStore } from './stores/settingsStore';
 import { useGameStore } from './stores/gameStore';
@@ -37,12 +39,14 @@ function Game() {
         <PhaserGame />
       </div>
       <HUD />
+      <JacobsFace />
       <InteractionPrompt />
       <InteractionMenu />
       <InteractionToast />
       <JacobsSpeech />
       <TerminalChat />
       <InventoryBar />
+      <HelpPanel />
       <SettingsMenu />
       <LoadingScreen />
     </div>

@@ -6,6 +6,7 @@ import { fetchRoom } from '../services/roomService';
 import { soundService } from '../services/soundService';
 import { startJacobsLoop, stopJacobsLoop } from '../services/jacobsService';
 import { startJobCycle, stopJobCycle } from '../services/jobService';
+import { MatrixBackground } from '../effects/MatrixBackground';
 import type { RoomDef, GameState, DoorTarget } from '../types/game';
 import type { JacobsMood } from '../types/jacobs';
 
@@ -69,6 +70,7 @@ export class OfficeScene extends Phaser.Scene {
   private doorZones: DoorZone[] = [];
   private transitioning = false;
   private doorGraceUntil = 0;
+  private matrixBg: MatrixBackground | null = null;
 
   constructor() {
     super('OfficeScene');
@@ -78,6 +80,7 @@ export class OfficeScene extends Phaser.Scene {
     this.sceneData = data ?? {};
     this.doorZones = [];
     this.transitioning = false;
+    this.matrixBg = null;
     this.objectVisuals = new Map();
     this.player = null!;
   }
@@ -96,6 +99,9 @@ export class OfficeScene extends Phaser.Scene {
 
     // Build the room from the tile map
     this.buildRoom(roomDef);
+
+    // Ambient matrix background effect (renders behind room tiles)
+    this.matrixBg = new MatrixBackground(this);
 
     // Spawn local player — use scene data position if provided (room transition), otherwise center
     const spawnTileX = this.sceneData.spawnX ?? Math.floor(roomDef.width / 2);
@@ -159,6 +165,11 @@ export class OfficeScene extends Phaser.Scene {
         const src = this.textures.get(key).getSourceImage() as HTMLCanvasElement;
         useJacobsStore.getState().setFaceDataUrl(m, src.toDataURL());
       }
+      const blinkKey = `jacobs-face-${m}-blink`;
+      if (this.textures.exists(blinkKey)) {
+        const blinkSrc = this.textures.get(blinkKey).getSourceImage() as HTMLCanvasElement;
+        useJacobsStore.getState().setBlinkFaceDataUrl(m, blinkSrc.toDataURL());
+      }
     }
 
     // Start the Jacobs brain loop and job cycle
@@ -170,7 +181,7 @@ export class OfficeScene extends Phaser.Scene {
 
     // Initialize sound system and start ambient music
     soundService.init();
-    soundService.playMusic('ambient-office');
+    soundService.setMusicLevel(1);
 
     // Wait for actual rendered frames + ScaleManager to settle before revealing.
     const createTime = performance.now();
@@ -360,7 +371,13 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private spawnItems(roomDef: RoomDef) {
+    const collected = useGameStore.getState().collectedSpawns;
+
     for (const item of roomDef.itemSpawns) {
+      // Skip items the player already picked up
+      const spawnKey = `${roomDef.id}:${item.item_id}:${item.tileX}:${item.tileY}`;
+      if (collected.has(spawnKey)) continue;
+
       const px = item.tileX * TILE_SIZE + TILE_SIZE / 2;
       const py = item.tileY * TILE_SIZE + TILE_SIZE / 2;
       const textureKey = item.spriteUrl
@@ -409,6 +426,7 @@ export class OfficeScene extends Phaser.Scene {
           name: item.name,
           tags: item.tags,
           spriteUrl: item.spriteUrl,
+          spawnKey,
         });
       });
     }
@@ -471,10 +489,11 @@ export class OfficeScene extends Phaser.Scene {
     }
   }
 
-  update(_time: number, _delta: number) {
+  update(_time: number, delta: number) {
     if (!this.player) return; // async create() still loading
     this.player.update();
     this.interactionManager.update();
+    this.matrixBg?.update(_time, delta);
 
     // Depth sort player so it renders in front/behind objects correctly
     this.player.setDepth(this.player.y);
@@ -694,7 +713,7 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private cleanup() {
-    soundService.stopMusic();
+    // Music intentionally NOT stopped here — persists across room transitions.
     stopJacobsLoop();
     stopJobCycle();
     this.unsubscribe?.();
@@ -714,5 +733,8 @@ export class OfficeScene extends Phaser.Scene {
       door.zone.destroy();
     }
     this.doorZones = [];
+
+    this.matrixBg?.destroy();
+    this.matrixBg = null;
   }
 }

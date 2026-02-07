@@ -16,10 +16,12 @@ const panelStyle: React.CSSProperties = {
 
 export function JacobsSpeech() {
   const speech = useJacobsStore((s) => s.currentSpeech);
+  const speechTitle = useJacobsStore((s) => s.speechTitle);
   const mood = useJacobsStore((s) => s.mood);
-  const setSpeech = useJacobsStore((s) => s.setSpeech);
   const faceUrl = useJacobsStore((s) => s.faceDataUrls[s.mood]);
+  const setSpeech = useJacobsStore((s) => s.setSpeech);
   const reviewInProgress = useJobStore((s) => s.reviewInProgress);
+  const isMajor = !!speechTitle;
 
   const [displayText, setDisplayText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
@@ -69,41 +71,61 @@ export function JacobsSpeech() {
 
   return (
     <div
-      className="absolute top-24 left-1/2 -translate-x-1/2 z-30 w-[420px]"
+      className={`absolute top-24 left-1/2 -translate-x-1/2 z-30 ${isMajor ? 'w-[500px]' : 'w-[420px]'}`}
       style={{ fontFamily: 'var(--font-hud)' }}
     >
       <div
-        className="px-5 py-3 text-[13px] flex items-start gap-3"
+        className={`px-4 py-3 ${isMajor ? 'text-[15px]' : 'text-[13px]'} flex items-start gap-3`}
         style={{
           ...panelStyle,
           color: 'var(--color-hud-text)',
         }}
       >
-        <div className="shrink-0 flex flex-col items-center gap-1">
-          {faceUrl && (
-            <img
-              src={faceUrl}
-              alt="Mr. Jacobs"
-              className="w-8 h-8 rounded-sm"
-              style={{ imageRendering: 'pixelated', borderColor: moodColor, borderWidth: 1 }}
-            />
+        {/* Jacobs face avatar */}
+        {faceUrl && (
+          <img
+            src={faceUrl}
+            alt="Mr. Jacobs"
+            className="w-10 h-10 rounded-sm shrink-0 mt-0.5"
+            style={{
+              imageRendering: 'pixelated',
+              borderColor: moodColor,
+              borderWidth: 2,
+              borderStyle: 'solid',
+            }}
+          />
+        )}
+
+        <div className="flex-1 flex flex-col">
+          {/* Title bar for major messages */}
+          {isMajor && (
+            <>
+              <div
+                className="text-[11px] tracking-[0.15em] font-bold mb-2"
+                style={{ color: moodColor }}
+              >
+                {speechTitle}
+              </div>
+              <div
+                className="mb-3"
+                style={{ height: 1, backgroundColor: moodColor, opacity: 0.4 }}
+              />
+            </>
           )}
-          <span className="text-[9px]" style={{ color: moodColor }}>
-            JACOBS
-          </span>
-        </div>
-        <div className="min-w-0 flex-1 relative">
-          {/* Invisible full text to reserve the final box height */}
-          <span className="invisible" aria-hidden="true">
-            &gt; {fullText}_
-          </span>
-          {/* Visible typewriter text layered on top */}
-          <div className="absolute inset-0">
-            <span style={{ color: moodColor }}>&gt; </span>
-            {displayText}
-            <span style={{ opacity: showCursor ? 1 : 0, color: moodColor }}>
-              _
+
+          <div className="relative">
+            {/* Invisible full text to reserve the final box height */}
+            <span className="invisible" aria-hidden="true">
+              &gt; {fullText}_
             </span>
+            {/* Visible typewriter text layered on top */}
+            <div className="absolute inset-0">
+              <span style={{ color: moodColor }}>&gt; </span>
+              {displayText}
+              <span style={{ opacity: showCursor ? 1 : 0, color: moodColor }}>
+                _
+              </span>
+            </div>
           </div>
         </div>
       </div>

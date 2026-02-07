@@ -32,24 +32,40 @@ const DEFAULT_ROOM: RoomDef = {
   itemSpawns: [],
 };
 
-/** Parse slim item_spawns from room JSON */
+/** UUID v4 pattern for filtering out "null" or garbage IDs */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Parse slim item_spawns from room JSON, skipping entries with invalid IDs */
 function parseItemSpawns(raw: unknown[]): ItemSpawn[] {
-  return raw.map((r) => {
+  const result: ItemSpawn[] = [];
+  for (const r of raw) {
     const o = r as Record<string, unknown>;
-    return {
-      item_id: o.item_id as string,
+    const id = o.item_id as string;
+    if (!id || !UUID_RE.test(id)) {
+      console.warn('Skipping item spawn with invalid item_id:', id);
+      continue;
+    }
+    result.push({
+      item_id: id,
       tileX: (o.tileX ?? o.tile_x) as number,
       tileY: (o.tileY ?? o.tile_y) as number,
-    };
-  });
+    });
+  }
+  return result;
 }
 
-/** Parse slim object_placements from room JSON */
+/** Parse slim object_placements from room JSON, skipping entries with invalid IDs */
 function parseObjectPlacements(raw: unknown[]): ObjectPlacement[] {
-  return raw.map((r) => {
+  const result: ObjectPlacement[] = [];
+  for (const r of raw) {
     const o = r as Record<string, unknown>;
+    const id = o.object_id as string;
+    if (!id || !UUID_RE.test(id)) {
+      console.warn('Skipping object placement with invalid object_id:', id);
+      continue;
+    }
     const placement: ObjectPlacement = {
-      object_id: o.object_id as string,
+      object_id: id,
       tileX: (o.tileX ?? o.tile_x) as number,
       tileY: (o.tileY ?? o.tile_y) as number,
     };
@@ -59,15 +75,18 @@ function parseObjectPlacements(raw: unknown[]): ObjectPlacement[] {
     if (o.door_target) {
       placement.door_target = o.door_target as DoorTarget;
     }
-    return placement;
-  });
+    result.push(placement);
+  }
+  return result;
 }
 
 /** Fetch items from the catalog and merge with spawn positions */
 async function resolveItems(spawns: ItemSpawn[]): Promise<ResolvedItem[]> {
   if (spawns.length === 0) return [];
 
-  const ids = [...new Set(spawns.map((s) => s.item_id))];
+  const ids = [...new Set(spawns.map((s) => s.item_id))].filter((id) => UUID_RE.test(id));
+  if (ids.length === 0) return [];
+
   const { data, error } = await supabase
     .from('items')
     .select('id, name, tags, sprite_url')
@@ -104,7 +123,9 @@ async function resolveItems(spawns: ItemSpawn[]): Promise<ResolvedItem[]> {
 async function resolveObjects(placements: ObjectPlacement[]): Promise<ResolvedObject[]> {
   if (placements.length === 0) return [];
 
-  const ids = [...new Set(placements.map((p) => p.object_id))];
+  const ids = [...new Set(placements.map((p) => p.object_id))].filter((id) => UUID_RE.test(id));
+  if (ids.length === 0) return [];
+
   const { data, error } = await supabase
     .from('objects')
     .select('id, name, tags, state, sprite_url, scale, directional_sprites')

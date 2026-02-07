@@ -21,10 +21,11 @@ async function callJacobsReact(
   events: JacobsEvent[],
   mood: JacobsMood,
   objectStates: Record<string, { tags: string[]; states: string[] }>,
+  currentJob: { title: string; description: string } | null,
 ): Promise<JacobsReaction> {
   try {
     const { data, error } = await supabase.functions.invoke('jacobs-react', {
-      body: { events, current_mood: mood, world_state: objectStates },
+      body: { events, current_mood: mood, world_state: objectStates, current_job: currentJob },
     });
     if (error || !data) {
       console.warn('jacobs-react error:', error);
@@ -64,10 +65,15 @@ async function processEvents(): Promise<void> {
   lastProcessTime = Date.now();
 
   const gameState = useGameStore.getState();
+  const jobState = useJobStore.getState();
+  const currentJob = jobState.currentJob
+    ? { title: jobState.currentJob.title, description: jobState.currentJob.description }
+    : null;
   const reaction = await callJacobsReact(
     events,
     jacobsStore.mood,
     gameState.objectStates,
+    currentJob,
   );
 
   jacobsStore.setMood(reaction.mood as JacobsMood);

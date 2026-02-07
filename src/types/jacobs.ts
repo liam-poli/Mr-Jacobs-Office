@@ -45,7 +45,8 @@ export interface JacobsState {
   clearEventLog: () => void;
 
   currentSpeech: string | null;
-  setSpeech: (speech: string | null) => void;
+  speechTitle: string | null;
+  setSpeech: (speech: string | null, title?: string | null) => void;
 
   isProcessing: boolean;
   setProcessing: (processing: boolean) => void;
@@ -55,4 +56,7 @@ export interface JacobsState {
 
   faceDataUrls: Partial<Record<JacobsMood, string>>;
   setFaceDataUrl: (mood: JacobsMood, dataUrl: string) => void;
+
+  blinkFaceDataUrls: Partial<Record<JacobsMood, string>>;
+  setBlinkFaceDataUrl: (mood: JacobsMood, dataUrl: string) => void;
 }

@@ -55,6 +55,14 @@ export const useGameStore = create<GameState>((set) => ({
     }),
   clearPendingDrop: () => set({ pendingDrop: null }),
 
+  collectedSpawns: new Set<string>(),
+  collectSpawn: (key) =>
+    set((s) => {
+      const next = new Set(s.collectedSpawns);
+      next.add(key);
+      return { collectedSpawns: next };
+    }),
+
   terminalChatOpen: false,
   openTerminalChat: () => set({ terminalChatOpen: true }),
   closeTerminalChat: () => set({ terminalChatOpen: false }),

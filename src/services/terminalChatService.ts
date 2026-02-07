@@ -24,11 +24,23 @@ export async function sendTerminalMessage(
   currentMood: JacobsMood,
 ): Promise<JacobsChatResponse> {
   try {
+    // Gather recent events so Jacobs knows what the player has been doing
+    const jobState = useJobStore.getState();
+    const recentEvents = jobState.phaseEvents.slice(-15).map((e) => ({
+      type: e.type,
+      details: e.details,
+    }));
+    const currentJob = jobState.currentJob
+      ? { title: jobState.currentJob.title, description: jobState.currentJob.description }
+      : null;
+
     const { data, error } = await supabase.functions.invoke('jacobs-chat', {
       body: {
         message,
         history: history.slice(-10),
         current_mood: currentMood,
+        recent_events: recentEvents,
+        current_job: currentJob,
       },
     });
 

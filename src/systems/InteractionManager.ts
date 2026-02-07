@@ -14,6 +14,7 @@ interface ItemMeta {
   name: string;
   tags: string[];
   spriteUrl?: string;
+  spawnKey?: string;
 }
 
 interface ObjectMeta {
@@ -202,7 +203,7 @@ export class InteractionManager {
     if (Phaser.Input.Keyboard.JustDown(this.eKey) && nearest) {
       if (nearest.type === 'object') {
         const def = this.objectDefs.get(nearest.id);
-        if (def && (def.name === "Jacobs' Screen" || def.name === 'Jacobs Screen')) {
+        if (def && def.name === 'Computer Terminal') {
           useGameStore.getState().openTerminalChat();
         } else {
           useGameStore.getState().openInteractionMenu();
@@ -272,6 +273,12 @@ export class InteractionManager {
     }
 
     const def = this.itemDefs.get(target.id)!;
+
+    // Mark this spawn as collected so it won't respawn on room re-entry
+    if (def.spawnKey) {
+      store.collectSpawn(def.spawnKey);
+    }
+
     store.addItem({
       id: target.id,
       item_id: def.item_id,

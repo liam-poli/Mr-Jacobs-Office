@@ -152,6 +152,10 @@ export interface GameState {
   dropItem: (index: number) => void;
   clearPendingDrop: () => void;
 
+  // Collected item spawns (persists across room changes so items don't respawn)
+  collectedSpawns: Set<string>;
+  collectSpawn: (key: string) => void;
+
   // Terminal chat
   terminalChatOpen: boolean;
   openTerminalChat: () => void;

@@ -71,7 +71,7 @@ function assignNewJob(): void {
   lastJobId = job.id;
 
   useJobStore.getState().startPhase(job);
-  useJacobsStore.getState().setSpeech(job.description);
+  useJacobsStore.getState().setSpeech(job.description, 'NEW ASSIGNMENT');
 }
 
 function tickPhaseTimer(): void {
@@ -137,7 +137,7 @@ async function triggerReview(): Promise<void> {
 
   // Apply review results
   useJacobsStore.getState().setMood(result.mood as JacobsMood);
-  useJacobsStore.getState().setSpeech(result.speech);
+  useJacobsStore.getState().setSpeech(result.speech, 'PERFORMANCE REVIEW');
   useGameStore.getState().addBucks(result.score);
 
   // Wait for the review speech to display, then start next phase

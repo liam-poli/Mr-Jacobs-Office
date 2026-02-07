@@ -11,7 +11,8 @@ export const useJacobsStore = create<JacobsState>((set) => ({
   clearEventLog: () => set({ eventLog: [] }),
 
   currentSpeech: null,
-  setSpeech: (speech) => set({ currentSpeech: speech }),
+  speechTitle: null,
+  setSpeech: (speech, title) => set({ currentSpeech: speech, speechTitle: title ?? null }),
 
   isProcessing: false,
   setProcessing: (processing) => set({ isProcessing: processing }),
@@ -26,5 +27,11 @@ export const useJacobsStore = create<JacobsState>((set) => ({
   setFaceDataUrl: (mood, dataUrl) =>
     set((s) => ({
       faceDataUrls: { ...s.faceDataUrls, [mood]: dataUrl },
+    })),
+
+  blinkFaceDataUrls: {},
+  setBlinkFaceDataUrl: (mood, dataUrl) =>
+    set((s) => ({
+      blinkFaceDataUrls: { ...s.blinkFaceDataUrls, [mood]: dataUrl },
     })),
 }));

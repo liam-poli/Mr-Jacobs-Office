@@ -6,6 +6,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 
 type SfxName = 'pickup' | 'drop' | 'interact' | 'footstep' | 'ui-hover' | 'ui-click' | 'error';
 type MusicName = 'ambient-office';
+export type MusicLevel = 1 | 2 | 3 | 4;
 
 interface SoundDef {
   src: string[];
@@ -37,6 +38,18 @@ const MUSIC_DEFS: Record<MusicName, SoundDef> = {
   'ambient-office': { src: ['/audio/music/ambient-office.mp3'], volume: 0.17, loop: true },
 };
 
+// ─── Music Level Tracks ───────────────────────────────────────────
+// 4 intensity tiers — drop mp3 files at these paths when ready.
+
+const MUSIC_LEVEL_DEFS: Record<MusicLevel, SoundDef> = {
+  1: { src: ['/audio/music/level-1.mp3'], volume: 0.17, loop: true },
+  2: { src: ['/audio/music/level-2.mp3'], volume: 0.20, loop: true },
+  3: { src: ['/audio/music/level-3.mp3'], volume: 0.23, loop: true },
+  4: { src: ['/audio/music/level-4.mp3'], volume: 0.25, loop: true },
+};
+
+const CROSSFADE_MS = 1500;
+
 // ─── SoundService ──────────────────────────────────────────────────
 
 class SoundService {
@@ -45,6 +58,11 @@ class SoundService {
   private music = new Map<MusicName, Howl>();
   private currentMusic: MusicName | null = null;
   private initialized = false;
+
+  // Music level system
+  private levelTracks = new Map<MusicLevel, Howl>();
+  private currentLevel: MusicLevel | null = null;
+  private crossfading = false;
 
   constructor() {
     this.subscribeToSettings();
@@ -81,6 +99,19 @@ class SoundService {
       );
     }
 
+    // Preload level-based music tracks
+    for (const [level, def] of Object.entries(MUSIC_LEVEL_DEFS) as [string, SoundDef][]) {
+      this.levelTracks.set(
+        Number(level) as MusicLevel,
+        new Howl({
+          src: def.src,
+          volume: def.volume ?? 0.2,
+          loop: def.loop ?? false,
+          preload: true,
+        }),
+      );
+    }
+
     const { soundEnabled, musicEnabled } = useSettingsStore.getState();
     this.applyMuteState(soundEnabled, musicEnabled);
   }
@@ -96,6 +127,13 @@ class SoundService {
     }
   }
 
+  /** Start music only if it isn't already playing (no-op for same track). */
+  ensureMusic(name: MusicName): void {
+    if (!this.initialized) return;
+    if (this.currentMusic === name) return;
+    this.playMusic(name);
+  }
+
   /** Start background music. Stops current track if different. */
   playMusic(name: MusicName): void {
     if (!this.initialized) return;
@@ -109,12 +147,66 @@ class SoundService {
     this.currentMusic = name;
   }
 
-  /** Stop all music. */
+  /** Stop all music (both named tracks and level tracks). */
   stopMusic(): void {
     if (this.currentMusic) {
       this.music.get(this.currentMusic)?.stop();
       this.currentMusic = null;
     }
+
+    // Also stop any active level track
+    if (this.currentLevel) {
+      this.levelTracks.get(this.currentLevel)?.stop();
+      this.currentLevel = null;
+      this.crossfading = false;
+    }
+  }
+
+  /** Crossfade to a music intensity level (1–4). */
+  setMusicLevel(level: MusicLevel): void {
+    if (!this.initialized) return;
+    if (this.currentLevel === level) return;
+    if (this.crossfading) return;
+
+    // Stop any named music track first
+    if (this.currentMusic) {
+      this.music.get(this.currentMusic)?.stop();
+      this.currentMusic = null;
+    }
+
+    const newTrack = this.levelTracks.get(level);
+    if (!newTrack) return;
+
+    const oldLevel = this.currentLevel;
+    const oldTrack = oldLevel ? this.levelTracks.get(oldLevel) : null;
+    const targetVol = MUSIC_LEVEL_DEFS[level].volume ?? 0.2;
+
+    this.currentLevel = level;
+
+    if (oldTrack) {
+      // Crossfade: fade out old, fade in new
+      this.crossfading = true;
+      const oldVol = MUSIC_LEVEL_DEFS[oldLevel!].volume ?? 0.2;
+
+      newTrack.volume(0);
+      newTrack.play();
+      newTrack.fade(0, targetVol, CROSSFADE_MS);
+
+      oldTrack.fade(oldVol, 0, CROSSFADE_MS);
+      oldTrack.once('fade', () => {
+        oldTrack.stop();
+        this.crossfading = false;
+      });
+    } else {
+      // No current track — just start playing
+      newTrack.volume(targetVol);
+      newTrack.play();
+    }
+  }
+
+  /** Get the current music level (null if not using level system). */
+  getMusicLevel(): MusicLevel | null {
+    return this.currentLevel;
   }
 
   private subscribeToSettings(): void {
@@ -131,6 +223,9 @@ class SoundService {
       for (const howl of howls) howl.mute(!soundEnabled);
     }
     for (const howl of this.music.values()) {
+      howl.mute(!musicEnabled);
+    }
+    for (const howl of this.levelTracks.values()) {
       howl.mute(!musicEnabled);
     }
   }

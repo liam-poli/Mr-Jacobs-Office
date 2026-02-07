@@ -1,7 +1,7 @@
-import { Settings } from 'lucide-react';
+import { Settings, HelpCircle } from 'lucide-react';
 import { useGameStore } from '../stores/gameStore';
-import { useSettingsStore } from '../stores/settingsStore';
 import { useJobStore } from '../stores/jobStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { soundService } from '../services/soundService';
 
 const panelStyle: React.CSSProperties = {
@@ -29,12 +29,14 @@ function formatGameClock(totalMinutes: number): string {
 export function HUD() {
   const bucks = useGameStore((s) => s.bucks);
   const sceneReady = useGameStore((s) => s.sceneReady);
-  const toggleMenu = useSettingsStore((s) => s.toggleMenu);
 
   const currentJob = useJobStore((s) => s.currentJob);
   const phaseTimeRemaining = useJobStore((s) => s.phaseTimeRemaining);
   const phaseStatus = useJobStore((s) => s.phaseStatus);
   const gameTimeMinutes = useJobStore((s) => s.gameTimeMinutes);
+
+  const toggleMenu = useSettingsStore((s) => s.toggleMenu);
+  const toggleHelp = useSettingsStore((s) => s.toggleHelp);
 
   if (!sceneReady) return null;
 
@@ -47,35 +49,45 @@ export function HUD() {
         : 'STANDBY';
 
   return (
-    <div
-      className="absolute top-4 left-4 right-4 z-10 flex items-start gap-3"
-      style={{ fontFamily: 'var(--font-hud)' }}
-    >
-      {/* Status bar */}
+    <>
+      {/* Status bar — top left */}
       <div
-        className="px-5 py-3 text-[16px] text-hud-accent tracking-[0.02em] flex items-center"
-        style={panelStyle}
+        className="absolute top-4 left-4 z-10"
+        style={{ fontFamily: 'var(--font-hud)' }}
       >
-        BUCKS: {bucks}
-        <span className="text-hud-border mx-3">|</span>
-        TASK: {taskDisplay}
-        <span className="text-hud-border mx-3">|</span>
-        {formatGameClock(gameTimeMinutes)}
-        <span className="text-hud-border mx-3">|</span>
-        {reviewDisplay}
+        <div
+          className="px-5 py-3 text-[16px] text-hud-accent tracking-[0.02em] flex items-center"
+          style={panelStyle}
+        >
+          BUCKS: {bucks}
+          <span className="text-hud-border mx-3">|</span>
+          TASK: {taskDisplay}
+          <span className="text-hud-border mx-3">|</span>
+          {formatGameClock(gameTimeMinutes)}
+          <span className="text-hud-border mx-3">|</span>
+          {reviewDisplay}
+        </div>
       </div>
 
-      <div className="flex-1" />
-
-      {/* Gear icon */}
-      <button
-        onClick={() => { soundService.playSfx('ui-click'); toggleMenu(); }}
-        className="w-[92px] h-[92px] flex items-center justify-center text-hud-accent hover:text-white transition-colors cursor-pointer"
-        style={panelStyle}
-        title="Settings"
-      >
-        <Settings size={44} />
-      </button>
-    </div>
+      {/* Bottom-left buttons */}
+      <div className="absolute bottom-6 left-4 z-10 flex gap-2" style={{ fontFamily: 'var(--font-hud)' }}>
+        <button
+          onClick={() => { soundService.playSfx('ui-click'); toggleHelp(); }}
+          className="p-2.5 text-hud-accent hover:text-white transition-colors cursor-pointer"
+          style={panelStyle}
+          title="Help"
+        >
+          <HelpCircle size={20} />
+        </button>
+        <button
+          onClick={() => { soundService.playSfx('ui-click'); toggleMenu(); }}
+          className="p-2.5 text-hud-accent hover:text-white transition-colors cursor-pointer"
+          style={panelStyle}
+          title="Settings"
+        >
+          <Settings size={20} />
+        </button>
+      </div>
+    </>
   );
 }

@@ -283,8 +283,8 @@ function RoomEditor({
     }
     const pos = tileAt(e);
     if (!pos) return;
-    if (e.button === 2) {
-      // Right-click → remove
+    if (e.button === 2 || e.altKey) {
+      // Right-click or Option+click → remove
       if (mode === 'objects') removeObject(pos.col, pos.row);
       else removeItem(pos.col, pos.row);
     } else {
@@ -361,7 +361,7 @@ function RoomEditor({
           {/* Objects/Items mode: hint */}
           {mode !== 'tiles' && (
             <span className="ml-auto text-[10px] text-gray-400">
-              Left-click to place &middot; Right-click to remove
+              Left-click to place &middot; Option+click or right-click to remove
             </span>
           )}
         </div>
