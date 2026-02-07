@@ -59,4 +59,5 @@ export const RATE_LIMITS = {
   sprite: { maxRequests: 20, windowMs: 60_000 },
   jacobsReact: { maxRequests: 10, windowMs: 60_000 },
   jacobsChat: { maxRequests: 20, windowMs: 60_000 },
+  jacobsReview: { maxRequests: 5, windowMs: 60_000 },
 };

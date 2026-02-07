@@ -5,6 +5,7 @@ import { InteractionManager } from '../systems/InteractionManager';
 import { fetchRoom } from '../services/roomService';
 import { soundService } from '../services/soundService';
 import { startJacobsLoop, stopJacobsLoop } from '../services/jacobsService';
+import { startJobCycle, stopJobCycle } from '../services/jobService';
 import type { RoomDef, GameState, DoorTarget } from '../types/game';
 import type { JacobsMood } from '../types/jacobs';
 
@@ -160,8 +161,9 @@ export class OfficeScene extends Phaser.Scene {
       }
     }
 
-    // Start the Jacobs brain loop
+    // Start the Jacobs brain loop and job cycle
     startJacobsLoop();
+    startJobCycle();
 
     // Clean up subscription when scene shuts down
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
@@ -304,10 +306,8 @@ export class OfficeScene extends Phaser.Scene {
       const baseScale = TILE_SIZE / Math.max(frame.width, frame.height);
       sprite.setScale(baseScale * obj.scale);
 
-      // Shadow — dark ellipse at object's ground footprint
-      const shadow = this.add.image(px, py + TILE_SIZE / 2 - 2, 'obj-shadow');
-      shadow.setDepth(0.1);
-      shadow.setScale(obj.scale * (TILE_SIZE / 28));
+      // Shadow FX — subtle ground shadow beneath object
+      sprite.postFX?.addShadow(0, 4, 0.02, 0.5, 0x000000, 6, 0.4);
 
       // Door objects with a target: use overlap zone (walkable portal)
       // Non-door objects: normal collision body
@@ -367,8 +367,35 @@ export class OfficeScene extends Phaser.Scene {
         ? `sprite-item-${item.item_id}`
         : 'item-default';
 
+      // Floor glow behind the item
+      const glow = this.add.image(px, py + 2, 'item-glow');
+      glow.setDepth(py - 1);
+      glow.setAlpha(0.6);
+      this.tweens.add({
+        targets: glow,
+        alpha: { from: 0.4, to: 0.7 },
+        scale: { from: 0.9, to: 1.05 },
+        duration: 1200,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+
+      // Bouncing arrow above the item
+      const arrow = this.add.image(px, py - 18, 'item-arrow');
+      arrow.setDepth(py + 1);
+      this.tweens.add({
+        targets: arrow,
+        y: { from: py - 20, to: py - 14 },
+        duration: 800,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+
       const sprite = this.add.image(px, py, textureKey);
       sprite.setDepth(py);
+      sprite.setData('highlight', [glow, arrow]);
 
       // Scale large textures (e.g. server sprites) to match 32px item size
       const frame = sprite.frame;
@@ -669,6 +696,7 @@ export class OfficeScene extends Phaser.Scene {
   private cleanup() {
     soundService.stopMusic();
     stopJacobsLoop();
+    stopJobCycle();
     this.unsubscribe?.();
     this.jacobsUnsubscribe?.();
     this.jacobsBobTween?.destroy();

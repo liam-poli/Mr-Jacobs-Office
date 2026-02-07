@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { useJacobsStore } from '../stores/jacobsStore';
+import { useJobStore } from '../stores/jobStore';
 import type { JacobsMood } from '../types/jacobs';
 
 export interface ChatMessage {
@@ -41,9 +42,9 @@ export async function sendTerminalMessage(
     // Update mood in Jacobs store
     useJacobsStore.getState().setMood(response.mood);
 
-    // Log the chat exchange as an event for the Jacobs reaction loop
-    useJacobsStore.getState().logEvent({
-      type: 'TERMINAL_CHAT',
+    // Log the chat exchange as an event for the Jacobs reaction loop + job phase
+    const chatEvent = {
+      type: 'TERMINAL_CHAT' as const,
       timestamp: Date.now(),
       player: 'PLAYER 1',
       details: {
@@ -51,7 +52,9 @@ export async function sendTerminalMessage(
         jacobsReply: response.reply,
         resultMood: response.mood,
       },
-    });
+    };
+    useJacobsStore.getState().logEvent(chatEvent);
+    useJobStore.getState().logPhaseEvent(chatEvent);
 
     return response;
   } catch (err) {

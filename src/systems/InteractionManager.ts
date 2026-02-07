@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { useGameStore } from '../stores/gameStore';
 import { useJacobsStore } from '../stores/jacobsStore';
+import { useJobStore } from '../stores/jobStore';
 import { soundService } from '../services/soundService';
 import { resolveInteraction } from '../services/interactionService';
 import type { InteractionTarget, InventoryItem } from '../types';
@@ -113,8 +114,36 @@ export class InteractionManager {
     const textureKey = item.spriteUrl
       ? `sprite-item-${item.item_id}`
       : 'item-default';
+
+    // Floor glow behind the dropped item
+    const glow = this.scene.add.image(px, py + 2, 'item-glow');
+    glow.setDepth(py - 1);
+    glow.setAlpha(0.6);
+    this.scene.tweens.add({
+      targets: glow,
+      alpha: { from: 0.4, to: 0.7 },
+      scale: { from: 0.9, to: 1.05 },
+      duration: 1200,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
+    // Bouncing arrow above the dropped item
+    const arrow = this.scene.add.image(px, py - 18, 'item-arrow');
+    arrow.setDepth(py + 1);
+    this.scene.tweens.add({
+      targets: arrow,
+      y: { from: py - 20, to: py - 14 },
+      duration: 800,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
     const sprite = this.scene.add.image(px, py, textureKey);
     sprite.setDepth(py);
+    sprite.setData('highlight', [glow, arrow]);
 
     // Scale large textures (e.g. server sprites) to match 32px item size
     const frame = sprite.frame;
@@ -138,12 +167,14 @@ export class InteractionManager {
       this.spawnDroppedItem(dropped);
       store.clearPendingDrop();
       soundService.playSfx('drop');
-      useJacobsStore.getState().logEvent({
-        type: 'DROP',
+      const dropEvent = {
+        type: 'DROP' as const,
         timestamp: Date.now(),
         player: 'PLAYER 1',
         details: { itemName: dropped.name },
-      });
+      };
+      useJacobsStore.getState().logEvent(dropEvent);
+      useJobStore.getState().logPhaseEvent(dropEvent);
     }
 
     // Consume pending interaction from menu (React → Phaser bridge)
@@ -249,16 +280,22 @@ export class InteractionManager {
       spriteUrl: def.spriteUrl,
     });
     soundService.playSfx('pickup');
-    useJacobsStore.getState().logEvent({
-      type: 'PICKUP',
+    const pickupEvent = {
+      type: 'PICKUP' as const,
       timestamp: Date.now(),
       player: 'PLAYER 1',
       details: { itemName: def.name, itemTags: def.tags },
-    });
+    };
+    useJacobsStore.getState().logEvent(pickupEvent);
+    useJobStore.getState().logPhaseEvent(pickupEvent);
 
-    // Remove from world
+    // Remove from world (including highlight effects)
     const sprite = this.itemSprites.get(target.id);
-    sprite?.destroy();
+    if (sprite) {
+      const extras = sprite.getData('highlight') as Phaser.GameObjects.GameObject[] | undefined;
+      extras?.forEach((obj) => obj.destroy());
+      sprite.destroy();
+    }
     this.itemSprites.delete(target.id);
     this.itemDefs.delete(target.id);
 
@@ -308,12 +345,14 @@ export class InteractionManager {
         const newStates = [result.result_state];
         objDef.states = newStates;
         store.updateObjectState(target.id, newStates);
-        useJacobsStore.getState().logEvent({
-          type: 'STATE_CHANGE',
+        const stateEvent = {
+          type: 'STATE_CHANGE' as const,
           timestamp: Date.now(),
           player: 'PLAYER 1',
           details: { objectName: objDef.name, objectId: target.id, newState: result.result_state },
-        });
+        };
+        useJacobsStore.getState().logEvent(stateEvent);
+        useJobStore.getState().logPhaseEvent(stateEvent);
       }
 
       // Spawn output item if the result provides one
@@ -337,9 +376,9 @@ export class InteractionManager {
       // Show result description
       store.setInteractionResult({ description: result.description });
 
-      // Log interaction for Mr. Jacobs
-      useJacobsStore.getState().logEvent({
-        type: 'INTERACTION',
+      // Log interaction for Mr. Jacobs + job phase tracking
+      const interactionEvent = {
+        type: 'INTERACTION' as const,
         timestamp: Date.now(),
         player: 'PLAYER 1',
         details: {
@@ -348,7 +387,9 @@ export class InteractionManager {
           resultState: result.result_state,
           description: result.description,
         },
-      });
+      };
+      useJacobsStore.getState().logEvent(interactionEvent);
+      useJobStore.getState().logPhaseEvent(interactionEvent);
     } catch (err) {
       console.error('Interaction failed:', err);
       soundService.playSfx('error');

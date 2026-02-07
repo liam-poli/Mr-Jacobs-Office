@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { useJacobsStore } from '../stores/jacobsStore';
 import { useGameStore } from '../stores/gameStore';
+import { useJobStore } from '../stores/jobStore';
 import type { JacobsReaction, JacobsEvent, JacobsMood } from '../types/jacobs';
 
 const EVENT_THRESHOLD = 5;
@@ -80,6 +81,9 @@ async function processEvents(): Promise<void> {
 }
 
 function checkThreshold(): void {
+  // Skip processing during job review
+  if (useJobStore.getState().reviewInProgress) return;
+
   const { eventLog } = useJacobsStore.getState();
   if (eventLog.length === 0) return;
 

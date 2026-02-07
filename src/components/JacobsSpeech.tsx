@@ -1,9 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { useJacobsStore } from '../stores/jacobsStore';
+import { useJobStore } from '../stores/jobStore';
 import { playMumble } from '../services/mumbleService';
 
 const CHAR_DELAY = 40;
 const DISMISS_DELAY = 5000;
+const REVIEW_DISMISS_DELAY = 8000;
 
 const panelStyle: React.CSSProperties = {
   backgroundColor: 'var(--color-hud-panel)',
@@ -17,6 +19,7 @@ export function JacobsSpeech() {
   const mood = useJacobsStore((s) => s.mood);
   const setSpeech = useJacobsStore((s) => s.setSpeech);
   const faceUrl = useJacobsStore((s) => s.faceDataUrls[s.mood]);
+  const reviewInProgress = useJobStore((s) => s.reviewInProgress);
 
   const [displayText, setDisplayText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
@@ -52,9 +55,10 @@ export function JacobsSpeech() {
   // Auto-dismiss after typing finishes
   useEffect(() => {
     if (!fullText || displayText.length < fullText.length) return;
-    timerRef.current = setTimeout(() => setSpeech(null), DISMISS_DELAY);
+    const delay = reviewInProgress ? REVIEW_DISMISS_DELAY : DISMISS_DELAY;
+    timerRef.current = setTimeout(() => setSpeech(null), delay);
     return () => clearTimeout(timerRef.current);
-  }, [displayText, fullText, setSpeech]);
+  }, [displayText, fullText, setSpeech, reviewInProgress]);
 
   if (!speech) return null;
 

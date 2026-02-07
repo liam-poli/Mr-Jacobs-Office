@@ -45,7 +45,8 @@ export class BootScene extends Phaser.Scene {
     this.generateIndicatorTextures();
     this.generateJacobsFaces();
     this.generatePromptTexture();
-    this.generateObjectShadow();
+
+    this.generateItemHighlight();
     this.createPlayerAnimations('player-0');
     this.scene.start('OfficeScene');
   }
@@ -495,13 +496,28 @@ export class BootScene extends Phaser.Scene {
     staticG.destroy();
   }
 
-  private generateObjectShadow() {
+
+  private generateItemHighlight() {
+    // Soft circular glow for items on the ground (40x40 radial gradient)
+    const S = 40;
     const g = this.add.graphics();
-    const W = 28, H = 10;
-    g.fillStyle(0x000000, 0.3);
-    g.fillEllipse(W / 2, H / 2, W, H);
-    g.generateTexture('obj-shadow', W, H);
+    const cx = S / 2, cy = S / 2;
+    for (let r = S / 2; r > 0; r -= 1) {
+      const alpha = 0.15 * (1 - r / (S / 2));
+      g.fillStyle(0xccffcc, alpha);
+      g.fillCircle(cx, cy, r);
+    }
+    g.generateTexture('item-glow', S, S);
     g.destroy();
+
+    // Small downward arrow indicator (10x8)
+    const a = this.add.graphics();
+    a.fillStyle(0x5ee6b0, 1);
+    a.fillTriangle(5, 8, 0, 0, 10, 0);
+    a.fillStyle(0x8fffd4, 0.8);
+    a.fillTriangle(5, 6, 2, 1, 8, 1);
+    a.generateTexture('item-arrow', 10, 8);
+    a.destroy();
   }
 
   private generatePromptTexture() {

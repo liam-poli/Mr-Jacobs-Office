@@ -1,6 +1,7 @@
 import { Settings } from 'lucide-react';
 import { useGameStore } from '../stores/gameStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useJobStore } from '../stores/jobStore';
 import { soundService } from '../services/soundService';
 
 const panelStyle: React.CSSProperties = {
@@ -10,38 +11,70 @@ const panelStyle: React.CSSProperties = {
   borderRadius: 6,
 };
 
+function formatCountdown(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function formatGameClock(totalMinutes: number): string {
+  const mins = Math.floor(totalMinutes) % (24 * 60);
+  const h24 = Math.floor(mins / 60);
+  const m = mins % 60;
+  const period = h24 >= 12 ? 'PM' : 'AM';
+  const h12 = h24 % 12 || 12;
+  return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+}
+
 export function HUD() {
   const bucks = useGameStore((s) => s.bucks);
   const sceneReady = useGameStore((s) => s.sceneReady);
   const toggleMenu = useSettingsStore((s) => s.toggleMenu);
 
+  const currentJob = useJobStore((s) => s.currentJob);
+  const phaseTimeRemaining = useJobStore((s) => s.phaseTimeRemaining);
+  const phaseStatus = useJobStore((s) => s.phaseStatus);
+  const gameTimeMinutes = useJobStore((s) => s.gameTimeMinutes);
+
   if (!sceneReady) return null;
+
+  const taskDisplay = currentJob ? currentJob.title : 'STANDBY';
+  const reviewDisplay =
+    phaseStatus === 'REVIEWING'
+      ? 'REVIEW'
+      : phaseStatus === 'WORKING'
+        ? `NEXT REVIEW: ${formatCountdown(phaseTimeRemaining)}`
+        : 'STANDBY';
 
   return (
     <div
-      className="absolute top-4 left-4 z-10 flex items-center gap-3"
+      className="absolute top-4 left-4 right-4 z-10 flex items-start gap-3"
       style={{ fontFamily: 'var(--font-hud)' }}
     >
       {/* Status bar */}
       <div
-        className="px-5 py-3 text-[16px] text-hud-accent tracking-[0.02em]"
+        className="px-5 py-3 text-[16px] text-hud-accent tracking-[0.02em] flex items-center"
         style={panelStyle}
       >
         BUCKS: {bucks}
         <span className="text-hud-border mx-3">|</span>
-        TASK: FILE SORT 04
+        TASK: {taskDisplay}
         <span className="text-hud-border mx-3">|</span>
-        TIME: 09:42 AM
+        {formatGameClock(gameTimeMinutes)}
+        <span className="text-hud-border mx-3">|</span>
+        {reviewDisplay}
       </div>
+
+      <div className="flex-1" />
 
       {/* Gear icon */}
       <button
         onClick={() => { soundService.playSfx('ui-click'); toggleMenu(); }}
-        className="px-2.5 py-2 text-hud-dim hover:text-hud-accent transition-colors cursor-pointer"
+        className="w-[92px] h-[92px] flex items-center justify-center text-hud-accent hover:text-white transition-colors cursor-pointer"
         style={panelStyle}
         title="Settings"
       >
-        <Settings size={20} />
+        <Settings size={44} />
       </button>
     </div>
   );

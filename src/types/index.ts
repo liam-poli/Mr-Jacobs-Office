@@ -20,3 +20,10 @@ export type {
   JacobsReaction,
   JacobsState,
 } from './jacobs';
+
+export type {
+  PhaseStatus,
+  Job,
+  ReviewResult,
+  JobState,
+} from './job';
