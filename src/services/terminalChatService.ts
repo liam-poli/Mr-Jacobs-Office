@@ -40,6 +40,7 @@ export async function sendTerminalMessage(
       game_time_minutes: jobState.gameTimeMinutes,
       bucks: useGameStore.getState().bucks,
       phases_completed: jobState.phaseNumber,
+      review_scores: jobState.reviewScores,
     };
     const { data, error } = await supabase.functions.invoke('jacobs-chat', {
       body: {

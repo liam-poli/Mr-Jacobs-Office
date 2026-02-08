@@ -39,6 +39,8 @@ export interface JobState {
   // Review state
   reviewInProgress: boolean;
   setReviewInProgress: (inProgress: boolean) => void;
+  reviewScores: number[];
+  recordReviewScore: (score: number) => void;
 
   // Actions
   startPhase: (job: Job) => void;

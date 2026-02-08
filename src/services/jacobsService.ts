@@ -30,6 +30,7 @@ async function callJacobsReact(
       game_time_minutes: jobState.gameTimeMinutes,
       bucks: useGameStore.getState().bucks,
       phases_completed: jobState.phaseNumber,
+      review_scores: jobState.reviewScores,
     };
     const { data, error } = await supabase.functions.invoke('jacobs-react', {
       body: { events, current_mood: mood, world_state: objectStates, current_job: currentJob, session_stats: sessionStats },

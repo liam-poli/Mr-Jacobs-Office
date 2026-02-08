@@ -186,6 +186,7 @@ async function callJacobsReview(
       game_time_minutes: jobState.gameTimeMinutes,
       bucks: useGameStore.getState().bucks,
       phases_completed: jobState.phaseNumber,
+      review_scores: jobState.reviewScores,
     };
     const { data, error } = await supabase.functions.invoke('jacobs-review', {
       body: { events, job, current_mood: mood, world_state: objectStates, session_stats: sessionStats },
@@ -226,6 +227,7 @@ async function triggerReview(): Promise<void> {
   useJacobsStore.getState().setMood(result.mood as JacobsMood);
   useJacobsStore.getState().setSpeech(result.speech, 'PERFORMANCE REVIEW');
   useGameStore.getState().addBucks(result.score);
+  useJobStore.getState().recordReviewScore(result.score);
 
   // Check for AI-driven game end
   const gameEnd = (result as ReviewResult & { game_end?: string }).game_end;

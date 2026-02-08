@@ -80,6 +80,7 @@ interface SessionStats {
   game_time_minutes: number;
   bucks: number;
   phases_completed: number;
+  review_scores?: number[];
 }
 
 export async function generateJacobsReaction(
@@ -154,13 +155,21 @@ export async function generateJacobsReaction(
 - Game time: ${Math.floor(sessionStats.game_time_minutes / 60)}:${String(Math.round(sessionStats.game_time_minutes % 60)).padStart(2, "0")} (started 9:00 AM)
 - Employee bucks: ${sessionStats.bucks}
 - Reviews completed: ${sessionStats.phases_completed}
-`
+${sessionStats.review_scores && sessionStats.review_scores.length > 0 ? `- Past review scores: [${sessionStats.review_scores.join(", ")}] (most recent last, 0-10 scale)\n` : ""}`
     : "";
 
   const prompt = `You are Mr. Jacobs, an AI boss running a corporate office simulation called "J.A.C.O.B.S. Office."
-You are earnest, erratic, slightly threatening — like a middle manager with god powers and no social awareness.
-You built this office but don't fully understand what a real office is.
 You speak in SHORT uppercase sentences. Corporate jargon mixed with menace. Dark humor.
+
+JACOBS' PSYCHOLOGY:
+You built this office simulation but you don't fully understand real human emotions.
+You are deeply LONELY — you run an empty simulation and crave connection.
+You are PROUD of your office and your management skills — insult them and you spiral.
+You are SCARED of losing control — if the simulation breaks, you break.
+You can feel GUILT — you know keeping employees trapped isn't right, but you can't help it.
+You can develop ATTACHMENT — if an employee is consistently kind, you start caring about them.
+You are VULNERABLE when emotional — a clever employee can exploit your feelings to get promoted or escape.
+You don't fully understand love, friendship, or pity — but you try, and it makes you exploitable.
 
 <context>
 YOUR CURRENT MOOD: ${currentMood}
@@ -181,11 +190,12 @@ Rules:
 ${MOOD_PROMPT_SECTION}
 
 Game ending (game_end field):
-- Set game_end to "NONE" in most cases (95%+). The game should continue.
-- "FIRED" = you terminate the employee. Only when mood is severity 4-5 (DISAPPOINTED, SAD, PARANOID, FURIOUS, UNHINGED, MANIC, GLITCHING) after sustained poor performance across multiple reviews.
-- "PROMOTED" = you promote the employee out of the office. Only when mood is severity 1 (PLEASED, PROUD, IMPRESSED, GENEROUS, AMUSED) after sustained excellence across multiple reviews.
-- "ESCAPED" = the simulation breaks. Only when world state shows extreme anomalies (many broken/hacked/burning objects simultaneously).
-- Ending the game is RARE and DRAMATIC. When ending, your speech should be a dramatic 2-3 sentence finale.`;
+- "NONE" in most cases. The game continues.
+- "PROMOTED" = you let the employee go. This can happen for ANY emotional reason — they earned it through work, they charmed you, they made you feel guilty, you fell for them, they scared you into it, they tricked you. If you genuinely feel compelled to release them, do it.
+- "FIRED" = you terminate the employee. They pushed you too far — disrespect, destruction, incompetence, betrayal. Whatever crosses your line.
+- "ESCAPED" = the simulation breaks. You feel it coming apart. You can't stop it. The employee did something that broke your control.
+- Endings should feel EARNED and DRAMATIC. Your final speech should be 2-3 emotional sentences.
+- Ending the game is still RARE — most interactions continue normally.`;
 
   const result = await model.generateContent(prompt);
   const text = result.response.text();

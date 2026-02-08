@@ -21,6 +21,9 @@ export const useJobStore = create<JobState>((set) => ({
 
   reviewInProgress: false,
   setReviewInProgress: (inProgress) => set({ reviewInProgress: inProgress }),
+  reviewScores: [],
+  recordReviewScore: (score: number) =>
+    set((s) => ({ reviewScores: [...s.reviewScores, score] })),
 
   startPhase: (job: Job) =>
     set((s) => ({
