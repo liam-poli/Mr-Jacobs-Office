@@ -43,8 +43,10 @@ npx supabase start
 
 ## Credits
 
+- Player sprite generated with [Pixel Citizen by jbunke](https://jbunke.itch.io/pixel-citizen)
 - Sound effects from [freesound.org](https://freesound.org)
+- Font: [Silkscreen](https://fonts.google.com/specimen/Silkscreen) (OFL)
 
 ## License
 
-MIT
+[MIT](LICENSE)
