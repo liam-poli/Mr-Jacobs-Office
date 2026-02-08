@@ -24,24 +24,33 @@ export function OverviewTab() {
     fetchCounts();
   }, []);
 
-  if (loading) return <p className="text-gray-500 text-sm">Loading...</p>;
+  if (loading) return <p className="text-hud-dim text-sm font-mono">LOADING...</p>;
 
   const stats = [
-    { label: 'Tags', count: counts.tags, color: 'bg-purple-50 text-purple-700' },
-    { label: 'Objects', count: counts.objects, color: 'bg-blue-50 text-blue-700' },
-    { label: 'Items', count: counts.items, color: 'bg-green-50 text-green-700' },
-    { label: 'Rooms', count: counts.rooms, color: 'bg-teal-50 text-teal-700' },
-    { label: 'Interactions', count: 0, color: 'bg-orange-50 text-orange-700' },
+    { label: 'TAGS', count: counts.tags, accent: '#aa44cc' },
+    { label: 'OBJECTS', count: counts.objects, accent: '#4488cc' },
+    { label: 'ITEMS', count: counts.items, accent: '#44cc88' },
+    { label: 'ROOMS', count: counts.rooms, accent: '#44cccc' },
+    { label: 'INTERACTIONS', count: 0, accent: '#cc8844' },
   ];
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">Overview</h2>
+      <h2
+        className="text-hud-accent text-sm tracking-widest mb-4"
+        style={{ fontFamily: 'var(--font-hud)' }}
+      >
+        SYSTEM OVERVIEW
+      </h2>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {stats.map((s) => (
-          <div key={s.label} className={`rounded-lg p-5 ${s.color}`}>
-            <p className="text-3xl font-bold">{s.count}</p>
-            <p className="text-sm font-medium mt-1">{s.label}</p>
+          <div
+            key={s.label}
+            className="bg-hud-panel rounded border border-hud-border p-5"
+            style={{ borderLeftWidth: 3, borderLeftColor: s.accent }}
+          >
+            <p className="text-3xl font-bold text-hud-accent font-mono">{s.count}</p>
+            <p className="text-xs font-mono text-hud-dim mt-1 tracking-wide">{s.label}</p>
           </div>
         ))}
       </div>

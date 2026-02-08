@@ -25,3 +25,38 @@ canvas {
   50% { transform: translateY(1.6px); }
 }
 
+@keyframes crt-glow {
+  0%, 100% { filter: drop-shadow(0 0 8px #9fda73) drop-shadow(0 0 20px rgba(159,218,115,0.3)); }
+  50% { filter: drop-shadow(0 0 12px #9fda73) drop-shadow(0 0 30px rgba(159,218,115,0.5)); }
+}
+
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.06) 2px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.admin-input {
+  background-color: var(--color-hud-bg);
+  border: 1px solid var(--color-hud-border);
+  color: var(--color-hud-text);
+  font-family: "Courier New", monospace;
+}
+.admin-input:focus {
+  outline: none;
+  border-color: var(--color-hud-accent);
+  box-shadow: 0 0 0 1px var(--color-hud-accent);
+}
+.admin-input::placeholder {
+  color: var(--color-hud-dim);
+}
+

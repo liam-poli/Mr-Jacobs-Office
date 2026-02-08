@@ -57,38 +57,44 @@ export function TagsTab() {
     setShowForm(true);
   }
 
-  if (loading) return <p className="text-gray-500 text-sm">Loading...</p>;
+  if (loading) return <p className="text-hud-dim text-sm font-mono">LOADING...</p>;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">Tags ({tags.length})</h2>
+        <h2
+          className="text-hud-accent text-sm tracking-widest"
+          style={{ fontFamily: 'var(--font-hud)' }}
+        >
+          TAGS ({tags.length})
+        </h2>
         <button
           onClick={() => { resetForm(); setShowForm(!showForm); }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+          className="bg-hud-accent text-hud-bg px-4 py-2 rounded text-xs font-bold tracking-wider hover:brightness-110 transition-all"
+          style={{ fontFamily: 'var(--font-hud)' }}
         >
-          {showForm ? 'Cancel' : '+ Add Tag'}
+          {showForm ? 'CANCEL' : '+ ADD TAG'}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 p-4 mb-4 flex gap-3 items-end">
+        <form onSubmit={handleSubmit} className="bg-hud-panel rounded border border-hud-border p-4 mb-4 flex gap-3 items-end">
           <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-500 mb-1">Name</label>
+            <label className="block text-xs font-mono text-hud-dim mb-1">NAME</label>
             <input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="TAG_NAME"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="admin-input w-full px-3 py-2 rounded text-sm"
               required
             />
           </div>
           <div className="w-32">
-            <label className="block text-xs font-medium text-gray-500 mb-1">Applies To</label>
+            <label className="block text-xs font-mono text-hud-dim mb-1">APPLIES TO</label>
             <select
               value={form.applies_to}
               onChange={(e) => setForm({ ...form, applies_to: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="admin-input w-full px-3 py-2 rounded text-sm"
             >
               <option value="both">Both</option>
               <option value="object">Object</option>
@@ -96,47 +102,47 @@ export function TagsTab() {
             </select>
           </div>
           <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
+            <label className="block text-xs font-mono text-hud-dim mb-1">DESCRIPTION</label>
             <input
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="What this tag means..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="admin-input w-full px-3 py-2 rounded text-sm"
             />
           </div>
-          <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700">
-            {editingId ? 'Update' : 'Add'}
+          <button type="submit" className="bg-hud-accent text-hud-bg px-4 py-2 rounded text-xs font-bold tracking-wider hover:brightness-110 transition-all">
+            {editingId ? 'UPDATE' : 'ADD'}
           </button>
         </form>
       )}
 
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-hud-panel rounded border border-hud-border overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="border-b border-hud-border">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Name</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Applies To</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Description</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-500">Actions</th>
+              <th className="text-left px-4 py-3 font-mono text-xs text-hud-dim tracking-wide">NAME</th>
+              <th className="text-left px-4 py-3 font-mono text-xs text-hud-dim tracking-wide">APPLIES TO</th>
+              <th className="text-left px-4 py-3 font-mono text-xs text-hud-dim tracking-wide">DESCRIPTION</th>
+              <th className="text-right px-4 py-3 font-mono text-xs text-hud-dim tracking-wide">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
             {tags.map((tag) => (
-              <tr key={tag.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="px-4 py-3 font-mono font-semibold text-gray-800">{tag.name}</td>
+              <tr key={tag.id} className="border-b border-hud-border/30 hover:bg-hud-panel-inner/30">
+                <td className="px-4 py-3 font-mono font-semibold text-hud-accent">{tag.name}</td>
                 <td className="px-4 py-3">
-                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                    tag.applies_to === 'both' ? 'bg-purple-100 text-purple-700' :
-                    tag.applies_to === 'object' ? 'bg-blue-100 text-blue-700' :
-                    'bg-green-100 text-green-700'
+                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-mono ${
+                    tag.applies_to === 'both' ? 'bg-purple-900/40 text-purple-300' :
+                    tag.applies_to === 'object' ? 'bg-blue-900/40 text-blue-300' :
+                    'bg-green-900/40 text-green-300'
                   }`}>
                     {tag.applies_to}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-gray-600">{tag.description}</td>
+                <td className="px-4 py-3 text-hud-dim font-mono text-xs">{tag.description}</td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => startEdit(tag)} className="text-blue-600 hover:underline text-xs mr-3">Edit</button>
-                  <button onClick={() => handleDelete(tag.id)} className="text-red-500 hover:underline text-xs">Delete</button>
+                  <button onClick={() => startEdit(tag)} className="text-hud-accent hover:text-hud-text text-xs font-mono mr-3">EDIT</button>
+                  <button onClick={() => handleDelete(tag.id)} className="text-hud-danger hover:brightness-125 text-xs font-mono">DEL</button>
                 </td>
               </tr>
             ))}

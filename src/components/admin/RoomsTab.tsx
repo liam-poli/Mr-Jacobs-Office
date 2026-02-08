@@ -301,18 +301,18 @@ function RoomEditor({
   /* ─── Render ─────────────────────────────────────────── */
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-[90vw] max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+      <div className="bg-hud-panel rounded-lg shadow-xl max-w-[90vw] max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-          <h3 className="font-semibold text-gray-800 text-sm">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-hud-border">
+          <h3 className="text-hud-text text-sm font-mono">
             Room Editor — {room.name} ({room.width}x{room.height})
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg">&times;</button>
+          <button onClick={onClose} className="text-hud-dim hover:text-hud-text text-lg">&times;</button>
         </div>
 
         {/* Mode selector + context toolbar */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100">
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-hud-border">
           {/* Mode tabs */}
           {(['tiles', 'objects', 'items'] as const).map((m) => (
             <button
@@ -320,20 +320,20 @@ function RoomEditor({
               onClick={() => setMode(m)}
               className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                 mode === m
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 hover:bg-gray-100'
+                  ? 'bg-hud-accent text-hud-bg'
+                  : 'text-hud-dim hover:bg-hud-bg'
               }`}
             >
               {m === 'tiles' ? 'Tiles' : m === 'objects' ? 'Objects' : 'Items'}
             </button>
           ))}
 
-          <div className="w-px h-5 bg-gray-200 mx-1" />
+          <div className="w-px h-5 bg-hud-border mx-1" />
 
           {/* Tiles mode: brush palette */}
           {mode === 'tiles' && (
             <>
-              <span className="text-xs text-gray-500">Brush:</span>
+              <span className="text-xs text-hud-dim">Brush:</span>
               {Object.entries(TILE_COLORS).map(([type, color]) => {
                 const t = Number(type);
                 return (
@@ -342,25 +342,25 @@ function RoomEditor({
                     onClick={() => setBrush(t)}
                     className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors ${
                       brush === t
-                        ? 'ring-2 ring-blue-500 bg-blue-50 font-medium'
-                        : 'hover:bg-gray-100'
+                        ? 'ring-2 ring-hud-accent bg-hud-bg font-mono'
+                        : 'hover:bg-hud-bg'
                     }`}
                   >
                     <span
-                      className="inline-block w-4 h-4 rounded-sm border border-gray-300"
+                      className="inline-block w-4 h-4 rounded-sm border border-hud-border"
                       style={{ backgroundColor: color }}
                     />
                     {TILE_LABELS[t]}
                   </button>
                 );
               })}
-              <span className="ml-auto text-[10px] text-gray-400">Click or drag to paint</span>
+              <span className="ml-auto text-[10px] text-hud-dim">Click or drag to paint</span>
             </>
           )}
 
           {/* Objects/Items mode: hint */}
           {mode !== 'tiles' && (
-            <span className="ml-auto text-[10px] text-gray-400">
+            <span className="ml-auto text-[10px] text-hud-dim">
               Left-click to place &middot; Option+click or right-click to remove
             </span>
           )}
@@ -370,8 +370,8 @@ function RoomEditor({
         <div className="flex flex-1 overflow-hidden">
           {/* Catalog sidebar */}
           {mode !== 'tiles' && (
-            <div className="w-48 border-r border-gray-200 overflow-y-auto p-2 shrink-0">
-              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-1 px-1">
+            <div className="w-48 border-r border-hud-border bg-hud-bg overflow-y-auto p-2 shrink-0">
+              <p className="text-[10px] text-hud-dim font-medium uppercase tracking-wide mb-1 px-1">
                 {mode === 'objects' ? 'Objects' : 'Items'} catalog
               </p>
               {mode === 'objects' && catalogObjects.map((obj) => (
@@ -380,12 +380,12 @@ function RoomEditor({
                   onClick={() => setSelectedObjectId(obj.id)}
                   className={`w-full text-left px-2 py-1.5 rounded text-xs mb-0.5 transition-colors ${
                     selectedObjectId === obj.id
-                      ? 'bg-red-50 text-red-700 ring-1 ring-red-300'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-red-900/30 text-red-300 ring-1 ring-red-500/50'
+                      : 'text-hud-dim hover:bg-hud-panel'
                   }`}
                 >
                   <span className="font-medium">{obj.name}</span>
-                  <span className="block text-[10px] text-gray-400 mt-0.5">
+                  <span className="block text-[10px] text-hud-dim mt-0.5">
                     {obj.tags.join(', ') || 'no tags'} &middot; {obj.state}
                   </span>
                 </button>
@@ -396,21 +396,21 @@ function RoomEditor({
                   onClick={() => setSelectedItemId(item.id)}
                   className={`w-full text-left px-2 py-1.5 rounded text-xs mb-0.5 transition-colors ${
                     selectedItemId === item.id
-                      ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-300'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-amber-900/30 text-amber-300 ring-1 ring-amber-500/50'
+                      : 'text-hud-dim hover:bg-hud-panel'
                   }`}
                 >
                   <span className="font-medium">{item.name}</span>
-                  <span className="block text-[10px] text-gray-400 mt-0.5">
+                  <span className="block text-[10px] text-hud-dim mt-0.5">
                     {item.tags.join(', ') || 'no tags'}
                   </span>
                 </button>
               ))}
               {mode === 'objects' && catalogObjects.length === 0 && (
-                <p className="text-[10px] text-gray-400 px-1">No objects in DB. Add them in the Objects tab.</p>
+                <p className="text-[10px] text-hud-dim px-1">No objects in DB. Add them in the Objects tab.</p>
               )}
               {mode === 'items' && catalogItems.length === 0 && (
-                <p className="text-[10px] text-gray-400 px-1">No items in DB. Add them in the Items tab.</p>
+                <p className="text-[10px] text-hud-dim px-1">No items in DB. Add them in the Items tab.</p>
               )}
             </div>
           )}
@@ -419,7 +419,7 @@ function RoomEditor({
           <div className="flex-1 overflow-auto p-4">
             <canvas
               ref={canvasRef}
-              className="border border-gray-300 rounded cursor-crosshair"
+              className="border border-hud-border rounded cursor-crosshair"
               style={{
                 width: room.width * EDITOR_PX,
                 height: room.height * EDITOR_PX,
@@ -443,18 +443,18 @@ function RoomEditor({
           if (doorPlacements.length === 0) return null;
           const otherRooms = allRooms.filter((r) => r.id !== room.id);
           return (
-            <div className="border-t border-gray-200 px-4 py-3">
-              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-2">Door Links</p>
+            <div className="border-t border-hud-border px-4 py-3">
+              <p className="text-[10px] text-hud-dim font-medium uppercase tracking-wide mb-2">Door Links</p>
               <div className="flex flex-col gap-2">
                 {doorPlacements.map((dp, idx) => {
                   const entry = objMap.get(dp.object_id);
                   return (
                     <div key={idx} className="flex items-center gap-3 text-xs">
-                      <span className="text-gray-600 font-medium w-32 shrink-0">
+                      <span className="text-hud-dim font-medium w-32 shrink-0">
                         {entry?.name ?? 'Door'} ({dp.tileX},{dp.tileY})
                       </span>
                       <select
-                        className="border border-gray-300 rounded px-2 py-1 text-xs flex-1"
+                        className="admin-input bg-hud-bg border border-hud-border text-hud-dim rounded px-2 py-1 text-xs flex-1"
                         value={dp.door_target?.room_id ?? ''}
                         onChange={(e) => {
                           const roomId = e.target.value || undefined;
@@ -474,10 +474,10 @@ function RoomEditor({
                       </select>
                       {dp.door_target && (
                         <>
-                          <label className="text-gray-500">X:</label>
+                          <label className="text-hud-dim">X:</label>
                           <input
                             type="number"
-                            className="w-14 border border-gray-300 rounded px-2 py-1 text-xs"
+                            className="admin-input w-14 bg-hud-bg border border-hud-border text-hud-dim rounded px-2 py-1 text-xs"
                             value={dp.door_target.spawnX}
                             min={0}
                             onChange={(e) => {
@@ -491,10 +491,10 @@ function RoomEditor({
                               );
                             }}
                           />
-                          <label className="text-gray-500">Y:</label>
+                          <label className="text-hud-dim">Y:</label>
                           <input
                             type="number"
-                            className="w-14 border border-gray-300 rounded px-2 py-1 text-xs"
+                            className="admin-input w-14 bg-hud-bg border border-hud-border text-hud-dim rounded px-2 py-1 text-xs"
                             value={dp.door_target.spawnY}
                             min={0}
                             onChange={(e) => {
@@ -520,18 +520,18 @@ function RoomEditor({
 
         {/* Object Directions (shown in objects mode when there are placements) */}
         {mode === 'objects' && objPlacements.length > 0 && (
-          <div className="border-t border-gray-200 px-4 py-3">
-            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-2">Object Directions</p>
+          <div className="border-t border-hud-border px-4 py-3">
+            <p className="text-[10px] text-hud-dim font-medium uppercase tracking-wide mb-2">Object Directions</p>
             <div className="flex flex-wrap gap-2">
               {objPlacements.map((op, idx) => {
                 const entry = objMap.get(op.object_id);
                 return (
-                  <div key={idx} className="flex items-center gap-1.5 text-xs bg-gray-50 rounded px-2 py-1">
-                    <span className="text-gray-600 font-medium">
+                  <div key={idx} className="flex items-center gap-1.5 text-xs bg-hud-bg rounded px-2 py-1">
+                    <span className="text-hud-dim font-medium">
                       {entry?.name ?? '?'} ({op.tileX},{op.tileY})
                     </span>
                     <select
-                      className="border border-gray-300 rounded px-1 py-0.5 text-[10px]"
+                      className="admin-input bg-hud-bg border border-hud-border text-hud-dim rounded px-1 py-0.5 text-[10px]"
                       value={op.direction ?? 'down'}
                       onChange={(e) => {
                         const dir = e.target.value;
@@ -553,8 +553,8 @@ function RoomEditor({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-          <div className="flex gap-3 text-[10px] text-gray-400">
+        <div className="flex items-center justify-between px-4 py-3 border-t border-hud-border">
+          <div className="flex gap-3 text-[10px] text-hud-dim">
             <span className="flex items-center gap-1">
               <span className="inline-block w-2 h-2 rounded-full bg-red-500" />
               {objPlacements.length} objects
@@ -565,10 +565,11 @@ function RoomEditor({
             </span>
           </div>
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+            <button onClick={onClose} className="px-4 py-2 text-sm text-hud-dim hover:text-hud-text">Cancel</button>
             <button
               onClick={() => onSave(tiles, objPlacements, itemSpawns)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+              className="bg-hud-accent text-hud-bg px-4 py-2 rounded-md tracking-wider font-bold text-xs uppercase hover:brightness-110 transition-all"
+              style={{ fontFamily: 'var(--font-hud)' }}
             >
               Save
             </button>
@@ -625,7 +626,7 @@ function RoomPreview({ room }: { room: Room }) {
   return (
     <canvas
       ref={canvasRef}
-      className="border border-gray-300 rounded shrink-0"
+      className="border border-hud-border rounded shrink-0"
       style={{ width: room.width * PX * 2, height: room.height * PX * 2, imageRendering: 'pixelated' }}
     />
   );
@@ -727,54 +728,59 @@ export function RoomsTab() {
     fetchRooms();
   }
 
-  if (loading) return <p className="text-gray-500 text-sm">Loading...</p>;
+  if (loading) return <p className="text-hud-dim text-sm font-mono">LOADING...</p>;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">Rooms ({rooms.length})</h2>
+        <h2 className="text-hud-accent text-sm tracking-widest" style={{ fontFamily: 'var(--font-hud)' }}>ROOMS ({rooms.length})</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+          className="bg-hud-accent text-hud-bg px-4 py-2 rounded-md tracking-wider font-bold text-xs uppercase hover:brightness-110 transition-all"
+          style={{ fontFamily: 'var(--font-hud)' }}
         >
-          {showForm ? 'Cancel' : '+ Add Room'}
+          {showForm ? 'CANCEL' : '+ ADD ROOM'}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleAddRoom} className="bg-white rounded-lg border border-gray-200 p-4 mb-4 flex gap-3 items-end">
+        <form onSubmit={handleAddRoom} className="bg-hud-panel rounded-lg border border-hud-border p-4 mb-4 flex gap-3 items-end">
           <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-500 mb-1">Name</label>
+            <label className="block text-xs font-mono text-hud-dim mb-1 uppercase">Name</label>
             <input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="Break Room"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="admin-input w-full px-3 py-2 rounded text-sm"
               required
             />
           </div>
           <div className="w-24">
-            <label className="block text-xs font-medium text-gray-500 mb-1">Width</label>
+            <label className="block text-xs font-mono text-hud-dim mb-1 uppercase">Width</label>
             <input
               type="number"
               value={form.width}
               onChange={(e) => setForm({ ...form, width: +e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="admin-input w-full px-3 py-2 rounded text-sm"
               min={5} max={50}
             />
           </div>
           <div className="w-24">
-            <label className="block text-xs font-medium text-gray-500 mb-1">Height</label>
+            <label className="block text-xs font-mono text-hud-dim mb-1 uppercase">Height</label>
             <input
               type="number"
               value={form.height}
               onChange={(e) => setForm({ ...form, height: +e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="admin-input w-full px-3 py-2 rounded text-sm"
               min={5} max={50}
             />
           </div>
-          <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700">
-            Create
+          <button
+            type="submit"
+            className="bg-hud-accent text-hud-bg px-4 py-2 rounded-md tracking-wider font-bold text-xs uppercase hover:brightness-110 transition-all"
+            style={{ fontFamily: 'var(--font-hud)' }}
+          >
+            CREATE
           </button>
         </form>
       )}
@@ -791,52 +797,58 @@ export function RoomsTab() {
 
       {/* JSON editor modal */}
       {editingId && jsonField && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-[640px] max-h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-800 text-sm">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-hud-panel rounded-lg shadow-xl w-[640px] max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-hud-border">
+              <h3 className="text-hud-text text-sm font-mono">
                 Edit {jsonField.replace(/_/g, ' ')}
               </h3>
-              <button onClick={() => { setEditingId(null); setJsonField(null); }} className="text-gray-400 hover:text-gray-600 text-lg">&times;</button>
+              <button onClick={() => { setEditingId(null); setJsonField(null); }} className="text-hud-dim hover:text-hud-text text-lg">&times;</button>
             </div>
             <textarea
               value={jsonValue}
               onChange={(e) => { setJsonValue(e.target.value); setJsonError(''); }}
-              className="flex-1 p-4 font-mono text-xs border-none outline-none resize-none min-h-[300px]"
+              className="flex-1 p-4 bg-hud-bg text-hud-accent font-mono text-xs border-none outline-none resize-none min-h-[300px]"
               spellCheck={false}
             />
-            {jsonError && <p className="text-red-500 text-xs px-4 pb-2">{jsonError}</p>}
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">
-              <button onClick={() => { setEditingId(null); setJsonField(null); }} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
-              <button onClick={saveJson} className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Save</button>
+            {jsonError && <p className="text-hud-danger text-xs px-4 pb-2">{jsonError}</p>}
+            <div className="flex justify-end gap-2 px-4 py-3 border-t border-hud-border">
+              <button onClick={() => { setEditingId(null); setJsonField(null); }} className="px-4 py-2 text-sm text-hud-dim hover:text-hud-text">Cancel</button>
+              <button
+                onClick={saveJson}
+                className="bg-hud-accent text-hud-bg px-4 py-2 rounded-md tracking-wider font-bold text-xs uppercase hover:brightness-110 transition-all"
+                style={{ fontFamily: 'var(--font-hud)' }}
+              >
+                SAVE
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {/* Legend */}
-      <div className="flex gap-4 text-[10px] text-gray-500 mb-3">
+      <div className="flex gap-4 text-[10px] text-hud-dim mb-3">
         <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-red-500" /> Objects</span>
         <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-amber-500" /> Items</span>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         {rooms.map((room) => (
-          <div key={room.id} className={`bg-white rounded-lg border p-3 flex flex-col ${room.is_active ? 'border-green-400 ring-1 ring-green-200' : 'border-gray-200'}`}>
+          <div key={room.id} className={`bg-hud-panel rounded border p-3 flex flex-col ${room.is_active ? 'border-green-500/50 ring-1 ring-green-500/30' : 'border-hud-border'}`}>
             <div className="flex items-start justify-between mb-2">
               <div>
                 <div className="flex items-center gap-1.5">
                   <input
-                    className="font-semibold text-gray-800 text-sm bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none"
+                    className="text-hud-text text-sm bg-transparent border-b border-transparent hover:border-hud-border focus:border-hud-accent focus:outline-none font-mono"
                     defaultValue={room.name}
                     onBlur={(e) => { if (e.target.value !== room.name) renameRoom(room.id, e.target.value); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
                   />
-                  {room.is_active && <span className="text-[9px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">ACTIVE</span>}
+                  {room.is_active && <span className="text-[9px] font-semibold text-green-400 bg-green-900/40 px-1.5 py-0.5 rounded font-mono">ACTIVE</span>}
                 </div>
-                <p className="text-[10px] text-gray-500">{room.width} x {room.height} tiles</p>
+                <p className="text-[10px] text-hud-dim">{room.width} x {room.height} tiles</p>
               </div>
-              <button onClick={() => handleDelete(room.id)} className="text-red-400 text-[10px] hover:underline">Delete</button>
+              <button onClick={() => handleDelete(room.id)} className="text-hud-danger text-[10px] font-mono hover:brightness-125">DELETE</button>
             </div>
             <div className="flex justify-center mb-2">
               <RoomPreview room={room} />
@@ -845,30 +857,32 @@ export function RoomsTab() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setEditRoom(room)}
-                  className="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors cursor-pointer"
+                  className="bg-hud-accent text-hud-bg px-4 py-2 rounded-md tracking-wider font-bold text-xs uppercase hover:brightness-110 transition-all cursor-pointer"
+                  style={{ fontFamily: 'var(--font-hud)' }}
                 >
-                  Edit Room
+                  EDIT ROOM
                 </button>
                 {!room.is_active && (
                   <button
                     onClick={() => setActiveRoom(room.id)}
-                    className="px-4 py-2 rounded-md bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors cursor-pointer"
+                    className="bg-hud-accent text-hud-bg px-4 py-2 rounded-md tracking-wider font-bold text-xs uppercase hover:brightness-110 transition-all cursor-pointer"
+                    style={{ fontFamily: 'var(--font-hud)' }}
                   >
-                    Set Active
+                    SET ACTIVE
                   </button>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+              <div className="flex items-center gap-1.5 text-[10px] text-hud-dim">
                 <span>{room.object_placements.length} objects &middot; {room.item_spawns.length} items</span>
                 <span>&middot;</span>
-                <button onClick={() => startEditJson(room, 'object_placements')} className="hover:text-blue-500 underline cursor-pointer">objects json</button>
-                <button onClick={() => startEditJson(room, 'item_spawns')} className="hover:text-blue-500 underline cursor-pointer">items json</button>
+                <button onClick={() => startEditJson(room, 'object_placements')} className="hover:text-hud-accent underline cursor-pointer">objects json</button>
+                <button onClick={() => startEditJson(room, 'item_spawns')} className="hover:text-hud-accent underline cursor-pointer">items json</button>
               </div>
             </div>
           </div>
         ))}
         {rooms.length === 0 && (
-          <p className="text-gray-400 text-sm">No rooms yet. Add one to get started.</p>
+          <p className="text-hud-dim text-sm">No rooms yet. Add one to get started.</p>
         )}
       </div>
     </div>

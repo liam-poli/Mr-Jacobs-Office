@@ -134,45 +134,46 @@ export function ItemsTab() {
     }
   }
 
-  if (loading) return <p className="text-gray-500 text-sm">Loading...</p>;
+  if (loading) return <p className="text-hud-dim text-sm font-mono">LOADING...</p>;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">Items ({items.length})</h2>
+        <h2 className="text-hud-accent text-sm tracking-widest font-mono" style={{ fontFamily: 'var(--font-hud)' }}>ITEMS ({items.length})</h2>
         <button
           onClick={() => { resetForm(); setShowForm(!showForm); }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+          className="bg-hud-accent text-hud-bg px-4 py-2 rounded-md uppercase tracking-wider font-bold text-xs hover:brightness-110 transition-all"
+          style={{ fontFamily: 'var(--font-hud)' }}
         >
-          {showForm ? 'Cancel' : '+ Add Item'}
+          {showForm ? 'CANCEL' : '+ ADD ITEM'}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 p-4 mb-4 space-y-3">
+        <form onSubmit={handleSubmit} className="bg-hud-panel rounded-lg border border-hud-border p-4 mb-4 space-y-3">
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Name</label>
+              <label className="block text-xs font-mono text-hud-dim mb-1 uppercase">NAME</label>
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Bucket of Water"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="admin-input w-full px-3 py-2 rounded text-sm"
                 required
               />
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Sprite URL</label>
+              <label className="block text-xs font-mono text-hud-dim mb-1 uppercase">SPRITE URL</label>
               <input
                 value={form.sprite_url}
                 onChange={(e) => setForm({ ...form, sprite_url: e.target.value })}
                 placeholder="/assets/sprites/bucket.png"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="admin-input w-full px-3 py-2 rounded text-sm"
               />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Tags</label>
+            <label className="block text-xs font-mono text-hud-dim mb-1 uppercase">TAGS</label>
             <div className="flex flex-wrap gap-2">
               {availableTags.map((tag) => (
                 <button
@@ -181,8 +182,8 @@ export function ItemsTab() {
                   onClick={() => toggleTag(tag.name)}
                   className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                     form.tags.includes(tag.name)
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                      ? 'bg-hud-accent text-hud-bg border-hud-accent'
+                      : 'bg-transparent text-hud-dim border-hud-border hover:border-hud-accent'
                   }`}
                 >
                   {tag.name}
@@ -190,8 +191,12 @@ export function ItemsTab() {
               ))}
             </div>
           </div>
-          <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700">
-            {editingId ? 'Update' : 'Add Item'}
+          <button
+            type="submit"
+            className="bg-hud-accent text-hud-bg px-4 py-2 rounded-md uppercase tracking-wider font-bold text-xs hover:brightness-110 transition-all"
+            style={{ fontFamily: 'var(--font-hud)' }}
+          >
+            {editingId ? 'UPDATE' : 'ADD ITEM'}
           </button>
         </form>
       )}
@@ -200,45 +205,45 @@ export function ItemsTab() {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {items.map((item) => (
-          <div key={item.id} className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
+          <div key={item.id} className="bg-hud-panel rounded-lg border border-hud-border p-3 flex flex-col">
             {item.sprite_url ? (
               <SpritePreview src={item.sprite_url} alt={item.name} />
             ) : (
-              <div className="mb-2 flex justify-center bg-gray-50 rounded p-2 aspect-square items-center">
-                <span className="text-gray-300 text-xs">No sprite</span>
+              <div className="mb-2 flex justify-center bg-hud-bg rounded p-2 aspect-square items-center">
+                <span className="text-hud-dim text-xs font-mono">NO SPRITE</span>
               </div>
             )}
-            <h3 className="font-semibold text-gray-800 text-sm leading-tight mb-1">{item.name}</h3>
+            <h3 className="font-semibold text-hud-text text-sm leading-tight font-mono mb-1">{item.name}</h3>
             <div className="flex flex-wrap gap-1 mb-2">
               {item.tags.map((tag) => (
-                <span key={tag} className="bg-green-50 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-mono">
+                <span key={tag} className="bg-green-900/40 text-green-300 text-[10px] px-1.5 py-0.5 rounded font-mono">
                   {tag}
                 </span>
               ))}
-              {item.tags.length === 0 && <span className="text-gray-400 text-[10px]">No tags</span>}
+              {item.tags.length === 0 && <span className="text-hud-dim text-[10px] font-mono">No tags</span>}
             </div>
-            <div className="flex gap-2 text-xs mt-auto">
-              <button onClick={() => startEdit(item)} className="text-blue-600 hover:underline">Edit</button>
-              <button onClick={() => handleDelete(item.id)} className="text-red-500 hover:underline">Delete</button>
+            <div className="flex gap-2 text-xs mt-auto font-mono">
+              <button onClick={() => startEdit(item)} className="text-hud-accent hover:text-hud-text">Edit</button>
+              <button onClick={() => handleDelete(item.id)} className="text-hud-danger hover:brightness-125">Delete</button>
               <button
                 onClick={() => triggerUpload(item.id)}
                 disabled={uploadingId === item.id}
-                className="ml-auto text-teal-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
+                className="ml-auto text-cyan-400 hover:text-cyan-300 disabled:opacity-50 disabled:cursor-wait"
               >
-                {uploadingId === item.id ? 'Uploading...' : 'Upload'}
+                {uploadingId === item.id ? '...' : 'UP'}
               </button>
               <button
                 onClick={() => handleGenerate(item)}
                 disabled={generatingId === item.id}
-                className="text-purple-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
+                className="text-purple-400 hover:text-purple-300 disabled:opacity-50 disabled:cursor-wait"
               >
-                {generatingId === item.id ? 'Generating...' : item.sprite_url ? 'Regen' : 'Generate'}
+                {generatingId === item.id ? '...' : item.sprite_url ? 'REGEN' : 'GEN'}
               </button>
             </div>
           </div>
         ))}
         {items.length === 0 && (
-          <p className="text-gray-400 text-sm col-span-full">No items yet. Add one to get started.</p>
+          <p className="text-hud-dim text-sm font-mono col-span-full">No items yet. Add one to get started.</p>
         )}
       </div>
     </div>

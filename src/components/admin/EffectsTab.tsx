@@ -241,7 +241,7 @@ function StatePreview({ state }: { state: StateDef }) {
   return (
     <canvas
       ref={ref}
-      className="border border-gray-300 rounded shrink-0"
+      className="border border-hud-border rounded shrink-0"
       style={{
         width: PREVIEW_SIZE * 2.5,
         height: PREVIEW_SIZE * 2.5,
@@ -256,8 +256,13 @@ function StatePreview({ state }: { state: StateDef }) {
 export function EffectsTab() {
   return (
     <div>
-      <h2 className="text-lg font-semibold text-gray-800 mb-1">State Effects</h2>
-      <p className="text-sm text-gray-500 mb-4">
+      <h2
+        className="text-hud-accent text-sm tracking-widest mb-1"
+        style={{ fontFamily: 'var(--font-hud)' }}
+      >
+        STATE EFFECTS
+      </h2>
+      <p className="text-sm text-hud-dim font-mono mb-4">
         Visual treatment applied to objects based on their current state. Each state can have a tint overlay and/or an indicator icon.
       </p>
       <div className="grid grid-cols-5 gap-3">
@@ -269,13 +274,13 @@ export function EffectsTab() {
           return (
             <div
               key={state.name}
-              className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col items-center"
+              className="bg-hud-panel rounded border border-hud-border p-3 flex flex-col items-center"
             >
               <StatePreview state={state} />
-              <span className="mt-2 text-sm font-medium text-gray-800">{state.name}</span>
+              <span className="mt-2 text-sm font-mono text-hud-text">{state.name}</span>
               <div className="flex gap-1.5 mt-1">
                 {hasTint && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 flex items-center gap-1">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-hud-bg text-hud-dim font-mono flex items-center gap-1">
                     <span
                       className="inline-block w-2 h-2 rounded-full"
                       style={{ backgroundColor: state.indicatorColor ?? state.tint ?? undefined }}
@@ -284,7 +289,7 @@ export function EffectsTab() {
                   </span>
                 )}
                 {hasIndicator && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 flex items-center gap-1">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-hud-bg text-hud-dim font-mono flex items-center gap-1">
                     <span
                       className="inline-block w-2 h-2 rounded-full"
                       style={{ backgroundColor: state.indicatorColor ?? undefined }}
@@ -294,10 +299,10 @@ export function EffectsTab() {
                 )}
               </div>
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded mt-1 ${
+                className={`text-[10px] px-1.5 py-0.5 rounded mt-1 font-mono ${
                   hasVisuals
-                    ? 'bg-green-50 text-green-600'
-                    : 'bg-gray-50 text-gray-400'
+                    ? 'bg-green-900/40 text-green-400'
+                    : 'bg-hud-bg text-hud-dim'
                 }`}
               >
                 {hasVisuals
@@ -306,7 +311,7 @@ export function EffectsTab() {
                     : 'partial'
                   : 'no visuals'}
               </span>
-              <p className="text-[10px] text-gray-400 mt-1 text-center leading-tight">{state.description}</p>
+              <p className="text-[10px] text-hud-dim mt-1 text-center leading-tight font-mono">{state.description}</p>
             </div>
           );
         })}

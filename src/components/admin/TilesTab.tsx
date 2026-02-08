@@ -124,7 +124,7 @@ function Preview({
   return (
     <canvas
       ref={ref}
-      className="border border-gray-300 rounded shrink-0"
+      className="border border-hud-border rounded shrink-0"
       style={{
         width: size * scale,
         height: size * scale,
@@ -139,32 +139,36 @@ function Preview({
 export function TilesTab() {
   return (
     <div>
-      {/* Tile Types */}
-      <h2 className="text-lg font-semibold text-gray-800 mb-3">Tile Types</h2>
+      <h2
+        className="text-hud-accent text-sm tracking-widest mb-3"
+        style={{ fontFamily: 'var(--font-hud)' }}
+      >
+        TILE TYPES
+      </h2>
       <div className="grid grid-cols-4 gap-3">
         {TILES.map((tile) => (
           <div
             key={tile.code}
-            className="bg-white rounded-lg border border-gray-200 p-4 flex flex-col items-center"
+            className="bg-hud-panel rounded border border-hud-border p-4 flex flex-col items-center"
           >
             <Preview size={TILE_SIZE} scale={3} draw={tile.draw} />
-            <span className="mt-2 text-sm font-medium text-gray-800">{tile.name}</span>
-            <span className="text-[10px] text-gray-400 font-mono">{tile.textureKey}</span>
+            <span className="mt-2 text-sm font-mono text-hud-text">{tile.name}</span>
+            <span className="text-[10px] text-hud-dim font-mono">{tile.textureKey}</span>
             <div className="flex gap-2 mt-1">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-hud-bg text-hud-dim font-mono">
                 code {tile.code}
               </span>
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded ${
+                className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
                   tile.collision
-                    ? 'bg-red-50 text-red-600'
-                    : 'bg-green-50 text-green-600'
+                    ? 'bg-red-900/40 text-red-400'
+                    : 'bg-green-900/40 text-green-400'
                 }`}
               >
                 {tile.collision ? 'collision' : 'walkable'}
               </span>
             </div>
-            <p className="text-[10px] text-gray-400 mt-1 text-center">{tile.note}</p>
+            <p className="text-[10px] text-hud-dim mt-1 text-center font-mono">{tile.note}</p>
           </div>
         ))}
       </div>

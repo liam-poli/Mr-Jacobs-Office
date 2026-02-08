@@ -171,45 +171,51 @@ export function ObjectsTab() {
     }
   }
 
-  if (loading) return <p className="text-gray-500 text-sm">Loading...</p>;
+  if (loading) return <p className="text-hud-dim text-sm font-mono">LOADING...</p>;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">Objects ({objects.length})</h2>
+        <h2
+          className="text-hud-accent text-sm tracking-widest"
+          style={{ fontFamily: 'var(--font-hud)' }}
+        >
+          OBJECTS ({objects.length})
+        </h2>
         <button
           onClick={() => { resetForm(); setShowForm(!showForm); }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+          className="bg-hud-accent text-hud-bg px-4 py-2 rounded text-xs font-bold tracking-wider hover:brightness-110 transition-all"
+          style={{ fontFamily: 'var(--font-hud)' }}
         >
-          {showForm ? 'Cancel' : '+ Add Object'}
+          {showForm ? 'CANCEL' : '+ ADD OBJECT'}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 p-4 mb-4 space-y-3">
+        <form onSubmit={handleSubmit} className="bg-hud-panel rounded border border-hud-border p-4 mb-4 space-y-3">
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Name</label>
+              <label className="block text-xs font-mono text-hud-dim mb-1">NAME</label>
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Coffee Maker"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="admin-input w-full px-3 py-2 rounded text-sm"
                 required
               />
             </div>
             <div className="w-40">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Default State</label>
+              <label className="block text-xs font-mono text-hud-dim mb-1">DEFAULT STATE</label>
               <select
                 value={form.state}
                 onChange={(e) => setForm({ ...form, state: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="admin-input w-full px-3 py-2 rounded text-sm"
               >
                 {OBJECT_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div className="w-20">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Scale</label>
+              <label className="block text-xs font-mono text-hud-dim mb-1">SCALE</label>
               <input
                 type="number"
                 value={form.scale}
@@ -217,31 +223,31 @@ export function ObjectsTab() {
                 min={0.1}
                 max={10}
                 step={0.1}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="admin-input w-full px-3 py-2 rounded text-sm"
               />
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Sprite URL</label>
+              <label className="block text-xs font-mono text-hud-dim mb-1">SPRITE URL</label>
               <input
                 value={form.sprite_url}
                 onChange={(e) => setForm({ ...form, sprite_url: e.target.value })}
                 placeholder="/assets/sprites/coffee_maker.png"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="admin-input w-full px-3 py-2 rounded text-sm"
               />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Tags</label>
+            <label className="block text-xs font-mono text-hud-dim mb-1">TAGS</label>
             <div className="flex flex-wrap gap-2">
               {availableTags.map((tag) => (
                 <button
                   key={tag.id}
                   type="button"
                   onClick={() => toggleTag(tag.name)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                  className={`px-3 py-1 rounded-full text-xs font-mono border transition-colors ${
                     form.tags.includes(tag.name)
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                      ? 'bg-hud-accent text-hud-bg border-hud-accent'
+                      : 'bg-transparent text-hud-dim border-hud-border hover:border-hud-accent'
                   }`}
                 >
                   {tag.name}
@@ -249,8 +255,8 @@ export function ObjectsTab() {
               ))}
             </div>
           </div>
-          <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700">
-            {editingId ? 'Update' : 'Add Object'}
+          <button type="submit" className="bg-hud-accent text-hud-bg px-4 py-2 rounded text-xs font-bold tracking-wider hover:brightness-110 transition-all">
+            {editingId ? 'UPDATE' : 'ADD OBJECT'}
           </button>
         </form>
       )}
@@ -259,12 +265,12 @@ export function ObjectsTab() {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {objects.map((obj) => (
-          <div key={obj.id} className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
+          <div key={obj.id} className="bg-hud-panel rounded border border-hud-border p-3 flex flex-col">
             {obj.sprite_url ? (
               <SpritePreview src={obj.sprite_url} alt={obj.name} directionalSprites={obj.directional_sprites} />
             ) : (
-              <div className="mb-2 flex justify-center bg-gray-50 rounded p-2 aspect-square items-center">
-                <span className="text-gray-300 text-xs">No sprite</span>
+              <div className="mb-2 flex justify-center bg-hud-bg rounded p-2 aspect-square items-center">
+                <span className="text-hud-dim text-xs font-mono">NO SPRITE</span>
               </div>
             )}
             {/* Directional sprite previews */}
@@ -274,32 +280,32 @@ export function ObjectsTab() {
                   const dirUrl = obj.directional_sprites?.[dir];
                   return (
                     <div key={dir} className="flex flex-col items-center">
-                      <div className="w-10 h-10 bg-gray-50 rounded border border-gray-200 flex items-center justify-center overflow-hidden">
+                      <div className="w-10 h-10 bg-hud-bg rounded border border-hud-border flex items-center justify-center overflow-hidden">
                         {dirUrl ? (
                           <img src={dirUrl} alt={`${obj.name} ${dir}`} className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
                         ) : (
-                          <span className="text-gray-300 text-[8px]">--</span>
+                          <span className="text-hud-dim text-[8px]">--</span>
                         )}
                       </div>
-                      <span className="text-[8px] text-gray-400 mt-0.5">{dir[0].toUpperCase()}</span>
+                      <span className="text-[8px] text-hud-dim mt-0.5 font-mono">{dir[0].toUpperCase()}</span>
                     </div>
                   );
                 })}
               </div>
             )}
             <div className="flex items-start justify-between mb-1">
-              <h3 className="font-semibold text-gray-800 text-sm leading-tight">{obj.name}</h3>
+              <h3 className="font-semibold text-hud-text text-sm leading-tight font-mono">{obj.name}</h3>
               <div className="flex gap-1 shrink-0 ml-1">
                 {obj.scale !== 1.0 && (
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-50 text-purple-600">
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-900/40 text-purple-300">
                     {obj.scale}x
                   </span>
                 )}
                 <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                  obj.state === 'BROKEN' ? 'bg-red-100 text-red-700' :
-                  obj.state === 'POWERED' ? 'bg-green-100 text-green-700' :
-                  obj.state === 'LOCKED' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-gray-100 text-gray-600'
+                  obj.state === 'BROKEN' ? 'bg-red-900/40 text-red-400' :
+                  obj.state === 'POWERED' ? 'bg-green-900/40 text-green-400' :
+                  obj.state === 'LOCKED' ? 'bg-yellow-900/40 text-yellow-400' :
+                  'bg-hud-bg text-hud-dim'
                 }`}>
                   {obj.state}
                 </span>
@@ -307,17 +313,17 @@ export function ObjectsTab() {
             </div>
             <div className="flex flex-wrap gap-1 mb-2">
               {obj.tags.map((tag) => (
-                <span key={tag} className="bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded font-mono">
+                <span key={tag} className="bg-blue-900/40 text-blue-300 text-[10px] px-1.5 py-0.5 rounded font-mono">
                   {tag}
                 </span>
               ))}
-              {obj.tags.length === 0 && <span className="text-gray-400 text-[10px]">No tags</span>}
+              {obj.tags.length === 0 && <span className="text-hud-dim text-[10px] font-mono">No tags</span>}
             </div>
-            <div className="flex gap-2 text-xs mt-auto items-center">
-              <button onClick={() => startEdit(obj)} className="text-blue-600 hover:underline">Edit</button>
-              <button onClick={() => handleDelete(obj.id)} className="text-red-500 hover:underline">Delete</button>
+            <div className="flex gap-2 text-xs mt-auto items-center font-mono">
+              <button onClick={() => startEdit(obj)} className="text-hud-accent hover:text-hud-text">EDIT</button>
+              <button onClick={() => handleDelete(obj.id)} className="text-hud-danger hover:brightness-125">DEL</button>
               <select
-                className="ml-auto text-[10px] border border-gray-200 rounded px-1 py-0.5"
+                className="ml-auto text-[10px] bg-hud-bg border border-hud-border rounded px-1 py-0.5 text-hud-dim"
                 value={spriteDirection[obj.id] ?? 'down'}
                 onChange={(e) => setSpriteDirection((prev) => ({ ...prev, [obj.id]: e.target.value }))}
               >
@@ -329,22 +335,22 @@ export function ObjectsTab() {
               <button
                 onClick={() => triggerUpload(obj.id)}
                 disabled={uploadingId === obj.id}
-                className="text-teal-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
+                className="text-cyan-400 hover:text-cyan-300 disabled:opacity-50 disabled:cursor-wait"
               >
-                {uploadingId === obj.id ? 'Uploading...' : 'Upload'}
+                {uploadingId === obj.id ? '...' : 'UP'}
               </button>
               <button
                 onClick={() => handleGenerate(obj, spriteDirection[obj.id] ?? 'down')}
                 disabled={generatingId === obj.id}
-                className="text-purple-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
+                className="text-purple-400 hover:text-purple-300 disabled:opacity-50 disabled:cursor-wait"
               >
-                {generatingId === obj.id ? 'Generating...' : obj.sprite_url ? 'Regen' : 'Generate'}
+                {generatingId === obj.id ? '...' : obj.sprite_url ? 'REGEN' : 'GEN'}
               </button>
             </div>
           </div>
         ))}
         {objects.length === 0 && (
-          <p className="text-gray-400 text-sm col-span-full">No objects yet. Add one to get started.</p>
+          <p className="text-hud-dim text-sm col-span-full font-mono">No objects yet. Add one to get started.</p>
         )}
       </div>
     </div>

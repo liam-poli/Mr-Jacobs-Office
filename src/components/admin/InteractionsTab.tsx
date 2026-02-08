@@ -157,30 +157,31 @@ export function InteractionsTab() {
     setShowForm(true);
   }
 
-  if (loading) return <p className="text-gray-500 text-sm">Loading...</p>;
+  if (loading) return <p className="text-hud-dim text-sm font-mono">LOADING...</p>;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">Interactions ({interactions.length})</h2>
+        <h2 className="text-hud-accent text-sm tracking-widest" style={{ fontFamily: 'var(--font-hud)' }}>INTERACTIONS ({interactions.length})</h2>
         <button
           onClick={() => { resetForm(); setShowForm(!showForm); }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+          className="bg-hud-accent text-hud-bg px-4 py-2 rounded-md tracking-wider font-bold text-xs uppercase hover:brightness-110 transition-all"
+          style={{ fontFamily: 'var(--font-hud)' }}
         >
-          {showForm ? 'Cancel' : '+ Add Interaction'}
+          {showForm ? 'CANCEL' : '+ ADD INTERACTION'}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 p-4 mb-4 space-y-3">
+        <form onSubmit={handleSubmit} className="bg-hud-panel rounded-lg border border-hud-border p-4 mb-4 space-y-3">
           {/* Item & Object Dropdowns (by ID) */}
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Item</label>
+              <label className="block text-xs font-mono text-hud-dim mb-1">ITEM</label>
               <select
                 value={form.item_id}
                 onChange={(e) => handleItemChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="admin-input w-full px-3 py-2 rounded text-sm"
               >
                 <option value="">(Bare hands)</option>
                 {catalogItems.map((item) => (
@@ -190,17 +191,17 @@ export function InteractionsTab() {
               {form.item_tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1">
                   {form.item_tags.map((t) => (
-                    <span key={t} className="bg-green-50 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-mono">{t}</span>
+                    <span key={t} className="bg-green-900/40 text-green-300 text-[10px] px-1.5 py-0.5 rounded font-mono">{t}</span>
                   ))}
                 </div>
               )}
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Object</label>
+              <label className="block text-xs font-mono text-hud-dim mb-1">OBJECT</label>
               <select
                 value={form.object_id}
                 onChange={(e) => handleObjectChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="admin-input w-full px-3 py-2 rounded text-sm"
                 required
               >
                 <option value="">Select object...</option>
@@ -211,7 +212,7 @@ export function InteractionsTab() {
               {form.object_tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1">
                   {form.object_tags.map((t) => (
-                    <span key={t} className="bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded font-mono">{t}</span>
+                    <span key={t} className="bg-blue-900/40 text-blue-300 text-[10px] px-1.5 py-0.5 rounded font-mono">{t}</span>
                   ))}
                 </div>
               )}
@@ -221,34 +222,34 @@ export function InteractionsTab() {
           {/* States + Output */}
           <div className="flex gap-3">
             <div className="w-44">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Required State</label>
+              <label className="block text-xs font-mono text-hud-dim mb-1">REQUIRED STATE</label>
               <select
                 value={form.required_state}
                 onChange={(e) => setForm({ ...form, required_state: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="admin-input w-full px-3 py-2 rounded text-sm"
               >
                 <option value="">Any state</option>
                 {OBJECT_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div className="w-44">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Result State</label>
+              <label className="block text-xs font-mono text-hud-dim mb-1">RESULT STATE</label>
               <select
                 value={form.result_state}
                 onChange={(e) => setForm({ ...form, result_state: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="admin-input w-full px-3 py-2 rounded text-sm"
               >
                 <option value="">No change</option>
                 {OBJECT_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Output Item (optional)</label>
+              <label className="block text-xs font-mono text-hud-dim mb-1">OUTPUT ITEM (OPTIONAL)</label>
               <input
                 value={form.output_item}
                 onChange={(e) => setForm({ ...form, output_item: e.target.value })}
                 placeholder="Filled Coffee Cup"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="admin-input w-full px-3 py-2 rounded text-sm"
               />
             </div>
           </div>
@@ -256,7 +257,7 @@ export function InteractionsTab() {
           {/* Output Item Tags (only if output item is set) */}
           {form.output_item.trim() && (
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Output Item Tags</label>
+              <label className="block text-xs font-mono text-hud-dim mb-1">OUTPUT ITEM TAGS</label>
               <div className="flex flex-wrap gap-2">
                 {itemTags.map((tag) => (
                   <button
@@ -265,8 +266,8 @@ export function InteractionsTab() {
                     onClick={() => toggleOutputTag(tag.name)}
                     className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                       form.output_item_tags.includes(tag.name)
-                        ? 'bg-purple-600 text-white border-purple-600'
-                        : 'bg-white text-gray-600 border-gray-300 hover:border-purple-400'
+                        ? 'bg-purple-400 text-hud-bg border-purple-400'
+                        : 'bg-transparent text-hud-dim border-hud-border hover:border-purple-400'
                     }`}
                   >
                     {tag.name}
@@ -278,35 +279,39 @@ export function InteractionsTab() {
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
+            <label className="block text-xs font-mono text-hud-dim mb-1">DESCRIPTION</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="The coffee machine hisses and fills the cup with hot coffee."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="admin-input w-full px-3 py-2 rounded text-sm"
               rows={2}
               required
             />
           </div>
 
-          <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700">
-            {editingId ? 'Update' : 'Add Interaction'}
+          <button
+            type="submit"
+            className="bg-hud-accent text-hud-bg px-4 py-2 rounded-md tracking-wider font-bold text-xs uppercase hover:brightness-110 transition-all"
+            style={{ fontFamily: 'var(--font-hud)' }}
+          >
+            {editingId ? 'UPDATE' : 'ADD INTERACTION'}
           </button>
         </form>
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+      <div className="bg-hud-panel rounded-lg border border-hud-border overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 text-left text-xs text-gray-500 uppercase">
-              <th className="px-3 py-2">Item</th>
-              <th className="px-3 py-2">Object</th>
-              <th className="px-3 py-2">Req. State</th>
-              <th className="px-3 py-2">Result</th>
-              <th className="px-3 py-2">Output Item</th>
-              <th className="px-3 py-2">Description</th>
-              <th className="px-3 py-2">Source</th>
+            <tr className="border-b border-hud-border text-left text-xs text-hud-dim uppercase font-mono tracking-wide">
+              <th className="px-3 py-2">ITEM</th>
+              <th className="px-3 py-2">OBJECT</th>
+              <th className="px-3 py-2">REQ. STATE</th>
+              <th className="px-3 py-2">RESULT</th>
+              <th className="px-3 py-2">OUTPUT ITEM</th>
+              <th className="px-3 py-2">DESCRIPTION</th>
+              <th className="px-3 py-2">SOURCE</th>
               <th className="px-3 py-2"></th>
             </tr>
           </thead>
@@ -315,71 +320,71 @@ export function InteractionsTab() {
               const itemEntry = row.item_id ? itemMap.get(row.item_id) : null;
               const objectEntry = objectMap.get(row.object_id);
               return (
-                <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <tr key={row.id} className="border-b border-hud-border/30 hover:bg-hud-panel-inner/30">
                   <td className="px-3 py-2">
-                    <div className="text-xs font-medium text-gray-800">{itemEntry?.name ?? '(Bare hands)'}</div>
+                    <div className="text-xs font-mono text-hud-text">{itemEntry?.name ?? '(Bare hands)'}</div>
                     <div className="flex flex-wrap gap-1 mt-0.5">
                       {row.item_tags.map((t) => (
-                        <span key={t} className="bg-green-50 text-green-700 text-[10px] px-1 py-0 rounded font-mono">{t}</span>
+                        <span key={t} className="bg-green-900/40 text-green-300 text-[10px] px-1 py-0 rounded font-mono">{t}</span>
                       ))}
                     </div>
                   </td>
                   <td className="px-3 py-2">
-                    <div className="text-xs font-medium text-gray-800">{objectEntry?.name ?? row.object_id}</div>
+                    <div className="text-xs font-mono text-hud-text">{objectEntry?.name ?? row.object_id}</div>
                     <div className="flex flex-wrap gap-1 mt-0.5">
                       {row.object_tags.map((t) => (
-                        <span key={t} className="bg-blue-50 text-blue-700 text-[10px] px-1 py-0 rounded font-mono">{t}</span>
+                        <span key={t} className="bg-blue-900/40 text-blue-300 text-[10px] px-1 py-0 rounded font-mono">{t}</span>
                       ))}
                     </div>
                   </td>
                   <td className="px-3 py-2">
                     {row.required_state ? (
-                      <span className="bg-yellow-50 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded font-mono">{row.required_state}</span>
+                      <span className="bg-yellow-900/40 text-yellow-300 text-[10px] px-1.5 py-0.5 rounded font-mono">{row.required_state}</span>
                     ) : (
-                      <span className="text-gray-400 text-[10px]">any</span>
+                      <span className="text-hud-dim text-[10px] font-mono">any</span>
                     )}
                   </td>
                   <td className="px-3 py-2">
                     {row.result_state ? (
                       <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                        row.result_state === 'BROKEN' ? 'bg-red-100 text-red-700' :
-                        row.result_state === 'POWERED' ? 'bg-green-100 text-green-700' :
-                        row.result_state === 'BURNING' ? 'bg-orange-100 text-orange-700' :
-                        row.result_state === 'UNLOCKED' ? 'bg-emerald-100 text-emerald-700' :
-                        'bg-gray-100 text-gray-600'
+                        row.result_state === 'BROKEN' ? 'bg-red-900/40 text-red-400' :
+                        row.result_state === 'POWERED' ? 'bg-green-900/40 text-green-400' :
+                        row.result_state === 'BURNING' ? 'bg-orange-900/40 text-orange-400' :
+                        row.result_state === 'UNLOCKED' ? 'bg-emerald-900/40 text-emerald-400' :
+                        'bg-hud-bg text-hud-dim'
                       }`}>{row.result_state}</span>
                     ) : (
-                      <span className="text-gray-400 text-[10px]">none</span>
+                      <span className="text-hud-dim text-[10px] font-mono">none</span>
                     )}
                   </td>
                   <td className="px-3 py-2">
                     {row.output_item ? (
                       <div>
-                        <span className="text-xs text-gray-800">{row.output_item}</span>
+                        <span className="text-xs text-hud-text font-mono">{row.output_item}</span>
                         {row.output_item_tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-0.5">
                             {row.output_item_tags.map((t) => (
-                              <span key={t} className="bg-purple-50 text-purple-700 text-[10px] px-1 py-0 rounded font-mono">{t}</span>
+                              <span key={t} className="bg-purple-900/40 text-purple-300 text-[10px] px-1 py-0 rounded font-mono">{t}</span>
                             ))}
                           </div>
                         )}
                       </div>
                     ) : (
-                      <span className="text-gray-400 text-[10px]">none</span>
+                      <span className="text-hud-dim text-[10px] font-mono">none</span>
                     )}
                   </td>
                   <td className="px-3 py-2 max-w-xs">
-                    <p className="text-xs text-gray-600 truncate" title={row.description}>{row.description}</p>
+                    <p className="text-xs text-hud-dim font-mono truncate" title={row.description}>{row.description}</p>
                   </td>
                   <td className="px-3 py-2">
-                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                      row.source === 'manual' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                      row.source === 'manual' ? 'bg-blue-900/40 text-blue-300' : 'bg-purple-900/40 text-purple-300'
                     }`}>{row.source}</span>
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-2 text-xs">
-                      <button onClick={() => startEdit(row)} className="text-blue-600 hover:underline">Edit</button>
-                      <button onClick={() => handleDelete(row.id)} className="text-red-500 hover:underline">Delete</button>
+                      <button onClick={() => startEdit(row)} className="text-hud-accent hover:text-hud-text font-mono">EDIT</button>
+                      <button onClick={() => handleDelete(row.id)} className="text-hud-danger hover:brightness-125 font-mono">DEL</button>
                     </div>
                   </td>
                 </tr>
@@ -387,7 +392,7 @@ export function InteractionsTab() {
             })}
             {interactions.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-gray-400 text-sm">
+                <td colSpan={8} className="px-3 py-8 text-center text-hud-dim text-sm font-mono">
                   No interactions yet. Add one to define what happens when items meet objects.
                 </td>
               </tr>

@@ -16,17 +16,17 @@ export function SpritePreview({ src, alt, directionalSprites }: SpritePreviewPro
 
   return (
     <>
-      <div className="mb-2 flex justify-center items-center bg-gray-50 rounded p-3 aspect-square cursor-pointer" onClick={() => setOpen(true)}>
+      <div className="mb-2 flex justify-center items-center bg-hud-bg rounded p-3 aspect-square cursor-pointer" onClick={() => setOpen(true)}>
         <img src={src} alt={alt} className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
       </div>
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
           onClick={() => setOpen(false)}
         >
           <div
-            className="bg-white rounded-lg p-6 shadow-xl max-w-lg"
+            className="bg-hud-panel rounded-lg p-6 shadow-xl max-w-lg border border-hud-border"
             onClick={(e) => e.stopPropagation()}
           >
             {hasAnyDir ? (
@@ -36,24 +36,24 @@ export function SpritePreview({ src, alt, directionalSprites }: SpritePreviewPro
                     const url = directionalSprites?.[dir];
                     return (
                       <div key={dir} className="flex flex-col items-center">
-                        <div className="w-40 h-40 bg-gray-50 rounded border border-gray-200 flex items-center justify-center">
+                        <div className="w-40 h-40 bg-hud-bg rounded border border-hud-border flex items-center justify-center">
                           {url ? (
                             <img src={url} alt={`${alt} ${dir}`} className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
                           ) : (
-                            <span className="text-gray-300 text-sm">No sprite</span>
+                            <span className="text-hud-dim text-sm font-mono">No sprite</span>
                           )}
                         </div>
-                        <span className="text-xs text-gray-500 mt-1.5 font-medium">{DIR_LABELS[dir]}</span>
+                        <span className="text-xs text-hud-dim mt-1.5 font-mono">{DIR_LABELS[dir]}</span>
                       </div>
                     );
                   })}
                 </div>
-                <p className="text-center text-sm text-gray-600 mt-4">{alt}</p>
+                <p className="text-center text-sm text-hud-text mt-4 font-mono">{alt}</p>
               </>
             ) : (
               <>
                 <img src={src} alt={alt} className="w-64 h-64 object-contain mx-auto" style={{ imageRendering: 'pixelated' }} />
-                <p className="text-center text-sm text-gray-600 mt-3">{alt}</p>
+                <p className="text-center text-sm text-hud-text mt-3 font-mono">{alt}</p>
               </>
             )}
           </div>

@@ -7,6 +7,7 @@ import { InteractionsTab } from '../components/admin/InteractionsTab';
 import { RoomsTab } from '../components/admin/RoomsTab';
 import { TilesTab } from '../components/admin/TilesTab';
 import { EffectsTab } from '../components/admin/EffectsTab';
+import { AdminMatrixBg } from '../components/admin/AdminMatrixBg';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'jacobs';
 
@@ -22,10 +23,22 @@ export function AdminPanel() {
 
   if (!authenticated) {
     return (
-      <div className="fixed inset-0 overflow-auto bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md w-80">
-          <h1 className="text-xl font-semibold text-gray-800 mb-1">J.A.C.O.B.S. Admin</h1>
-          <p className="text-sm text-gray-500 mb-4">Enter password to continue</p>
+      <div className="fixed inset-0 overflow-hidden bg-hud-bg flex items-center justify-center">
+        <AdminMatrixBg />
+        <div className="flex flex-col items-center z-10">
+          <img
+            src="/jacobs-logo.png"
+            alt="J.A.C.O.B.S."
+            className="w-32 mb-6"
+            style={{ imageRendering: 'pixelated', animation: 'crt-glow 3s ease-in-out infinite' }}
+          />
+          <h1
+            className="text-hud-accent text-lg tracking-widest mb-1"
+            style={{ fontFamily: 'var(--font-hud)' }}
+          >
+            J.A.C.O.B.S.
+          </h1>
+          <p className="text-hud-dim text-xs font-mono mb-6 tracking-wide">SYSTEM ACCESS TERMINAL</p>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -33,24 +46,26 @@ export function AdminPanel() {
                 setAuthenticated(true);
                 setError('');
               } else {
-                setError('Wrong password');
+                setError('ACCESS DENIED');
               }
             }}
+            className="w-72"
           >
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+              placeholder="ENTER PASSWORD"
+              className="admin-input w-full px-3 py-2.5 rounded text-sm tracking-wider text-center mb-2"
               autoFocus
             />
-            {error && <p className="text-red-500 text-xs mb-2">{error}</p>}
+            {error && <p className="text-hud-danger text-xs mb-2 text-center font-mono">{error}</p>}
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+              className="w-full bg-hud-accent text-hud-bg py-2.5 rounded text-sm font-bold tracking-wider hover:brightness-110 transition-all"
+              style={{ fontFamily: 'var(--font-hud)' }}
             >
-              Enter
+              AUTHENTICATE
             </button>
           </form>
         </div>
@@ -59,19 +74,33 @@ export function AdminPanel() {
   }
 
   return (
-    <div className="fixed inset-0 overflow-auto bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <div className="fixed inset-0 overflow-auto bg-hud-bg">
+      <AdminMatrixBg />
+      <header className="bg-hud-panel/90 border-b border-hud-border px-6 py-4 relative z-10 backdrop-blur-sm">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-800">J.A.C.O.B.S. Admin</h1>
+          <div className="flex items-center gap-3">
+            <img
+              src="/jacobs-logo.png"
+              alt=""
+              className="h-7"
+              style={{ imageRendering: 'pixelated' }}
+            />
+            <h1
+              className="text-hud-accent text-sm tracking-widest"
+              style={{ fontFamily: 'var(--font-hud)' }}
+            >
+              J.A.C.O.B.S. ADMIN
+            </h1>
+          </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setRefreshKey((k) => k + 1)}
-              className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+              className="px-3 py-1.5 text-xs font-mono text-hud-dim hover:text-hud-accent border border-hud-border rounded transition-colors"
             >
-              Refresh
+              REFRESH
             </button>
-            <a href="/" className="text-sm text-blue-600 hover:underline">
-              Back to Game
+            <a href="/" className="text-xs font-mono text-hud-dim hover:text-hud-accent transition-colors">
+              EXIT &gt;
             </a>
           </div>
         </div>
@@ -80,18 +109,18 @@ export function AdminPanel() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors ${
+              className={`px-4 py-2 text-xs font-mono tracking-wide rounded-t transition-colors ${
                 activeTab === tab
-                  ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  ? 'bg-hud-bg text-hud-accent border border-hud-border border-b-transparent'
+                  : 'text-hud-dim hover:text-hud-text'
               }`}
             >
-              {tab}
+              {tab.toUpperCase()}
             </button>
           ))}
         </nav>
       </header>
-      <main className="p-6 max-w-7xl mx-auto">
+      <main className="p-6 max-w-7xl mx-auto relative z-10">
         {activeTab === 'Overview' && <OverviewTab key={refreshKey} />}
         {activeTab === 'Tags' && <TagsTab key={refreshKey} />}
         {activeTab === 'Objects' && <ObjectsTab key={refreshKey} />}
