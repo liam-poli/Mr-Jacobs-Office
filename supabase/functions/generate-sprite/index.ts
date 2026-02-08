@@ -12,11 +12,13 @@ const DIRECTION_PROMPTS: Record<string, string> = {
 function buildItemPrompt(name: string, tags: string[]): string {
   const tagList = tags.length > 0 ? tags.join(", ") : "generic";
   return (
-    `A single ${name}, small handheld item, pixel art sprite, 16-bit retro game style, ` +
-    `front-facing view looking straight at the object, like a classic SNES RPG sprite, crisp 1-pixel edges, no blur or anti-aliasing, ` +
+    `A single ${name}, small handheld item, 2D pixel art sprite for a retro 16-bit video game, ` +
+    `front-facing view looking straight at the object, shown as a 2D sprite sheet asset, ` +
+    `crisp 1-pixel edges, no blur or anti-aliasing, ` +
     `natural colors appropriate to the object, warm muted tones, 1980s office aesthetic, ` +
-    `clean simple silhouette, centered on a plain white background, ` +
-    `no shadows, no text, no extra objects. ` +
+    `detailed enough to be recognizable at 32px in-game, clean simple silhouette, ` +
+    `centered on a plain white background, ` +
+    `no shadows, no text, no extra objects, no people, no floor, no ground. ` +
     `Properties: ${tagList}.`
   );
 }

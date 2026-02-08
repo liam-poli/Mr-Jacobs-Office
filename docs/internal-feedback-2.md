@@ -15,7 +15,12 @@ Finsihing it off
     - Paintings 
     - Secuuity cameras
     - More soudns 
+    -Clocks
 * Connect up the jacbos control 
+    * music
+    * object state
+    * items 
+    * Room stuff wd
 * Not all interactions need to use hte item 
 * Clean up the state effect icons 
 * Clean up state effect icon positions 
@@ -23,7 +28,8 @@ Finsihing it off
 * Lock on the standy too
 * clean up the doors and general graphic pass 
 * Make sure end game state is connceted
-
+* Set serverpassword
+* Style admin in jacobs style
 
 Video
 * A game with invifite ways to solve it w

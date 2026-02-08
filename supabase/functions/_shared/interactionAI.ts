@@ -81,7 +81,7 @@ export async function resolveInteraction(
             type: SchemaType.STRING,
             nullable: true,
             description:
-              "Name of a new item created by this interaction, or null if none",
+              "Simple 1-3 word name for the item produced (e.g. 'Coffee Cup', 'Loose Screw', 'Wet Rag'). Plain noun, no adjectives unless needed to distinguish. Null if no item created.",
           },
           output_item_tags: {
             type: SchemaType.ARRAY,
@@ -93,7 +93,7 @@ export async function resolveInteraction(
           description: {
             type: SchemaType.STRING,
             description:
-              "A brief, darkly humorous one-sentence description of what happens",
+              "Short action result in 5-10 words. Plain English, no metaphors. Say what happened. Example: 'The machine powers on.' or 'Water spills everywhere.'",
           },
         },
         required: ["result_state", "output_item", "output_item_tags", "description"],
@@ -121,9 +121,9 @@ Rules:
 - BARE HANDS: If the item is "(bare hands)" with no tags, the employee is INSPECTING the object. ALWAYS set result_state to null — bare hands NEVER change object state. However, you CAN produce an output_item if it makes sense (e.g. finding a paper clip in a filing cabinet, grabbing a loose screw from a machine). The description should be observational — what the employee sees, touches, or discovers.
 - If the combination doesn't make physical/logical sense, set result_state to null (no change).
 - Only create an output_item if the interaction would logically produce something new.
-- Keep the description short, dark, and corporate-dystopian in humor.
-- Use the tags to reason about physical properties — they constrain what's plausible, not what's interesting.
-- The item and object names matter — tailor the description to the specific combo.`;
+- Keep the description very short and clear — just say what physically happened.
+- Use the tags to reason about physical properties — they constrain what's plausible.
+- Output item names must be simple nouns (1-3 words). No jokes or wordplay in item names.`;
 
   const result = await model.generateContent(prompt);
   const text = result.response.text();
