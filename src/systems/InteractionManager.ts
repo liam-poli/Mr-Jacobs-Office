@@ -396,8 +396,8 @@ export class InteractionManager {
         objectName: objDef.name,
       });
 
-      // Consume item only if the interaction actually did something
-      if (item && (result.result_state || result.output_item)) {
+      // Consume item only if the AI decided it should be used up
+      if (item && result.consumes_item) {
         store.removeItem(item.id);
       }
 

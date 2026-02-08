@@ -150,7 +150,7 @@ async function resolveObjects(placements: ObjectPlacement[]): Promise<ResolvedOb
     const effectiveSpriteUrl = dirSprites[direction] || (entry.sprite_url as string) || undefined;
 
     resolved.push({
-      id: placement.object_id,
+      id: `${placement.object_id}_${placement.tileX}_${placement.tileY}`,
       object_id: placement.object_id,
       name: entry.name as string,
       tags: entry.tags as string[],

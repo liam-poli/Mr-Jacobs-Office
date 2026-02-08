@@ -17,6 +17,7 @@ const FALLBACK_RESULT: InteractionResult = {
   output_item_id: null,
   output_item_sprite_url: null,
   output_item_tags: null,
+  consumes_item: false,
   description: "That doesn't seem to work.",
   cached: false,
 };

@@ -103,6 +103,7 @@ export interface InteractionResult {
   output_item_id: string | null;
   output_item_sprite_url: string | null;
   output_item_tags: string[] | null;
+  consumes_item: boolean;
   description: string;
   cached: boolean;
 }

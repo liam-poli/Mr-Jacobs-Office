@@ -7,6 +7,7 @@ export interface InteractionResult {
   result_state: string | null;
   output_item: string | null;
   output_item_tags: string[] | null;
+  consumes_item: boolean;
   description: string;
 }
 
@@ -90,13 +91,18 @@ export async function resolveInteraction(
             description:
               `Tags for the output item. Each must be one of: ${VALID_TAGS.join(", ")}`,
           },
+          consumes_item: {
+            type: SchemaType.BOOLEAN,
+            description:
+              "true if the item is physically used up, transformed, or incorporated into the result (e.g. empty mug becomes coffee, paper fed into shredder). false if the item is a reusable tool (e.g. wrench, key, screwdriver). Always false for bare hands.",
+          },
           description: {
             type: SchemaType.STRING,
             description:
               "Short action result in 5-10 words. Plain English, no metaphors. Say what happened. Example: 'The machine powers on.' or 'Water spills everywhere.'",
           },
         },
-        required: ["result_state", "output_item", "output_item_tags", "description"],
+        required: ["result_state", "output_item", "output_item_tags", "consumes_item", "description"],
       },
     },
   });
@@ -123,7 +129,8 @@ Rules:
 - Only create an output_item if the interaction would logically produce something new.
 - Keep the description very short and clear — just say what physically happened.
 - Use the tags to reason about physical properties — they constrain what's plausible.
-- Output item names must be simple nouns (1-3 words). No jokes or wordplay in item names.`;
+- Output item names must be simple nouns (1-3 words). No jokes or wordplay in item names.
+- consumes_item: true ONLY if the item is physically used up, transformed, or incorporated (e.g. empty mug → coffee, paper fed into shredder). false if the item is a reusable tool that the employee keeps (e.g. wrench, key, screwdriver). Bare hands are NEVER consumed.`;
 
   const result = await model.generateContent(prompt);
   const text = result.response.text();
@@ -134,9 +141,10 @@ Rules:
     parsed.result_state = null;
   }
 
-  // Hard guard: bare hands never change object state
+  // Hard guard: bare hands never change object state or consume
   if (itemTags.length === 0) {
     parsed.result_state = null;
+    parsed.consumes_item = false;
   }
 
   // Validate output_item_tags

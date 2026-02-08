@@ -127,6 +127,7 @@ Deno.serve(async (req) => {
           output_item_id: outputItemId,
           output_item_sprite_url: outputItemSpriteUrl,
           output_item_tags: cached.output_item_tags,
+          consumes_item: cached.consumes_item ?? false,
           description: cached.description,
           cached: true,
         });
@@ -186,6 +187,7 @@ Deno.serve(async (req) => {
       output_item: aiResult.output_item,
       output_item_id: outputItemId,
       output_item_tags: aiResult.output_item_tags ?? [],
+      consumes_item: aiResult.consumes_item ?? false,
       description: aiResult.description,
       source: "ai",
     });
@@ -201,6 +203,7 @@ Deno.serve(async (req) => {
       output_item_id: outputItemId,
       output_item_sprite_url: outputItemSpriteUrl,
       output_item_tags: aiResult.output_item_tags,
+      consumes_item: aiResult.consumes_item ?? false,
       description: aiResult.description,
       cached: false,
     });
