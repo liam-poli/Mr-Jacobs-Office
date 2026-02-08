@@ -13,6 +13,7 @@ import { InteractionToast } from './components/InteractionToast';
 import { JacobsSpeech } from './components/JacobsSpeech';
 import { JacobsFace } from './components/JacobsFace';
 import { TerminalChat } from './components/TerminalChat';
+import { PhaseTitle } from './components/PhaseTitle';
 import { useSettingsStore } from './stores/settingsStore';
 import { useGameStore } from './stores/gameStore';
 import { AdminPanel } from './pages/AdminPanel';
@@ -36,7 +37,7 @@ function Game() {
 
   return (
     <div className="relative w-screen h-screen bg-black overflow-hidden">
-      <div className={menuOpen ? 'pointer-events-none' : ''}>
+      <div className={`absolute inset-0 ${menuOpen ? 'pointer-events-none' : ''}`}>
         <PhaserGame />
       </div>
       <HUD />
@@ -49,6 +50,7 @@ function Game() {
       <InventoryBar />
       <HelpPanel />
       <SettingsMenu />
+      <PhaseTitle />
       <EndScreen />
       <LoadingScreen />
     </div>

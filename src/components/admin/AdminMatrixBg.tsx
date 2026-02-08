@@ -12,6 +12,11 @@ const RAIN_SPEED_MAX = 30;
 const RAIN_FONT_SIZE = 14;
 const BG_COLOR = '#0c0f16';
 
+const LOGO_SIZE = 320;
+const LOGO_SPEED = 40;
+const LOGO_ALPHA = 0.12;
+const LOGO_COUNT = 6;
+
 interface Drop {
   x: number;
   y: number;
@@ -67,6 +72,22 @@ export function AdminMatrixBg() {
       });
     }
 
+    // Bouncing logos state
+    const logo = new Image();
+    logo.src = '/jacobs-logo.png';
+    let logoLoaded = false;
+    logo.onload = () => { logoLoaded = true; };
+
+    const logos = Array.from({ length: LOGO_COUNT }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      return {
+        x: Math.random() * (window.innerWidth - LOGO_SIZE),
+        y: Math.random() * (window.innerHeight - LOGO_SIZE),
+        vx: Math.cos(angle) * LOGO_SPEED,
+        vy: Math.sin(angle) * LOGO_SPEED,
+      };
+    });
+
     let frameCount = 0;
 
     function draw(time: number) {
@@ -93,6 +114,26 @@ export function AdminMatrixBg() {
         ctx!.lineTo(w, y + 0.5);
       }
       ctx!.stroke();
+
+      // Bouncing logos
+      if (logoLoaded) {
+        const logoW = LOGO_SIZE;
+        const logoH = LOGO_SIZE * (194 / 223);
+
+        ctx!.globalAlpha = LOGO_ALPHA;
+        for (const l of logos) {
+          l.x += l.vx * dt;
+          l.y += l.vy * dt;
+
+          if (l.x <= 0) { l.x = 0; l.vx = Math.abs(l.vx); }
+          if (l.x + logoW >= w) { l.x = w - logoW; l.vx = -Math.abs(l.vx); }
+          if (l.y <= 0) { l.y = 0; l.vy = Math.abs(l.vy); }
+          if (l.y + logoH >= h) { l.y = h - logoH; l.vy = -Math.abs(l.vy); }
+
+          ctx!.drawImage(logo, l.x, l.y, logoW, logoH);
+        }
+        ctx!.globalAlpha = 1;
+      }
 
       // Rain drops
       ctx!.font = `${RAIN_FONT_SIZE}px "Courier New", monospace`;

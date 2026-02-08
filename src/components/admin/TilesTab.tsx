@@ -1,4 +1,7 @@
 import { useEffect, useRef } from 'react';
+import floorTileImg from '../../assets/tiles/floor_tile.png';
+import carpetTileImg from '../../assets/tiles/carpet_tile.png';
+import deskTopImg from '../../assets/tiles/desk_top.png';
 
 /* ─── Data ───────────────────────────────────────────────── */
 
@@ -10,9 +13,9 @@ interface TileDef {
   textureKey: string;
   collision: boolean;
   note: string;
-  draw: (ctx: CanvasRenderingContext2D) => void;
+  imgSrc?: string;
+  draw?: (ctx: CanvasRenderingContext2D) => void;
 }
-
 
 const TILES: TileDef[] = [
   {
@@ -21,26 +24,7 @@ const TILES: TileDef[] = [
     textureKey: 'floor-tile',
     collision: false,
     note: 'Basic walkable tile',
-    draw(ctx) {
-      ctx.fillStyle = '#becdd4';
-      ctx.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-      // Inner highlight (top + left)
-      ctx.strokeStyle = 'rgba(214,226,232,0.6)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(1, 1); ctx.lineTo(TILE_SIZE - 1, 1);
-      ctx.moveTo(1, 1); ctx.lineTo(1, TILE_SIZE - 1);
-      ctx.stroke();
-      // Inner shadow (bottom + right)
-      ctx.strokeStyle = 'rgba(154,172,180,0.5)';
-      ctx.beginPath();
-      ctx.moveTo(1, TILE_SIZE - 1); ctx.lineTo(TILE_SIZE - 1, TILE_SIZE - 1);
-      ctx.moveTo(TILE_SIZE - 1, 1); ctx.lineTo(TILE_SIZE - 1, TILE_SIZE - 1);
-      ctx.stroke();
-      // Grid gap border
-      ctx.strokeStyle = 'rgba(138,156,166,0.7)';
-      ctx.strokeRect(0.5, 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
-    },
+    imgSrc: floorTileImg,
   },
   {
     code: 1,
@@ -67,17 +51,7 @@ const TILES: TileDef[] = [
     textureKey: 'carpet-tile',
     collision: false,
     note: 'Decorative, striped pattern',
-    draw(ctx) {
-      ctx.fillStyle = '#5c6b7a';
-      ctx.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-      ctx.fillStyle = 'rgba(82,97,112,0.3)';
-      for (let i = 0; i < TILE_SIZE; i += 4) {
-        ctx.fillRect(i, 0, 2, TILE_SIZE);
-      }
-      ctx.strokeStyle = 'rgba(74,90,104,0.5)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0.5, 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
-    },
+    imgSrc: carpetTileImg,
   },
   {
     code: 3,
@@ -85,21 +59,13 @@ const TILES: TileDef[] = [
     textureKey: 'desk-tile',
     collision: true,
     note: 'Floor underneath, depth-sorted sprite',
-    draw(ctx) {
-      ctx.fillStyle = '#6b5040';
-      ctx.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
-      ctx.fillStyle = '#7d6050';
-      ctx.fillRect(2, 2, TILE_SIZE - 4, TILE_SIZE - 4);
-      ctx.strokeStyle = 'rgba(74,56,40,0.8)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0.5, 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
-    },
+    imgSrc: deskTopImg,
   },
 ];
 
-/* ─── Canvas Preview ─────────────────────────────────────── */
+/* ─── Canvas Preview (for generated tiles) ──────────────── */
 
-function Preview({
+function CanvasPreview({
   size,
   scale,
   draw,
@@ -151,7 +117,20 @@ export function TilesTab() {
             key={tile.code}
             className="bg-hud-panel rounded border border-hud-border p-4 flex flex-col items-center"
           >
-            <Preview size={TILE_SIZE} scale={3} draw={tile.draw} />
+            {tile.imgSrc ? (
+              <img
+                src={tile.imgSrc}
+                alt={tile.name}
+                className="border border-hud-border rounded shrink-0"
+                style={{
+                  width: TILE_SIZE * 3,
+                  height: TILE_SIZE * 3,
+                  imageRendering: 'pixelated',
+                }}
+              />
+            ) : tile.draw ? (
+              <CanvasPreview size={TILE_SIZE} scale={3} draw={tile.draw} />
+            ) : null}
             <span className="mt-2 text-sm font-mono text-hud-text">{tile.name}</span>
             <span className="text-[10px] text-hud-dim font-mono">{tile.textureKey}</span>
             <div className="flex gap-2 mt-1">

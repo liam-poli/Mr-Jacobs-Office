@@ -340,10 +340,10 @@ function RoomEditor({
                   <button
                     key={t}
                     onClick={() => setBrush(t)}
-                    className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors ${
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs font-mono transition-colors ${
                       brush === t
-                        ? 'ring-2 ring-hud-accent bg-hud-bg font-mono'
-                        : 'hover:bg-hud-bg'
+                        ? 'ring-2 ring-hud-accent bg-hud-bg text-hud-accent'
+                        : 'text-hud-text hover:bg-hud-bg'
                     }`}
                   >
                     <span

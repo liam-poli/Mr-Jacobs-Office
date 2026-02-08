@@ -10,6 +10,7 @@ import type { SessionEndType } from '../types/game';
 
 const FIRST_PHASE_DELAY = 5_000; // ms before first job assignment
 const REVIEW_SPEECH_DURATION = 8_000; // ms to show review speech before next phase
+const BETWEEN_PHASES_DELAY = 3_000; // ms gap after review speech before next assignment
 
 // ─── Job Templates ──────────────────────────────────────────────────
 
@@ -133,9 +134,10 @@ function assignNewJob(): void {
     console.warn('No objects in catalog — cannot assign job');
     return;
   }
+  useGameStore.getState().setPlayerFrozen(true);
   const job = pickRandomJob();
   useJobStore.getState().startPhase(job);
-  useJacobsStore.getState().setSpeech(job.description, 'NEW ASSIGNMENT');
+  // Speech is triggered by PhaseTitle after the title card finishes
 }
 
 const SESSION_END_TIME = 550.5; // 9:10:30 AM = 10m30s real time (buffer for final review)
@@ -203,6 +205,7 @@ async function triggerReview(): Promise<void> {
   const jobStore = useJobStore.getState();
   if (jobStore.reviewInProgress) return;
 
+  useGameStore.getState().setPlayerFrozen(true);
   jobStore.endPhase();
   jobStore.setReviewInProgress(true);
 
@@ -231,10 +234,12 @@ async function triggerReview(): Promise<void> {
     return;
   }
 
-  // Wait for the review speech to display, then start next phase
+  // Wait for the review speech to display, then pause, then start next phase
   setTimeout(() => {
     useJobStore.getState().setReviewInProgress(false);
-    assignNewJob();
+    setTimeout(() => {
+      assignNewJob();
+    }, BETWEEN_PHASES_DELAY);
   }, REVIEW_SPEECH_DURATION);
 }
 

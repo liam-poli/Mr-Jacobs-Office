@@ -15,10 +15,10 @@ function buildItemPrompt(name: string, tags: string[]): string {
     `A single ${name}, small handheld item, 2D pixel art sprite for a retro 16-bit video game, ` +
     `front-facing view looking straight at the object, shown as a 2D sprite sheet asset, ` +
     `crisp 1-pixel edges, no blur or anti-aliasing, ` +
-    `natural colors appropriate to the object, warm muted tones, 1980s office aesthetic, ` +
+    `natural colors appropriate to the object, retro 16-bit palette, 1980s office aesthetic, ` +
     `detailed enough to be recognizable at 32px in-game, clean simple silhouette, ` +
     `centered on a plain white background, ` +
-    `no shadows, no text, no extra objects, no people, no floor, no ground. ` +
+    `plain unmarked surface, no shadows, no extra objects, no people, no floor, no ground. ` +
     `Properties: ${tagList}.`
   );
 }
@@ -32,10 +32,10 @@ function buildObjectPrompt(name: string, tags: string[], state?: string, directi
     `flat orthographic ${viewHint}, perfectly straight-on, zero perspective, zero rotation, no 3D, no isometric, ` +
     `the object is shown as a 2D sprite sheet asset, ` +
     `crisp 1-pixel edges, no blur or anti-aliasing, ` +
-    `natural colors appropriate to the object, warm muted tones, 1980s office aesthetic, ` +
+    `natural colors appropriate to the object, retro 16-bit palette, 1980s office aesthetic, ` +
     `detailed enough to be recognizable at 32-64px in-game, ` +
     `centered on a plain white background, ` +
-    `no shadows, no text, no extra objects, no people, no floor, no ground. ` +
+    `plain unmarked surface, no shadows, no extra objects, no people, no floor, no ground. ` +
     `Properties: ${tagList}.${stateHint}`
   );
 }

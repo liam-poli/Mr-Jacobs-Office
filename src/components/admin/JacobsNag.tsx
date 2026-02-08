@@ -29,7 +29,7 @@ const MESSAGES = [
 
 const MIN_DELAY = 15_000;
 const MAX_DELAY = 40_000;
-const DISPLAY_TIME = 5_000;
+const DISPLAY_TIME = 10_000;
 
 export function JacobsNag() {
   const [message, setMessage] = useState<string | null>(null);

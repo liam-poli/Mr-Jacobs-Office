@@ -91,6 +91,9 @@ export const useGameStore = create<GameState>((set) => ({
   openTerminalChat: () => set({ terminalChatOpen: true }),
   closeTerminalChat: () => set({ terminalChatOpen: false }),
 
+  playerFrozen: false,
+  setPlayerFrozen: (frozen) => set({ playerFrozen: frozen }),
+
   sessionStatus: 'PLAYING',
   sessionEndType: null,
   sessionEndSpeech: null,

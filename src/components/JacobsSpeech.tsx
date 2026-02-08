@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useJacobsStore } from '../stores/jacobsStore';
 import { useJobStore } from '../stores/jobStore';
+import { useGameStore } from '../stores/gameStore';
 import { playMumble } from '../services/mumbleService';
 import { getMoodColor } from '../utils/moodUtils';
 
@@ -22,6 +23,7 @@ export function JacobsSpeech() {
   const faceUrl = useJacobsStore((s) => s.faceDataUrls[s.mood]);
   const setSpeech = useJacobsStore((s) => s.setSpeech);
   const reviewInProgress = useJobStore((s) => s.reviewInProgress);
+  const playerFrozen = useGameStore((s) => s.playerFrozen);
   const isMajor = !!speechTitle;
 
   const [displayText, setDisplayText] = useState('');
@@ -29,9 +31,9 @@ export function JacobsSpeech() {
   const fullText = speech ?? '';
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Typewriter effect
+  // Typewriter effect — wait until title card is gone
   useEffect(() => {
-    if (!fullText) {
+    if (!fullText || playerFrozen) {
       setDisplayText('');
       return;
     }
@@ -46,7 +48,7 @@ export function JacobsSpeech() {
       if (i >= fullText.length) clearInterval(interval);
     }, CHAR_DELAY);
     return () => clearInterval(interval);
-  }, [fullText]);
+  }, [fullText, playerFrozen]);
 
   // Blinking cursor
   useEffect(() => {
@@ -55,15 +57,15 @@ export function JacobsSpeech() {
     return () => clearInterval(interval);
   }, [speech]);
 
-  // Auto-dismiss after typing finishes
+  // Auto-dismiss after typing finishes (only when visible)
   useEffect(() => {
-    if (!fullText || displayText.length < fullText.length) return;
+    if (!fullText || playerFrozen || displayText.length < fullText.length) return;
     const delay = reviewInProgress ? REVIEW_DISMISS_DELAY : DISMISS_DELAY;
     timerRef.current = setTimeout(() => setSpeech(null), delay);
     return () => clearTimeout(timerRef.current);
-  }, [displayText, fullText, setSpeech, reviewInProgress]);
+  }, [displayText, fullText, setSpeech, reviewInProgress, playerFrozen]);
 
-  if (!speech) return null;
+  if (!speech || playerFrozen) return null;
 
   const moodColor = getMoodColor(mood);
 

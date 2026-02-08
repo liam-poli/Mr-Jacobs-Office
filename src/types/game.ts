@@ -175,6 +175,10 @@ export interface GameState {
   // Inventory sprite updates (for async-generated sprites)
   updateItemSprite: (itemId: string, spriteUrl: string) => void;
 
+  // Phase transition freeze (title card playing)
+  playerFrozen: boolean;
+  setPlayerFrozen: (frozen: boolean) => void;
+
   // Session end
   sessionStatus: SessionStatus;
   sessionEndType: SessionEndType | null;
