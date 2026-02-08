@@ -343,8 +343,22 @@ export class OfficeScene extends Phaser.Scene {
         sprite.y -= extraHeight / 2;
       }
 
-      // Shadow FX — subtle ground shadow beneath object
-      sprite.postFX?.addShadow(0, 4, 0.02, 0.5, 0x000000, 6, 0.4);
+      // Nudge doors to align with walls based on facing direction
+      if (obj.door_target) {
+        if (obj.direction === 'left') {
+          sprite.x += TILE_SIZE / 2;
+        } else if (obj.direction === 'right') {
+          sprite.x -= TILE_SIZE / 2;
+        } else if (obj.direction === 'down') {
+          sprite.x -= 1;
+          sprite.y += 15;
+        }
+      }
+
+      // Shadow FX — subtle ground shadow beneath object (skip for doors)
+      if (!obj.door_target) {
+        sprite.postFX?.addShadow(0, 4, 0.02, 0.5, 0x000000, 6, 0.4);
+      }
 
       // Door objects with a target: use overlap zone (walkable portal)
       // Non-door objects: normal collision body
@@ -366,7 +380,7 @@ export class OfficeScene extends Phaser.Scene {
 
       // J.A.C.O.B.S. Core: keep the DB sprite as the monitor, overlay the face on top
       if (obj.name === 'J.A.C.O.B.S. Core') {
-        const faceY = py - 4;
+        const faceY = sprite.y - 4;
         const currentMood = useJacobsStore.getState().mood;
         const faceKey = `jacobs-face-${currentMood}`;
         const faceOverlay = this.add.image(px, faceY, this.textures.exists(faceKey) ? faceKey : 'jacobs-face-NEUTRAL');
@@ -446,11 +460,11 @@ export class OfficeScene extends Phaser.Scene {
 
       // Scale large textures to match item size (smaller than objects for perspective)
       const frame = sprite.frame;
-      const itemScale = 32 / Math.max(frame.width, frame.height) * 0.75;
+      const itemScale = 32 / Math.max(frame.width, frame.height) * 0.8;
       if (frame.width > 32 || frame.height > 32) {
         sprite.setScale(itemScale);
       } else {
-        sprite.setScale(0.75);
+        sprite.setScale(0.8);
       }
 
       this.events.once('interaction-ready', () => {
@@ -499,12 +513,12 @@ export class OfficeScene extends Phaser.Scene {
     // Add indicator for first matching state
     for (const state of states) {
       if (STATE_INDICATORS[state] && this.textures.exists(STATE_INDICATORS[state])) {
-        // Position indicator floating above top-right corner with offset
+        // Position indicator at top-right corner of the sprite (tucked in)
         const halfW = visual.sprite.displayWidth / 2;
         const halfH = visual.sprite.displayHeight / 2;
         const ind = this.add.image(
-          visual.sprite.x + halfW - 4,
-          visual.sprite.y - halfH - 4,
+          visual.sprite.x + halfW - 6,
+          visual.sprite.y - halfH + 6,
           STATE_INDICATORS[state],
         );
         ind.setDepth(visual.sprite.depth + 2);

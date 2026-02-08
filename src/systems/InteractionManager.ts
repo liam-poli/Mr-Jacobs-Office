@@ -8,7 +8,7 @@ import type { InteractionTarget, InventoryItem } from '../types';
 
 const INTERACT_RADIUS = 40;
 const LABEL_SCALE = 2;
-const ITEM_SCALE = 0.75;
+const ITEM_SCALE = 0.8;
 
 interface ItemMeta {
   item_id: string;
@@ -88,15 +88,17 @@ export class InteractionManager {
     });
     tempText.setOrigin(0.5, 1);
 
-    // State line (optional, amber color to stand out)
+    // State line (optional, bright amber + stroke for readability at small size)
     const visibleStates = states?.filter((s) => s !== 'POWERED' && s !== 'UNLOCKED') ?? [];
     let stateText: Phaser.GameObjects.Text | null = null;
     if (visibleStates.length > 0) {
-      const stateStr = visibleStates.map((s) => `[${s}]`).join(' ');
+      const stateStr = visibleStates.map((s) => `[${s.charAt(0)}${s.slice(1).toLowerCase()}]`).join(' ');
       stateText = this.scene.add.text(0, 0, stateStr, {
         fontFamily: '"Courier New", monospace',
         fontSize: `${7 * LABEL_SCALE}px`,
-        color: '#d4a843',
+        color: '#f5c542',
+        stroke: '#000000',
+        strokeThickness: 1 * LABEL_SCALE,
       });
       stateText.setOrigin(0.5, 1);
     }
@@ -104,9 +106,9 @@ export class InteractionManager {
     const nameW = Math.ceil(tempText.width);
     const nameH = Math.ceil(tempText.height);
     const stateW = stateText ? Math.ceil(stateText.width) : 0;
-    const stateH = stateText ? Math.ceil(stateText.height) + 1 * LABEL_SCALE : 0;
+    const stateH = stateText ? Math.ceil(stateText.height) + 2 * LABEL_SCALE : 0;
     const padX = 3 * LABEL_SCALE;
-    const padY = 1 * LABEL_SCALE;
+    const padY = 2 * LABEL_SCALE;
     const boxW = Math.max(nameW, stateW) + padX * 2;
     const boxH = nameH + stateH + padY * 2;
     const radius = 2 * LABEL_SCALE;
