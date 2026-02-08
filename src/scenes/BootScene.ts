@@ -200,65 +200,78 @@ export class BootScene extends Phaser.Scene {
 
   private generateIndicatorTextures() {
     const S = 16; // indicator icon size
+    const CX = S / 2;
+    const CY = S / 2;
+
+    // Helper: draw a dark circular backing behind each icon for readability
+    const drawBacking = (g: Phaser.GameObjects.Graphics) => {
+      g.fillStyle(0x0c0f16, 0.85);
+      g.fillCircle(CX, CY, 7);
+      g.lineStyle(1, 0x222222, 0.6);
+      g.strokeCircle(CX, CY, 7);
+    };
 
     // Lock — yellow padlock with shackle
     const lock = this.add.graphics();
+    drawBacking(lock);
     lock.fillStyle(0xffd700, 1);
-    lock.fillRoundedRect(2, 7, 12, 8, 1);
-    lock.fillStyle(0xe6c200, 1);
-    lock.fillRect(3, 8, 10, 6);
+    lock.fillRoundedRect(3, 8, 10, 6, 1);
     lock.lineStyle(2, 0xffd700, 1);
     lock.beginPath();
-    lock.arc(8, 7, 4, Math.PI, 0, false);
+    lock.arc(CX, 8, 3, Math.PI, 0, false);
     lock.strokePath();
     lock.fillStyle(0x8b7500, 1);
-    lock.fillRect(7, 10, 2, 3);
+    lock.fillRect(7, 10, 2, 2);
     lock.generateTexture('indicator-lock', S, S);
     lock.destroy();
 
-    // Power — green lightning bolt with outline
+    // Power — green lightning bolt
     const power = this.add.graphics();
+    drawBacking(power);
     power.fillStyle(0x00cc66, 1);
-    power.fillTriangle(9, 0, 3, 7, 8, 7);
-    power.fillTriangle(7, 7, 13, 7, 6, 16);
+    power.fillTriangle(9, 2, 4, 8, 8, 8);
+    power.fillTriangle(7, 8, 12, 8, 7, 14);
     power.fillStyle(0x00ff88, 1);
-    power.fillTriangle(9, 1, 4, 7, 8, 7);
-    power.fillTriangle(7, 7, 12, 7, 7, 15);
+    power.fillTriangle(9, 3, 5, 8, 8, 8);
+    power.fillTriangle(7, 8, 11, 8, 7, 13);
     power.generateTexture('indicator-power', S, S);
     power.destroy();
 
-    // Broken — red X with thick outline
+    // Broken — red X
     const broken = this.add.graphics();
+    drawBacking(broken);
     broken.lineStyle(3, 0xcc2222, 1);
-    broken.lineBetween(2, 2, 14, 14);
-    broken.lineBetween(14, 2, 2, 14);
+    broken.lineBetween(4, 4, 12, 12);
+    broken.lineBetween(12, 4, 4, 12);
     broken.lineStyle(2, 0xff4444, 1);
-    broken.lineBetween(2, 2, 14, 14);
-    broken.lineBetween(14, 2, 2, 14);
+    broken.lineBetween(4, 4, 12, 12);
+    broken.lineBetween(12, 4, 4, 12);
     broken.generateTexture('indicator-broken', S, S);
     broken.destroy();
 
-    // Burning — orange/yellow flame with layers
+    // Burning — orange/yellow flame
     const burn = this.add.graphics();
+    drawBacking(burn);
     burn.fillStyle(0xcc4400, 1);
-    burn.fillTriangle(8, 0, 1, 14, 15, 14);
+    burn.fillTriangle(8, 2, 2, 13, 14, 13);
     burn.fillStyle(0xff8844, 1);
-    burn.fillTriangle(8, 2, 2, 14, 14, 14);
+    burn.fillTriangle(8, 3, 3, 13, 13, 13);
     burn.fillStyle(0xffcc44, 1);
-    burn.fillTriangle(8, 5, 4, 14, 12, 14);
+    burn.fillTriangle(8, 6, 5, 13, 11, 13);
     burn.fillStyle(0xffee88, 1);
-    burn.fillTriangle(8, 8, 6, 14, 10, 14);
+    burn.fillTriangle(8, 8, 6, 13, 10, 13);
     burn.generateTexture('indicator-burning', S, S);
     burn.destroy();
 
-    // Flooded — blue water droplet with highlight
+    // Flooded — blue water droplet
     const flood = this.add.graphics();
+    drawBacking(flood);
     flood.fillStyle(0x4466aa, 1);
-    flood.fillTriangle(8, 1, 1, 10, 15, 10);
-    flood.fillCircle(8, 11, 7);
+    flood.fillTriangle(8, 3, 2, 10, 14, 10);
+    flood.fillCircle(8, 10, 6);
     flood.fillStyle(0x6688cc, 1);
-    flood.fillTriangle(8, 2, 2, 10, 14, 10);
-    flood.fillCircle(8, 11, 6);
+    flood.fillTriangle(8, 4, 3, 10, 13, 10);
+    flood.fillCircle(8, 10, 5);
     flood.fillStyle(0x88aaee, 0.5);
     flood.fillCircle(6, 9, 2);
     flood.generateTexture('indicator-flooded', S, S);
@@ -266,14 +279,15 @@ export class BootScene extends Phaser.Scene {
 
     // Jammed — amber gear with teeth
     const jam = this.add.graphics();
+    drawBacking(jam);
     jam.fillStyle(0xccaa44, 1);
-    jam.fillCircle(8, 8, 6);
-    jam.fillRect(6, 1, 4, 3);
-    jam.fillRect(6, 12, 4, 3);
-    jam.fillRect(1, 6, 3, 4);
-    jam.fillRect(12, 6, 3, 4);
+    jam.fillCircle(8, 8, 5);
+    jam.fillRect(6, 2, 4, 3);
+    jam.fillRect(6, 11, 4, 3);
+    jam.fillRect(2, 6, 3, 4);
+    jam.fillRect(11, 6, 3, 4);
     jam.fillStyle(0x8a7430, 1);
-    jam.fillCircle(8, 8, 3);
+    jam.fillCircle(8, 8, 2);
     jam.fillStyle(0xccaa44, 1);
     jam.fillCircle(8, 8, 1);
     jam.generateTexture('indicator-jammed', S, S);
@@ -281,29 +295,40 @@ export class BootScene extends Phaser.Scene {
 
     // Hacked — green terminal brackets with cursor
     const hack = this.add.graphics();
+    drawBacking(hack);
     hack.lineStyle(2, 0x22cc66, 1);
-    hack.lineBetween(1, 2, 5, 2);
-    hack.lineBetween(1, 2, 1, 14);
-    hack.lineBetween(1, 14, 5, 14);
-    hack.lineBetween(11, 2, 15, 2);
-    hack.lineBetween(15, 2, 15, 14);
-    hack.lineBetween(11, 14, 15, 14);
+    hack.lineBetween(3, 4, 6, 4);
+    hack.lineBetween(3, 4, 3, 12);
+    hack.lineBetween(3, 12, 6, 12);
+    hack.lineBetween(10, 4, 13, 4);
+    hack.lineBetween(13, 4, 13, 12);
+    hack.lineBetween(10, 12, 13, 12);
     hack.fillStyle(0x44ff88, 1);
     hack.fillRect(6, 7, 4, 2);
     hack.generateTexture('indicator-hacked', S, S);
     hack.destroy();
 
-    // Contaminated — purple hazard with exclamation
+    // Contaminated — purple hazard triangle with exclamation
     const contam = this.add.graphics();
-    contam.lineStyle(2, 0x7733aa, 1);
-    contam.strokeTriangle(8, 1, 1, 15, 15, 15);
+    drawBacking(contam);
     contam.fillStyle(0xaa44cc, 1);
-    contam.fillTriangle(8, 3, 3, 14, 13, 14);
+    contam.fillTriangle(8, 3, 2, 13, 14, 13);
+    contam.lineStyle(1, 0x7733aa, 1);
+    contam.strokeTriangle(8, 3, 2, 13, 14, 13);
     contam.fillStyle(0x220033, 1);
-    contam.fillRect(7, 6, 2, 4);
-    contam.fillRect(7, 11, 2, 2);
+    contam.fillRect(7, 7, 2, 3);
+    contam.fillRect(7, 11, 2, 1);
     contam.generateTexture('indicator-contaminated', S, S);
     contam.destroy();
+
+    // Unpowered — gray circle with line-through
+    const unpower = this.add.graphics();
+    drawBacking(unpower);
+    unpower.lineStyle(2, 0x888888, 1);
+    unpower.strokeCircle(8, 8, 4);
+    unpower.lineBetween(5, 11, 11, 5);
+    unpower.generateTexture('indicator-unpowered', S, S);
+    unpower.destroy();
   }
 
   private generateJacobsFaces() {

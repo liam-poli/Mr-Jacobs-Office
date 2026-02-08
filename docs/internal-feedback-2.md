@@ -27,7 +27,7 @@ Finsihing it off
 * When we are processing review, freese the screen and show a popup
 * Lock on the standy too
 * clean up the doors and general graphic pass 
-* Make sure end game state is connceted
+DONE * Make sure end game state is connceted
 * Set serverpassword
 * Style admin in jacobs style
 

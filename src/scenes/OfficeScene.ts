@@ -15,6 +15,7 @@ const TILE_SIZE = 32;
 
 // State → tint color mappings
 const STATE_TINTS: Record<string, number> = {
+  UNPOWERED: 0x666666,
   BROKEN: 0xff6666,
   BURNING: 0xff8844,
   FLOODED: 0x6688cc,
@@ -26,6 +27,7 @@ const STATE_TINTS: Record<string, number> = {
 // State → indicator texture mappings
 const STATE_INDICATORS: Record<string, string> = {
   LOCKED: 'indicator-lock',
+  UNPOWERED: 'indicator-unpowered',
   BROKEN: 'indicator-broken',
   BURNING: 'indicator-burning',
   FLOODED: 'indicator-flooded',
@@ -297,7 +299,20 @@ export class OfficeScene extends Phaser.Scene {
 
     if (loadCount > 0) {
       await new Promise<void>((resolve) => {
-        this.load.once('complete', resolve);
+        this.load.once('complete', () => {
+          // Ensure all dynamically loaded sprites use nearest-neighbor filtering
+          for (const item of roomDef.itemSpawns) {
+            if (!item.spriteUrl) continue;
+            const key = `sprite-item-${item.item_id}`;
+            this.textures.get(key)?.setFilter(Phaser.Textures.FilterMode.NEAREST);
+          }
+          for (const obj of roomDef.objectPlacements) {
+            if (!obj.spriteUrl) continue;
+            const key = `sprite-obj-${obj.object_id}-${obj.direction}`;
+            this.textures.get(key)?.setFilter(Phaser.Textures.FilterMode.NEAREST);
+          }
+          resolve();
+        });
         this.load.start();
       });
     }
@@ -321,6 +336,12 @@ export class OfficeScene extends Phaser.Scene {
       const frame = sprite.frame;
       const baseScale = TILE_SIZE / Math.max(frame.width, frame.height);
       sprite.setScale(baseScale * obj.scale);
+
+      // Shift upward so scaled objects bleed up (perspective), not down
+      const extraHeight = sprite.displayHeight - TILE_SIZE;
+      if (extraHeight > 0) {
+        sprite.y -= extraHeight / 2;
+      }
 
       // Shadow FX — subtle ground shadow beneath object
       sprite.postFX?.addShadow(0, 4, 0.02, 0.5, 0x000000, 6, 0.4);
@@ -423,10 +444,13 @@ export class OfficeScene extends Phaser.Scene {
       sprite.setDepth(py);
       sprite.setData('highlight', [glow, arrow]);
 
-      // Scale large textures (e.g. server sprites) to match 32px item size
+      // Scale large textures to match item size (smaller than objects for perspective)
       const frame = sprite.frame;
+      const itemScale = 32 / Math.max(frame.width, frame.height) * 0.75;
       if (frame.width > 32 || frame.height > 32) {
-        sprite.setScale(32 / Math.max(frame.width, frame.height));
+        sprite.setScale(itemScale);
+      } else {
+        sprite.setScale(0.75);
       }
 
       this.events.once('interaction-ready', () => {
@@ -475,18 +499,21 @@ export class OfficeScene extends Phaser.Scene {
     // Add indicator for first matching state
     for (const state of states) {
       if (STATE_INDICATORS[state] && this.textures.exists(STATE_INDICATORS[state])) {
+        // Position indicator floating above top-right corner with offset
+        const halfW = visual.sprite.displayWidth / 2;
+        const halfH = visual.sprite.displayHeight / 2;
         const ind = this.add.image(
-          visual.sprite.x + visual.sprite.displayWidth / 2,
-          visual.sprite.y - visual.sprite.displayHeight / 2,
+          visual.sprite.x + halfW - 4,
+          visual.sprite.y - halfH - 4,
           STATE_INDICATORS[state],
         );
-        ind.setDepth(visual.sprite.depth + 1);
+        ind.setDepth(visual.sprite.depth + 2);
 
         // Pulse animation
         visual.tween = this.tweens.add({
           targets: ind,
-          alpha: { from: 1, to: 0.3 },
-          duration: 800,
+          alpha: { from: 1, to: 0.4 },
+          duration: 900,
           yoyo: true,
           repeat: -1,
           ease: 'Sine.easeInOut',

@@ -12,32 +12,47 @@ interface StateDef {
   drawIndicator: ((ctx: CanvasRenderingContext2D, x: number, y: number, s: number) => void) | null;
 }
 
+// Helper: draw dark circle backing for indicator preview (matches in-game BootScene)
+function drawBacking(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
+  const cx = x + s / 2;
+  const cy = y + s / 2;
+  const r = s * 0.44;
+  ctx.fillStyle = 'rgba(12,15,22,0.85)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(34,34,34,0.6)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
 const STATES: StateDef[] = [
   {
     name: 'POWERED',
-    tint: 'rgba(204,255,255,0.35)',
-    indicatorColor: '#00ff88',
-    description: 'Object has electrical power. Cyan tint + green lightning bolt.',
-    drawIndicator(ctx, x, y, s) {
-      ctx.fillStyle = '#00ff88';
-      ctx.beginPath();
-      ctx.moveTo(x + s * 0.5, y);
-      ctx.lineTo(x + s * 0.2, y + s * 0.5);
-      ctx.lineTo(x + s * 0.6, y + s * 0.5);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(x + s * 0.4, y + s * 0.5);
-      ctx.lineTo(x + s * 0.8, y + s * 0.5);
-      ctx.lineTo(x + s * 0.5, y + s);
-      ctx.fill();
-    },
+    tint: null,
+    indicatorColor: null,
+    description: 'Object has electrical power. Default appearance, no visual treatment.',
+    drawIndicator: null,
   },
   {
     name: 'UNPOWERED',
     tint: 'rgba(102,102,102,0.45)',
-    indicatorColor: null,
-    description: 'Object has no power. Dark gray tint, no indicator.',
-    drawIndicator: null,
+    indicatorColor: '#888888',
+    description: 'Object has no power. Dark gray tint + circle-slash indicator.',
+    drawIndicator(ctx, x, y, s) {
+      drawBacking(ctx, x, y, s);
+      ctx.strokeStyle = '#888888';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x + s * 0.5, y + s * 0.5, s * 0.25, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + s * 0.3, y + s * 0.7);
+      ctx.lineTo(x + s * 0.7, y + s * 0.3);
+      ctx.stroke();
+    },
   },
   {
     name: 'BROKEN',
@@ -45,13 +60,14 @@ const STATES: StateDef[] = [
     indicatorColor: '#ff4444',
     description: 'Object is destroyed. Red tint + red X indicator.',
     drawIndicator(ctx, x, y, s) {
+      drawBacking(ctx, x, y, s);
       ctx.strokeStyle = '#ff4444';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(x + s * 0.1, y + s * 0.1);
-      ctx.lineTo(x + s * 0.9, y + s * 0.9);
-      ctx.moveTo(x + s * 0.9, y + s * 0.1);
-      ctx.lineTo(x + s * 0.1, y + s * 0.9);
+      ctx.moveTo(x + s * 0.25, y + s * 0.25);
+      ctx.lineTo(x + s * 0.75, y + s * 0.75);
+      ctx.moveTo(x + s * 0.75, y + s * 0.25);
+      ctx.lineTo(x + s * 0.25, y + s * 0.75);
       ctx.stroke();
     },
   },
@@ -61,12 +77,13 @@ const STATES: StateDef[] = [
     indicatorColor: '#ffd700',
     description: 'Object is locked. No tint, yellow padlock indicator.',
     drawIndicator(ctx, x, y, s) {
+      drawBacking(ctx, x, y, s);
       ctx.fillStyle = '#ffd700';
-      ctx.fillRect(x + s * 0.1, y + s * 0.4, s * 0.8, s * 0.6);
+      ctx.fillRect(x + s * 0.2, y + s * 0.5, s * 0.6, s * 0.35);
       ctx.strokeStyle = '#ffd700';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(x + s * 0.5, y + s * 0.4, s * 0.3, Math.PI, 0);
+      ctx.arc(x + s * 0.5, y + s * 0.5, s * 0.2, Math.PI, 0);
       ctx.stroke();
     },
   },
@@ -83,15 +100,16 @@ const STATES: StateDef[] = [
     indicatorColor: '#ff8844',
     description: 'Object is on fire. Orange tint + flame indicator.',
     drawIndicator(ctx, x, y, s) {
+      drawBacking(ctx, x, y, s);
       ctx.fillStyle = '#ff8844';
       ctx.beginPath();
-      ctx.moveTo(x + s * 0.5, y);
-      ctx.lineTo(x + s * 0.1, y + s * 0.8);
-      ctx.lineTo(x + s * 0.9, y + s * 0.8);
+      ctx.moveTo(x + s * 0.5, y + s * 0.15);
+      ctx.lineTo(x + s * 0.15, y + s * 0.8);
+      ctx.lineTo(x + s * 0.85, y + s * 0.8);
       ctx.fill();
       ctx.fillStyle = '#ffcc44';
       ctx.beginPath();
-      ctx.moveTo(x + s * 0.5, y + s * 0.3);
+      ctx.moveTo(x + s * 0.5, y + s * 0.35);
       ctx.lineTo(x + s * 0.3, y + s * 0.8);
       ctx.lineTo(x + s * 0.7, y + s * 0.8);
       ctx.fill();
@@ -103,14 +121,15 @@ const STATES: StateDef[] = [
     indicatorColor: '#6688cc',
     description: 'Object is waterlogged. Blue tint + droplet indicator.',
     drawIndicator(ctx, x, y, s) {
+      drawBacking(ctx, x, y, s);
       ctx.fillStyle = '#6688cc';
       ctx.beginPath();
-      ctx.moveTo(x + s * 0.5, y + s * 0.1);
-      ctx.lineTo(x + s * 0.1, y + s * 0.6);
-      ctx.lineTo(x + s * 0.9, y + s * 0.6);
+      ctx.moveTo(x + s * 0.5, y + s * 0.15);
+      ctx.lineTo(x + s * 0.15, y + s * 0.6);
+      ctx.lineTo(x + s * 0.85, y + s * 0.6);
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(x + s * 0.5, y + s * 0.65, s * 0.4, 0, Math.PI);
+      ctx.arc(x + s * 0.5, y + s * 0.62, s * 0.35, 0, Math.PI);
       ctx.fill();
     },
   },
@@ -120,18 +139,19 @@ const STATES: StateDef[] = [
     indicatorColor: '#ccaa44',
     description: 'Object is stuck/gummed. Amber tint + gear indicator.',
     drawIndicator(ctx, x, y, s) {
+      drawBacking(ctx, x, y, s);
       ctx.fillStyle = '#ccaa44';
       ctx.beginPath();
-      ctx.arc(x + s * 0.5, y + s * 0.5, s * 0.4, 0, Math.PI * 2);
+      ctx.arc(x + s * 0.5, y + s * 0.5, s * 0.3, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#8a7430';
-      ctx.lineWidth = 2;
+      ctx.fillRect(x + s * 0.38, y + s * 0.12, s * 0.24, s * 0.2);
+      ctx.fillRect(x + s * 0.38, y + s * 0.68, s * 0.24, s * 0.2);
+      ctx.fillRect(x + s * 0.12, y + s * 0.38, s * 0.2, s * 0.24);
+      ctx.fillRect(x + s * 0.68, y + s * 0.38, s * 0.2, s * 0.24);
+      ctx.fillStyle = '#8a7430';
       ctx.beginPath();
-      ctx.moveTo(x + s * 0.5, y + s * 0.1);
-      ctx.lineTo(x + s * 0.5, y + s * 0.9);
-      ctx.moveTo(x + s * 0.1, y + s * 0.5);
-      ctx.lineTo(x + s * 0.9, y + s * 0.5);
-      ctx.stroke();
+      ctx.arc(x + s * 0.5, y + s * 0.5, s * 0.12, 0, Math.PI * 2);
+      ctx.fill();
     },
   },
   {
@@ -140,18 +160,21 @@ const STATES: StateDef[] = [
     indicatorColor: '#44ff88',
     description: 'Object has been hacked. Green tint + terminal brackets.',
     drawIndicator(ctx, x, y, s) {
+      drawBacking(ctx, x, y, s);
       ctx.strokeStyle = '#44ff88';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(x + s * 0.4, y + s * 0.1);
-      ctx.lineTo(x + s * 0.1, y + s * 0.1);
-      ctx.lineTo(x + s * 0.1, y + s * 0.9);
-      ctx.lineTo(x + s * 0.4, y + s * 0.9);
-      ctx.moveTo(x + s * 0.6, y + s * 0.1);
-      ctx.lineTo(x + s * 0.9, y + s * 0.1);
-      ctx.lineTo(x + s * 0.9, y + s * 0.9);
-      ctx.lineTo(x + s * 0.6, y + s * 0.9);
+      ctx.moveTo(x + s * 0.4, y + s * 0.2);
+      ctx.lineTo(x + s * 0.2, y + s * 0.2);
+      ctx.lineTo(x + s * 0.2, y + s * 0.8);
+      ctx.lineTo(x + s * 0.4, y + s * 0.8);
+      ctx.moveTo(x + s * 0.6, y + s * 0.2);
+      ctx.lineTo(x + s * 0.8, y + s * 0.2);
+      ctx.lineTo(x + s * 0.8, y + s * 0.8);
+      ctx.lineTo(x + s * 0.6, y + s * 0.8);
       ctx.stroke();
+      ctx.fillStyle = '#44ff88';
+      ctx.fillRect(x + s * 0.38, y + s * 0.45, s * 0.24, s * 0.1);
     },
   },
   {
@@ -160,18 +183,17 @@ const STATES: StateDef[] = [
     indicatorColor: '#aa44cc',
     description: 'Object is chemically contaminated. Purple tint + hazard triangle.',
     drawIndicator(ctx, x, y, s) {
-      ctx.strokeStyle = '#aa44cc';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(x + s * 0.5, y + s * 0.1);
-      ctx.lineTo(x + s * 0.1, y + s * 0.9);
-      ctx.lineTo(x + s * 0.9, y + s * 0.9);
-      ctx.closePath();
-      ctx.stroke();
+      drawBacking(ctx, x, y, s);
       ctx.fillStyle = '#aa44cc';
       ctx.beginPath();
-      ctx.arc(x + s * 0.5, y + s * 0.7, s * 0.08, 0, Math.PI * 2);
+      ctx.moveTo(x + s * 0.5, y + s * 0.15);
+      ctx.lineTo(x + s * 0.15, y + s * 0.85);
+      ctx.lineTo(x + s * 0.85, y + s * 0.85);
+      ctx.closePath();
       ctx.fill();
+      ctx.fillStyle = '#220033';
+      ctx.fillRect(x + s * 0.44, y + s * 0.42, s * 0.12, s * 0.2);
+      ctx.fillRect(x + s * 0.44, y + s * 0.68, s * 0.12, s * 0.08);
     },
   },
 ];

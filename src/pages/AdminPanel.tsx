@@ -18,6 +18,7 @@ export function AdminPanel() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<Tab>('Overview');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   if (!authenticated) {
     return (
@@ -62,9 +63,17 @@ export function AdminPanel() {
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold text-gray-800">J.A.C.O.B.S. Admin</h1>
-          <a href="/" className="text-sm text-blue-600 hover:underline">
-            Back to Game
-          </a>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setRefreshKey((k) => k + 1)}
+              className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+            >
+              Refresh
+            </button>
+            <a href="/" className="text-sm text-blue-600 hover:underline">
+              Back to Game
+            </a>
+          </div>
         </div>
         <nav className="flex gap-1 mt-3">
           {TABS.map((tab) => (
@@ -83,14 +92,14 @@ export function AdminPanel() {
         </nav>
       </header>
       <main className="p-6 max-w-7xl mx-auto">
-        {activeTab === 'Overview' && <OverviewTab />}
-        {activeTab === 'Tags' && <TagsTab />}
-        {activeTab === 'Objects' && <ObjectsTab />}
-        {activeTab === 'Items' && <ItemsTab />}
-        {activeTab === 'Interactions' && <InteractionsTab />}
-        {activeTab === 'Rooms' && <RoomsTab />}
-        {activeTab === 'Tiles' && <TilesTab />}
-        {activeTab === 'Effects' && <EffectsTab />}
+        {activeTab === 'Overview' && <OverviewTab key={refreshKey} />}
+        {activeTab === 'Tags' && <TagsTab key={refreshKey} />}
+        {activeTab === 'Objects' && <ObjectsTab key={refreshKey} />}
+        {activeTab === 'Items' && <ItemsTab key={refreshKey} />}
+        {activeTab === 'Interactions' && <InteractionsTab key={refreshKey} />}
+        {activeTab === 'Rooms' && <RoomsTab key={refreshKey} />}
+        {activeTab === 'Tiles' && <TilesTab key={refreshKey} />}
+        {activeTab === 'Effects' && <EffectsTab key={refreshKey} />}
       </main>
     </div>
   );

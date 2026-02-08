@@ -8,6 +8,7 @@ import type { InteractionTarget, InventoryItem } from '../types';
 
 const INTERACT_RADIUS = 40;
 const LABEL_SCALE = 2;
+const ITEM_SCALE = 0.75;
 
 interface ItemMeta {
   item_id: string;
@@ -62,14 +63,24 @@ export class InteractionManager {
   ): void {
     this.objectSprites.set(id, sprite);
     this.objectDefs.set(id, def);
-    this.createNameLabel(id, def.name);
+    this.createNameLabel(id, def.name, def.states);
   }
 
-  private createNameLabel(id: string, name: string): void {
+  private createNameLabel(id: string, name: string, states?: string[]): void {
+    // Destroy old label image if it exists
+    const oldLabel = this.nameLabels.get(id);
+    if (oldLabel) {
+      if (this.activeLabel === oldLabel) this.activeLabel = null;
+      oldLabel.destroy();
+      this.nameLabels.delete(id);
+    }
+
     const textureKey = `label-${id}`;
     if (this.scene.textures.exists(textureKey)) {
       this.scene.textures.remove(textureKey);
     }
+
+    // Name line
     const tempText = this.scene.add.text(0, 0, name, {
       fontFamily: '"Courier New", monospace',
       fontSize: `${7 * LABEL_SCALE}px`,
@@ -77,12 +88,27 @@ export class InteractionManager {
     });
     tempText.setOrigin(0.5, 1);
 
-    const textW = Math.ceil(tempText.width);
-    const textH = Math.ceil(tempText.height);
+    // State line (optional, amber color to stand out)
+    const visibleStates = states?.filter((s) => s !== 'POWERED' && s !== 'UNLOCKED') ?? [];
+    let stateText: Phaser.GameObjects.Text | null = null;
+    if (visibleStates.length > 0) {
+      const stateStr = visibleStates.map((s) => `[${s}]`).join(' ');
+      stateText = this.scene.add.text(0, 0, stateStr, {
+        fontFamily: '"Courier New", monospace',
+        fontSize: `${7 * LABEL_SCALE}px`,
+        color: '#d4a843',
+      });
+      stateText.setOrigin(0.5, 1);
+    }
+
+    const nameW = Math.ceil(tempText.width);
+    const nameH = Math.ceil(tempText.height);
+    const stateW = stateText ? Math.ceil(stateText.width) : 0;
+    const stateH = stateText ? Math.ceil(stateText.height) + 1 * LABEL_SCALE : 0;
     const padX = 3 * LABEL_SCALE;
     const padY = 1 * LABEL_SCALE;
-    const boxW = textW + padX * 2;
-    const boxH = textH + padY * 2;
+    const boxW = Math.max(nameW, stateW) + padX * 2;
+    const boxH = nameH + stateH + padY * 2;
     const radius = 2 * LABEL_SCALE;
 
     const g = this.scene.add.graphics();
@@ -95,11 +121,18 @@ export class InteractionManager {
 
     const rt = this.scene.add.renderTexture(0, 0, boxW, boxH);
     rt.draw(g, 0, 0);
-    rt.draw(tempText, boxW / 2, boxH - padY);
+    // Draw name, then state text below it
+    const nameY = padY + nameH;
+    rt.draw(tempText, boxW / 2, nameY);
+    if (stateText) {
+      rt.draw(stateText, boxW / 2, nameY + stateH);
+    }
     rt.saveTexture(textureKey);
+    this.scene.textures.get(textureKey)?.setFilter(Phaser.Textures.FilterMode.NEAREST);
     rt.destroy();
     g.destroy();
     tempText.destroy();
+    stateText?.destroy();
 
     const label = this.scene.add.image(0, 0, textureKey);
     label.setOrigin(0.5, 1);
@@ -107,6 +140,12 @@ export class InteractionManager {
     label.setDepth(10000);
     label.setVisible(false);
     this.nameLabels.set(id, label);
+  }
+
+  private refreshLabel(id: string): void {
+    const def = this.objectDefs.get(id);
+    if (!def) return;
+    this.createNameLabel(id, def.name, def.states);
   }
 
   private spawnDroppedItem(item: InventoryItem): void {
@@ -152,11 +191,12 @@ export class InteractionManager {
     if (item.spriteUrl && !this.scene.textures.exists(desiredKey)) {
       this.scene.load.image(desiredKey, item.spriteUrl);
       this.scene.load.once('complete', () => {
+        this.scene.textures.get(desiredKey)?.setFilter(Phaser.Textures.FilterMode.NEAREST);
         if (sprite.active) {
           sprite.setTexture(desiredKey);
           const f = sprite.frame;
           if (f.width > 32 || f.height > 32) {
-            sprite.setScale(32 / Math.max(f.width, f.height));
+            sprite.setScale(32 / Math.max(f.width, f.height) * ITEM_SCALE);
           }
         }
       });
@@ -166,7 +206,7 @@ export class InteractionManager {
     // Scale large textures (e.g. server sprites) to match 32px item size
     const frame = sprite.frame;
     if (frame.width > 32 || frame.height > 32) {
-      sprite.setScale(32 / Math.max(frame.width, frame.height));
+      sprite.setScale(32 / Math.max(frame.width, frame.height) * ITEM_SCALE);
     }
     this.registerItem(item.id, sprite, {
       item_id: item.item_id,
@@ -354,8 +394,8 @@ export class InteractionManager {
         objectName: objDef.name,
       });
 
-      // Consume item on success (only if one was used)
-      if (item) {
+      // Consume item only if the interaction actually did something
+      if (item && (result.result_state || result.output_item)) {
         store.removeItem(item.id);
       }
 
@@ -364,6 +404,7 @@ export class InteractionManager {
         const newStates = [result.result_state];
         objDef.states = newStates;
         store.updateObjectState(target.id, newStates);
+        this.refreshLabel(target.id);
         const stateEvent = {
           type: 'STATE_CHANGE' as const,
           timestamp: Date.now(),

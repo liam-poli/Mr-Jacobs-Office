@@ -15,6 +15,11 @@
   --color-hud-panel-inner: #22313a;
 }
 
+canvas {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+}
+
 @keyframes jacobs-bob {
   0%, 100% { transform: translateY(-1.6px); }
   50% { transform: translateY(1.6px); }
