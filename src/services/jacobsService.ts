@@ -104,6 +104,7 @@ function checkThreshold(): void {
   // Skip if session ended or during job review
   if (useGameStore.getState().sessionStatus !== 'PLAYING') return;
   if (useJobStore.getState().reviewInProgress) return;
+  if (useJacobsStore.getState().speechTitle) return;
 
   const { eventLog } = useJacobsStore.getState();
   if (eventLog.length === 0) return;

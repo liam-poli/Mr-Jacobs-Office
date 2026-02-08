@@ -18,6 +18,7 @@ import { useSettingsStore } from './stores/settingsStore';
 import { useGameStore } from './stores/gameStore';
 import { AdminPanel } from './pages/AdminPanel';
 import { MobileBlocker } from './components/MobileBlocker';
+import { IntroBriefing } from './components/IntroBriefing';
 
 function Game() {
   const menuOpen = useSettingsStore((s) => s.menuOpen);
@@ -53,6 +54,7 @@ function Game() {
       <SettingsMenu />
       <PhaseTitle />
       <EndScreen />
+      <IntroBriefing />
       <LoadingScreen />
     </div>
   );

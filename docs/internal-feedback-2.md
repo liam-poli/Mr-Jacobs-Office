@@ -9,22 +9,18 @@ Finsihing it off
     -Clocks
 * add a few more speical items 
 * lower object text adw
-* add a jacobs lore of story part
 * add opening message 
-* Check all doors and opening poitns 
-* check jabobcs random messa geit
 * stop jacobsm messaging showing while we are doing other takss d
-* safe lcoked 
-* Show getting bucks 
 * Increase time to review?
 Sounds for the header messages
-* Slow everuthing down a ltitle 
-* Adjsut personality - smug  
 * Add somethign werid 
+
+
+
 Video
 * Your in a office sim with jacobs A game with invifite ways to solve it w
 * I have only cleared the game once, so its pretty hard and i did that by stealing jacobs toys 
-
+* Reduce the gltihcing a little
 * Show hacking state then asking ot be let out a
 * Do a voice over 
 * Show ai generated states - fill mug, pourt mug, fill water, pourt water 

@@ -33,6 +33,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('floor-tile', floorTileImg);
     this.load.image('carpet-tile', carpetTileImg);
     this.load.image('desk-tile', deskTopImg);
+    this.load.image('jacobs-logo', '/jacobs-logo.png');
   }
 
   create() {

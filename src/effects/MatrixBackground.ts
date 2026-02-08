@@ -19,9 +19,21 @@ const RAIN_FONT_SIZE = 14;
 
 const DEPTH = -10;
 
+// Bouncing logo constants
+const LOGO_COUNT = 4;
+const LOGO_SCALE = 0.35;
+const LOGO_SPEED = 40;
+const LOGO_ALPHA = 0.10;
+
 interface RainDrop {
   text: Phaser.GameObjects.Text;
   speed: number;
+}
+
+interface BouncingLogo {
+  sprite: Phaser.GameObjects.Image;
+  vx: number;
+  vy: number;
 }
 
 // Mood severity → visual parameters
@@ -30,7 +42,7 @@ const MOOD_RAIN_CONFIG: Record<number, { color: string; gridColor: number; gridA
   2: { color: '#00ff41', gridColor: 0x00ff41, gridAlpha: 0.08, speedMin: 15, speedMax: 30 },
   3: { color: '#ffaa00', gridColor: 0xffaa00, gridAlpha: 0.10, speedMin: 20, speedMax: 35 },
   4: { color: '#ff4444', gridColor: 0xff4444, gridAlpha: 0.12, speedMin: 25, speedMax: 40 },
-  5: { color: '#ff2222', gridColor: 0xff2222, gridAlpha: 0.15, speedMin: 30, speedMax: 50 },
+  5: { color: '#ff2222', gridColor: 0xff2222, gridAlpha: 0.50, speedMin: 30, speedMax: 50 },
 };
 
 export class MatrixBackground {
@@ -40,6 +52,7 @@ export class MatrixBackground {
   private frameCount = 0;
   private currentSpeedMin = RAIN_SPEED_MIN;
   private currentSpeedMax = RAIN_SPEED_MAX;
+  private bouncingLogos: BouncingLogo[] = [];
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -116,6 +129,21 @@ export class MatrixBackground {
       const idx = Phaser.Math.Between(0, this.rainDrops.length - 1);
       this.rainDrops[idx].text.setText(this.randomChar());
     }
+
+    // Bounce logos (DVD screensaver style)
+    for (const logo of this.bouncingLogos) {
+      const s = logo.sprite;
+      s.x += logo.vx * dt;
+      s.y += logo.vy * dt;
+
+      const hw = (s.displayWidth * s.originX);
+      const hh = (s.displayHeight * s.originY);
+
+      if (s.x - hw <= 0) { s.x = hw; logo.vx = Math.abs(logo.vx); }
+      if (s.x + hw >= CANVAS_W) { s.x = CANVAS_W - hw; logo.vx = -Math.abs(logo.vx); }
+      if (s.y - hh <= 0) { s.y = hh; logo.vy = Math.abs(logo.vy); }
+      if (s.y + hh >= CANVAS_H) { s.y = CANVAS_H - hh; logo.vy = -Math.abs(logo.vy); }
+    }
   }
 
   /** Update rain color, speed, and grid based on mood severity (1-5). */
@@ -139,6 +167,45 @@ export class MatrixBackground {
     for (let y = 0; y <= CANVAS_H; y += GRID_SPACING) {
       this.gridGraphics.lineBetween(0, y, CANVAS_W, y);
     }
+
+    // Bouncing logos — spawn at severity 5, destroy otherwise
+    if (severity >= 5) {
+      this.spawnBouncingLogos();
+    } else {
+      this.destroyBouncingLogos();
+    }
+  }
+
+  private spawnBouncingLogos(): void {
+    if (this.bouncingLogos.length > 0) return; // already active
+    if (!this.scene.textures.exists('jacobs-logo')) return;
+
+    for (let i = 0; i < LOGO_COUNT; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const sprite = this.scene.add.image(
+        Phaser.Math.Between(100, CANVAS_W - 100),
+        Phaser.Math.Between(100, CANVAS_H - 100),
+        'jacobs-logo',
+      );
+      sprite.setScrollFactor(0);
+      sprite.setDepth(DEPTH + 0.05);
+      sprite.setScale(LOGO_SCALE);
+      sprite.setAlpha(LOGO_ALPHA);
+      sprite.setTint(0xff2222);
+
+      this.bouncingLogos.push({
+        sprite,
+        vx: Math.cos(angle) * LOGO_SPEED,
+        vy: Math.sin(angle) * LOGO_SPEED,
+      });
+    }
+  }
+
+  private destroyBouncingLogos(): void {
+    for (const logo of this.bouncingLogos) {
+      logo.sprite.destroy();
+    }
+    this.bouncingLogos = [];
   }
 
   destroy(): void {
@@ -147,5 +214,6 @@ export class MatrixBackground {
       drop.text.destroy();
     }
     this.rainDrops.length = 0;
+    this.destroyBouncingLogos();
   }
 }
