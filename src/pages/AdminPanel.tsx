@@ -8,6 +8,7 @@ import { RoomsTab } from '../components/admin/RoomsTab';
 import { TilesTab } from '../components/admin/TilesTab';
 import { EffectsTab } from '../components/admin/EffectsTab';
 import { AdminMatrixBg } from '../components/admin/AdminMatrixBg';
+import { JacobsNag } from '../components/admin/JacobsNag';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'jacobs';
 
@@ -130,6 +131,7 @@ export function AdminPanel() {
         {activeTab === 'Tiles' && <TilesTab key={refreshKey} />}
         {activeTab === 'Effects' && <EffectsTab key={refreshKey} />}
       </main>
+      <JacobsNag />
     </div>
   );
 }
