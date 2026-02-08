@@ -24,11 +24,22 @@ interface RainDrop {
   speed: number;
 }
 
+// Mood severity → visual parameters
+const MOOD_RAIN_CONFIG: Record<number, { color: string; gridColor: number; gridAlpha: number; speedMin: number; speedMax: number }> = {
+  1: { color: '#00ff41', gridColor: 0x00ff41, gridAlpha: 0.08, speedMin: 15, speedMax: 30 },
+  2: { color: '#00ff41', gridColor: 0x00ff41, gridAlpha: 0.08, speedMin: 15, speedMax: 30 },
+  3: { color: '#ffaa00', gridColor: 0xffaa00, gridAlpha: 0.10, speedMin: 20, speedMax: 35 },
+  4: { color: '#ff4444', gridColor: 0xff4444, gridAlpha: 0.12, speedMin: 25, speedMax: 40 },
+  5: { color: '#ff2222', gridColor: 0xff2222, gridAlpha: 0.15, speedMin: 30, speedMax: 50 },
+};
+
 export class MatrixBackground {
   private scene: Phaser.Scene;
   private gridGraphics: Phaser.GameObjects.Graphics;
   private rainDrops: RainDrop[] = [];
   private frameCount = 0;
+  private currentSpeedMin = RAIN_SPEED_MIN;
+  private currentSpeedMax = RAIN_SPEED_MAX;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -81,7 +92,7 @@ export class MatrixBackground {
   private resetDrop(drop: RainDrop): void {
     drop.text.setText(this.randomChar());
     drop.text.setAlpha(Phaser.Math.FloatBetween(RAIN_ALPHA_MIN, RAIN_ALPHA_MAX));
-    drop.speed = Phaser.Math.FloatBetween(RAIN_SPEED_MIN, RAIN_SPEED_MAX);
+    drop.speed = Phaser.Math.FloatBetween(this.currentSpeedMin, this.currentSpeedMax);
     drop.text.y = -RAIN_FONT_SIZE;
   }
 
@@ -104,6 +115,29 @@ export class MatrixBackground {
     if (this.frameCount % 10 === 0) {
       const idx = Phaser.Math.Between(0, this.rainDrops.length - 1);
       this.rainDrops[idx].text.setText(this.randomChar());
+    }
+  }
+
+  /** Update rain color, speed, and grid based on mood severity (1-5). */
+  setMoodIntensity(severity: number): void {
+    const config = MOOD_RAIN_CONFIG[severity] ?? MOOD_RAIN_CONFIG[2];
+
+    // Update rain color and speed
+    this.currentSpeedMin = config.speedMin;
+    this.currentSpeedMax = config.speedMax;
+    for (const drop of this.rainDrops) {
+      drop.text.setColor(config.color);
+      drop.speed = Phaser.Math.FloatBetween(config.speedMin, config.speedMax);
+    }
+
+    // Redraw grid with new color
+    this.gridGraphics.clear();
+    this.gridGraphics.lineStyle(1, config.gridColor, config.gridAlpha);
+    for (let x = 0; x <= CANVAS_W; x += GRID_SPACING) {
+      this.gridGraphics.lineBetween(x, 0, x, CANVAS_H);
+    }
+    for (let y = 0; y <= CANVAS_H; y += GRID_SPACING) {
+      this.gridGraphics.lineBetween(0, y, CANVAS_W, y);
     }
   }
 

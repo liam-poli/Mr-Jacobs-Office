@@ -3,7 +3,7 @@ import { useJacobsStore } from '../stores/jacobsStore';
 import { Player } from '../entities/Player';
 import { InteractionManager } from '../systems/InteractionManager';
 import { fetchRoom } from '../services/roomService';
-import { soundService } from '../services/soundService';
+import { soundService, type MusicLevel } from '../services/soundService';
 import { startJacobsLoop, stopJacobsLoop } from '../services/jacobsService';
 import { startJobCycle, stopJobCycle } from '../services/jobService';
 import { MatrixBackground } from '../effects/MatrixBackground';
@@ -75,6 +75,8 @@ export class OfficeScene extends Phaser.Scene {
   private doorGraceUntil = 0;
   private matrixBg: MatrixBackground | null = null;
   private worldStripped = false;
+  private allTiles: Phaser.GameObjects.Image[] = [];
+  private tileGlitchTimer?: Phaser.Time.TimerEvent;
 
   constructor() {
     super('OfficeScene');
@@ -86,6 +88,7 @@ export class OfficeScene extends Phaser.Scene {
     this.transitioning = false;
     this.matrixBg = null;
     this.objectVisuals = new Map();
+    this.allTiles = [];
     this.player = null!;
     this.worldStripped = false;
   }
@@ -186,9 +189,14 @@ export class OfficeScene extends Phaser.Scene {
     // Clean up subscription when scene shuts down
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
 
-    // Initialize sound system and start ambient music
+    // Initialize sound system and restore music level from current mood
     soundService.init();
-    soundService.setMusicLevel(1);
+    const currentMood = useJacobsStore.getState().mood;
+    const currentSev = MOOD_SEVERITY[currentMood] ?? 2;
+    const initMusicLevel = currentSev <= 2 ? 1 : currentSev === 3 ? 2 : currentSev === 4 ? 3 : 4;
+    soundService.setMusicLevel(initMusicLevel as MusicLevel);
+    this.matrixBg?.setMoodIntensity(currentSev);
+    this.restartTileGlitchTimer(currentSev);
 
     // Wait for actual rendered frames + ScaleManager to settle before revealing.
     const createTime = performance.now();
@@ -223,27 +231,33 @@ export class OfficeScene extends Phaser.Scene {
         if (tile === 0) {
           const fl = this.add.image(x, y, 'floor-tile');
           fl.setDisplaySize(TILE_SIZE, TILE_SIZE);
+          this.allTiles.push(fl);
         } else if (tile === 2) {
           const carpet = this.add.image(x, y, 'carpet-tile');
           carpet.setDisplaySize(TILE_SIZE, TILE_SIZE);
+          this.allTiles.push(carpet);
         } else if (tile === 3) {
           // Desk: floor underneath + desk top with depth sorting + collision
           const fl = this.add.image(x, y, 'floor-tile');
           fl.setDisplaySize(TILE_SIZE, TILE_SIZE);
+          this.allTiles.push(fl);
           const dk = this.add.image(x, y, 'desk-tile');
           dk.setDisplaySize(TILE_SIZE, TILE_SIZE);
           dk.setDepth(y);
+          this.allTiles.push(dk);
           const wall = this.wallGroup.create(x, y, 'desk-tile') as Phaser.Physics.Arcade.Sprite;
           wall.setVisible(false);
           wall.setDisplaySize(TILE_SIZE, TILE_SIZE);
           wall.refreshBody();
         } else {
-          this.add.image(x, y, 'wall-tile');
+          const wl = this.add.image(x, y, 'wall-tile');
+          this.allTiles.push(wl);
           // Top-side cap for wall tiles (adds height illusion)
           const hasWallAbove = row > 0 && roomDef.tileMap[row - 1][col] === 1;
           if (!hasWallAbove && this.textures.exists('wall-cap')) {
             const cap = this.add.image(x, y, 'wall-cap');
             cap.setDisplaySize(TILE_SIZE, TILE_SIZE);
+            this.allTiles.push(cap);
           }
           // Baseboard/shadow at floor edge for wall tiles
           const tileBelow = row + 1 < roomDef.tileMap.length ? roomDef.tileMap[row + 1][col] : -1;
@@ -251,6 +265,7 @@ export class OfficeScene extends Phaser.Scene {
           if (!isWallBelow && this.textures.exists('wall-base')) {
             const base = this.add.image(x, y, 'wall-base');
             base.setDisplaySize(TILE_SIZE, TILE_SIZE);
+            this.allTiles.push(base);
           }
           const wall = this.wallGroup.create(x, y, 'wall-tile') as Phaser.Physics.Arcade.Sprite;
           wall.setVisible(false);
@@ -825,6 +840,46 @@ export class OfficeScene extends Phaser.Scene {
         ease: 'Sine.easeInOut',
       });
     }
+
+    // ── World influence ──────────────────────────────────
+    // Music intensity
+    const musicLevel = sev <= 2 ? 1 : sev === 3 ? 2 : sev === 4 ? 3 : 4;
+    soundService.setMusicLevel(musicLevel as MusicLevel);
+
+    // Background rain color/speed
+    this.matrixBg?.setMoodIntensity(sev);
+
+    // Tile glitch timer
+    this.restartTileGlitchTimer(sev);
+  }
+
+  private restartTileGlitchTimer(severity: number): void {
+    this.tileGlitchTimer?.destroy();
+    this.tileGlitchTimer = undefined;
+
+    if (severity <= 3 || this.allTiles.length === 0) return;
+
+    const delay = severity === 4 ? 3000 : 1000;
+    const countMin = severity === 4 ? 2 : 4;
+    const countMax = severity === 4 ? 5 : 8;
+    const glitchTints = [0xff4444, 0x44ff88, 0xaa44cc];
+
+    this.tileGlitchTimer = this.time.addEvent({
+      delay,
+      loop: true,
+      callback: () => {
+        const count = Phaser.Math.Between(countMin, countMax);
+        for (let i = 0; i < count; i++) {
+          const tile = this.allTiles[Phaser.Math.Between(0, this.allTiles.length - 1)];
+          if (!tile || !tile.scene) continue;
+          const tint = glitchTints[Phaser.Math.Between(0, glitchTints.length - 1)];
+          tile.setTint(tint);
+          this.time.delayedCall(Phaser.Math.Between(150, 300), () => {
+            if (tile?.scene) tile.clearTint();
+          });
+        }
+      },
+    });
   }
 
   private cleanup() {
@@ -835,6 +890,8 @@ export class OfficeScene extends Phaser.Scene {
       this.jacobsBobTween?.destroy();
       this.jacobsBlinkTimer?.destroy();
       this.jacobsGlitchTimer?.destroy();
+      this.tileGlitchTimer?.destroy();
+      this.allTiles = [];
       this.interactionManager?.destroy();
       for (const visual of this.objectVisuals.values()) {
         visual.tween?.destroy();
