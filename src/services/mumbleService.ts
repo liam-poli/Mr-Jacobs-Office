@@ -9,7 +9,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 const BASE_FREQ = 220;      // Hz — base pitch
 const FREQ_RANGE = 160;     // Hz — random variation above base
 const BLIP_DURATION = 0.06; // seconds per blip
-const VOLUME = 0.12;
+const VOLUME = 0.09;
 
 let ctx: AudioContext | null = null;
 
