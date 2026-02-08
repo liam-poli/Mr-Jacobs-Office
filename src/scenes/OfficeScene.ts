@@ -611,20 +611,15 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private onStateChange(state: GameState) {
-    // Strip the world when the session ends — leave only the matrix background
-    if (state.sessionStatus !== 'PLAYING') {
-      this.stripWorld();
-      return;
-    }
-
-    // Disable Phaser keyboard when terminal chat is open so keys reach the React input.
+    // Disable Phaser keyboard when React needs text input (terminal chat, end screen name entry).
     // clearCaptures() removes keycodes from the KeyboardManager capture set so
     // preventDefault() is no longer called — letting WASD/E flow into the <input>.
     if (this.input.keyboard) {
-      if (state.terminalChatOpen && this.input.keyboard.enabled) {
+      const needsKeyboard = !state.terminalChatOpen && state.sessionStatus === 'PLAYING';
+      if (!needsKeyboard && this.input.keyboard.enabled) {
         this.input.keyboard.clearCaptures();
         this.input.keyboard.enabled = false;
-      } else if (!state.terminalChatOpen && !this.input.keyboard.enabled) {
+      } else if (needsKeyboard && !this.input.keyboard.enabled) {
         this.input.keyboard.enabled = true;
         const K = Phaser.Input.Keyboard.KeyCodes;
         this.input.keyboard.addCapture([
@@ -632,6 +627,12 @@ export class OfficeScene extends Phaser.Scene {
           K.UP, K.DOWN, K.LEFT, K.RIGHT, K.SPACE,
         ]);
       }
+    }
+
+    // Strip the world when the session ends — leave only the matrix background
+    if (state.sessionStatus !== 'PLAYING') {
+      this.stripWorld();
+      return;
     }
 
     // Update object visuals when states change

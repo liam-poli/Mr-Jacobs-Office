@@ -17,6 +17,7 @@ import { PhaseTitle } from './components/PhaseTitle';
 import { useSettingsStore } from './stores/settingsStore';
 import { useGameStore } from './stores/gameStore';
 import { AdminPanel } from './pages/AdminPanel';
+import { MobileBlocker } from './components/MobileBlocker';
 
 function Game() {
   const menuOpen = useSettingsStore((s) => s.menuOpen);
@@ -59,9 +60,12 @@ function Game() {
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Game />} />
-      <Route path="/admin" element={<AdminPanel />} />
-    </Routes>
+    <>
+      <MobileBlocker />
+      <Routes>
+        <Route path="/" element={<Game />} />
+        <Route path="/admin" element={<AdminPanel />} />
+      </Routes>
+    </>
   );
 }

@@ -1,8 +1,10 @@
-import { Settings, HelpCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Settings, HelpCircle, Trophy } from 'lucide-react';
 import { useGameStore } from '../stores/gameStore';
 import { useJobStore } from '../stores/jobStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { soundService } from '../services/soundService';
+import { LeaderboardPanel } from './LeaderboardPanel';
 
 const panelStyle: React.CSSProperties = {
   backgroundColor: 'var(--color-hud-panel)',
@@ -37,6 +39,8 @@ export function HUD() {
 
   const toggleMenu = useSettingsStore((s) => s.toggleMenu);
   const toggleHelp = useSettingsStore((s) => s.toggleHelp);
+
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
 
   if (!sceneReady) return null;
 
@@ -80,6 +84,14 @@ export function HUD() {
           <HelpCircle size={20} />
         </button>
         <button
+          onClick={() => { soundService.playSfx('ui-click'); setLeaderboardOpen(true); }}
+          className="p-2.5 text-hud-accent hover:text-white transition-colors cursor-pointer"
+          style={panelStyle}
+          title="Leaderboard"
+        >
+          <Trophy size={20} />
+        </button>
+        <button
           onClick={() => { soundService.playSfx('ui-click'); toggleMenu(); }}
           className="p-2.5 text-hud-accent hover:text-white transition-colors cursor-pointer"
           style={panelStyle}
@@ -88,6 +100,8 @@ export function HUD() {
           <Settings size={20} />
         </button>
       </div>
+
+      <LeaderboardPanel open={leaderboardOpen} onClose={() => setLeaderboardOpen(false)} />
     </>
   );
 }

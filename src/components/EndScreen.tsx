@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { useJacobsStore } from '../stores/jacobsStore';
 import { useJobStore } from '../stores/jobStore';
 import { soundService } from '../services/soundService';
+import { submitScore, fetchLeaderboard, type LeaderboardEntry } from '../services/leaderboardService';
 import type { SessionEndType } from '../types/game';
 
 const panelStyle: React.CSSProperties = {
@@ -35,6 +36,15 @@ export function EndScreen() {
 
   const [visible, setVisible] = useState(false);
 
+  // Leaderboard state
+  const [playerName, setPlayerName] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (sessionStatus === 'PLAYING') return;
     // Delay fade-in slightly so the final speech can register
@@ -42,11 +52,48 @@ export function EndScreen() {
     return () => clearTimeout(timer);
   }, [sessionStatus]);
 
+  // Fetch leaderboard when visible
+  useEffect(() => {
+    if (!visible || !sessionEndType) return;
+    const config = END_CONFIG[sessionEndType];
+    fetchLeaderboard().then(setLeaderboard);
+    // Losers see leaderboard immediately
+    if (!config.won) setShowLeaderboard(true);
+  }, [visible, sessionEndType]);
+
+  // Auto-focus name input
+  useEffect(() => {
+    if (visible && nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
+  }, [visible]);
+
   if (sessionStatus === 'PLAYING' || !sessionEndType) return null;
 
   const config = END_CONFIG[sessionEndType];
   const accentColor = config.won ? 'var(--color-hud-accent)' : 'var(--color-hud-danger)';
   const timeSurvived = Math.round(gameTimeMinutes - GAME_START_TIME);
+
+  const handleSubmit = async () => {
+    const trimmed = playerName.trim();
+    if (!trimmed || submitting) return;
+    soundService.playSfx('ui-click');
+    setSubmitting(true);
+    const result = await submitScore({
+      player_name: trimmed,
+      bucks,
+      phases_survived: phaseNumber,
+      time_survived_minutes: timeSurvived,
+      end_type: sessionEndType,
+      jacobs_mood: mood,
+    });
+    if (result) setSubmittedId(result.id);
+    const updated = await fetchLeaderboard();
+    setLeaderboard(updated);
+    setSubmitted(true);
+    setShowLeaderboard(true);
+    setSubmitting(false);
+  };
 
   return (
     <div
@@ -59,7 +106,7 @@ export function EndScreen() {
       }}
     >
       <div
-        className="flex flex-col items-center gap-6 p-10 max-w-lg w-full"
+        className="flex flex-col items-center gap-6 p-10 max-w-lg w-full max-h-[90vh] overflow-y-auto"
         style={panelStyle}
       >
         {/* Jacobs face */}
@@ -142,6 +189,99 @@ export function EndScreen() {
         <div className="text-[10px] tracking-[0.15em]" style={{ color: 'var(--color-hud-dim)' }}>
           JACOBS MOOD: <span style={{ color: accentColor }}>{mood}</span>
         </div>
+
+        {/* Name entry (winners only, pre-submit) */}
+        {config.won && !submitted && (
+          <div className="w-full flex flex-col items-center gap-3">
+            <div
+              className="text-[10px] tracking-[0.2em]"
+              style={{ color: 'var(--color-hud-dim)' }}
+            >
+              ENTER YOUR NAME FOR THE LEADERBOARD
+            </div>
+            <div className="flex items-center gap-2 w-full max-w-[280px]">
+              <span className="text-[12px]" style={{ color: accentColor }}>&gt;</span>
+              <input
+                ref={nameInputRef}
+                type="text"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value.toUpperCase())}
+                onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') handleSubmit(); }}
+                placeholder="YOUR NAME"
+                maxLength={16}
+                className="flex-1 bg-transparent outline-none text-[14px] tracking-wider"
+                style={{
+                  color: 'var(--color-hud-text)',
+                  fontFamily: 'var(--font-hud)',
+                  caretColor: accentColor,
+                  borderBottom: `1px solid ${accentColor}`,
+                  paddingBottom: 4,
+                }}
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={!playerName.trim() || submitting}
+                className="px-4 py-1.5 text-[11px] tracking-wider font-bold rounded cursor-pointer"
+                style={{
+                  color: 'var(--color-hud-panel)',
+                  backgroundColor: !playerName.trim() || submitting ? 'var(--color-hud-dim)' : accentColor,
+                  border: 'none',
+                }}
+              >
+                {submitting ? '...' : 'SUBMIT'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Leaderboard */}
+        {showLeaderboard && leaderboard.length > 0 && (
+          <div className="w-full flex flex-col items-center gap-2">
+            <div
+              className="w-full"
+              style={{ height: 1, backgroundColor: accentColor, opacity: 0.3 }}
+            />
+            <div
+              className="text-[10px] tracking-[0.2em]"
+              style={{ color: 'var(--color-hud-dim)' }}
+            >
+              LEADERBOARD
+            </div>
+            <div
+              className="w-full max-h-[180px] overflow-y-auto text-[10px] tracking-wider"
+              style={{ color: 'var(--color-hud-dim)' }}
+            >
+              {/* Header */}
+              <div
+                className="flex gap-2 px-2 pb-1 mb-1"
+                style={{ borderBottom: '1px solid rgba(155,155,155,0.2)' }}
+              >
+                <span className="w-6 text-right">#</span>
+                <span className="flex-1">NAME</span>
+                <span className="w-14 text-right">TIME</span>
+              </div>
+              {/* Rows */}
+              {leaderboard.map((entry, i) => {
+                const isMe = submittedId === entry.id;
+                const rowColor = isMe ? accentColor : 'var(--color-hud-dim)';
+                return (
+                  <div
+                    key={entry.id}
+                    className="flex gap-2 px-2 py-0.5"
+                    style={{
+                      color: rowColor,
+                      backgroundColor: isMe ? 'rgba(159,218,115,0.08)' : 'transparent',
+                    }}
+                  >
+                    <span className="w-6 text-right">{i + 1}</span>
+                    <span className="flex-1 truncate">{entry.player_name}</span>
+                    <span className="w-14 text-right">{entry.time_survived_minutes}m</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Play again */}
         <button
