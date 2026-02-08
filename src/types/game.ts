@@ -179,6 +179,10 @@ export interface GameState {
   playerFrozen: boolean;
   setPlayerFrozen: (frozen: boolean) => void;
 
+  // Game start gate (waits for IntroBriefing dismiss)
+  gameStarted: boolean;
+  setGameStarted: (started: boolean) => void;
+
   // Session end
   sessionStatus: SessionStatus;
   sessionEndType: SessionEndType | null;

@@ -2,22 +2,20 @@ Finsihing it off
 
 
 * Make tasks make a bit more sense, asking to fix somethign , maybe tweak these 
-* Add flare 
-    - Paintings 
-    - Secuuity cameras
-    - More soudns 
-    -Clocks
-* add a few more speical items 
-* lower object text adw
-* add opening message 
-* stop jacobsm messaging showing while we are doing other takss d
 * Increase time to review?
-Sounds for the header messages
-* Add somethign werid 
+* store leeard board in seconds 
+
 
 
 
 Video
+
+
+You need to escape the simulation 
+
+
+
+
 * Your in a office sim with jacobs A game with invifite ways to solve it w
 * I have only cleared the game once, so its pretty hard and i did that by stealing jacobs toys 
 * Reduce the gltihcing a little

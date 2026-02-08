@@ -182,21 +182,22 @@ export class OfficeScene extends Phaser.Scene {
       }
     }
 
-    // Start the Jacobs brain loop and job cycle
-    startJacobsLoop();
-    startJobCycle();
-
     // Clean up subscription when scene shuts down
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
 
-    // Initialize sound system and restore music level from current mood
-    soundService.init();
-    const currentMood = useJacobsStore.getState().mood;
-    const currentSev = MOOD_SEVERITY[currentMood] ?? 2;
-    const initMusicLevel = currentSev <= 2 ? 1 : currentSev === 3 ? 2 : currentSev === 4 ? 3 : 4;
-    soundService.setMusicLevel(initMusicLevel as MusicLevel);
-    this.matrixBg?.setMoodIntensity(currentSev);
-    this.restartTileGlitchTimer(currentSev);
+    // Gate game systems on IntroBriefing dismiss (gameStarted flag).
+    // On room transitions gameStarted is already true, so systems start immediately.
+    if (useGameStore.getState().gameStarted) {
+      this.startGameSystems();
+    } else {
+      const unsub = useGameStore.subscribe((s) => {
+        if (s.gameStarted) {
+          unsub();
+          this.startGameSystems();
+        }
+      });
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, unsub);
+    }
 
     // Wait for actual rendered frames + ScaleManager to settle before revealing.
     const createTime = performance.now();
@@ -851,6 +852,19 @@ export class OfficeScene extends Phaser.Scene {
 
     // Tile glitch timer
     this.restartTileGlitchTimer(sev);
+  }
+
+  private startGameSystems(): void {
+    startJacobsLoop();
+    startJobCycle();
+
+    soundService.init();
+    const currentMood = useJacobsStore.getState().mood;
+    const currentSev = MOOD_SEVERITY[currentMood] ?? 2;
+    const initMusicLevel = currentSev <= 2 ? 1 : currentSev === 3 ? 2 : currentSev === 4 ? 3 : 4;
+    soundService.setMusicLevel(initMusicLevel as MusicLevel);
+    this.matrixBg?.setMoodIntensity(currentSev);
+    this.restartTileGlitchTimer(currentSev);
   }
 
   private restartTileGlitchTimer(severity: number): void {

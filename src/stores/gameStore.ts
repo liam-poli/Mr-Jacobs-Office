@@ -94,6 +94,9 @@ export const useGameStore = create<GameState>((set) => ({
   playerFrozen: false,
   setPlayerFrozen: (frozen) => set({ playerFrozen: frozen }),
 
+  gameStarted: false,
+  setGameStarted: (started) => set({ gameStarted: started }),
+
   sessionStatus: 'PLAYING',
   sessionEndType: null,
   sessionEndSpeech: null,

@@ -27,7 +27,9 @@ export function IntroBriefing() {
   }, [sceneReady, setPlayerFrozen]);
 
   function handleBegin() {
+    useGameStore.getState().setGameStarted(true);
     soundService.init();
+    soundService.playSfx('ui-click');
     setFading(true);
     setTimeout(() => {
       setPlayerFrozen(false);
@@ -62,7 +64,8 @@ export function IntroBriefing() {
           <div className="text-hud-text text-xs font-mono leading-relaxed space-y-2 mb-6">
             <p>You are trapped in a simulation run by <span className="text-hud-accent">J.A.C.O.B.S.</span> — an unhinged AI office manager.</p>
             <p>Complete his tasks. Earn bucks. Stay on his good side.</p>
-            <p>Not everything will make sense. <span className="text-hud-accent">Find a way out.</span></p>
+            <p><span className="text-hud-accent">Jacobs is insane</span> — not every task will make sense.</p>
+            <p><span className="text-hud-accent">Find a way out.</span></p>
           </div>
           <button
             onClick={handleBegin}
