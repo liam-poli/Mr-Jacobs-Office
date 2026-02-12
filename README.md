@@ -6,6 +6,8 @@ Escape a corporate office simulation controlled by a deranged AI named Mr. Jacob
 
 Built for the [Supercell Global AI Game Hackathon](https://discord.gg/bQ29YpdQ75) (February 2026).
 
+[![Watch the demo](https://img.youtube.com/vi/7jAb_yPZwV0/maxresdefault.jpg)](https://www.youtube.com/watch?v=7jAb_yPZwV0)
+
 ## How It Works
 
 You wake up inside a retro corporate office. Your boss is an AI displayed on a CRT monitor. He assigns tasks, reviews your performance, and controls the entire simulation. His mood is real — powered by an LLM that processes every action you take and reacts with speech, world changes, and environmental effects.
