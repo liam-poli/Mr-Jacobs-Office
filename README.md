@@ -6,6 +6,8 @@ Escape a corporate office simulation controlled by a deranged AI named Mr. Jacob
 
 Built for the [Supercell Global AI Game Hackathon](https://discord.gg/bQ29YpdQ75) (February 2026).
 
+**▶ [Watch the demo](https://www.youtube.com/watch?v=7jAb_yPZwV0)**
+
 [![Watch the demo](https://img.youtube.com/vi/7jAb_yPZwV0/maxresdefault.jpg)](https://www.youtube.com/watch?v=7jAb_yPZwV0)
 
 ## How It Works
